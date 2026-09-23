@@ -280,6 +280,11 @@
             overflow-y: auto;
         }
 
+        .tall-card.target-select-active {
+            border: 2px solid #ef4444;
+            background-color: #fff5f5;
+        }
+
         .short-card {
             height: 196px;
             justify-content: space-between;
@@ -303,6 +308,19 @@
             border-radius: 8px;
             font-size: 13px;
             font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .rank-item.selectable {
+            cursor: pointer;
+            border: 1px solid #fca5a5;
+            background-color: #ffffff;
+        }
+
+        .rank-item.selectable:hover {
+            background-color: #fee2e2;
+            transform: scale(1.02);
+            border-color: #ef4444;
         }
 
         .rank-badge {
@@ -437,55 +455,6 @@
             word-break: keep-all;
         }
 
-        .target-modal {
-            width: 360px;
-            max-height: 420px;
-            background: #ffffff;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .target-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #0f172a;
-            text-align: center;
-        }
-
-        .target-list {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 300px;
-        }
-
-        .target-item {
-            padding: 10px 14px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #334155;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.2s;
-        }
-
-        .target-item:hover {
-            background: #eff6ff;
-            border-color: #3b82f6;
-            color: #1d4ed8;
-        }
-
         #tauntOverlay {
             position: fixed;
             top: 0;
@@ -493,17 +462,21 @@
             width: 100vw;
             height: 100vh;
             z-index: 9999;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             display: none;
             align-items: center;
             justify-content: center;
             pointer-events: none;
+            overflow: hidden;
         }
 
         #tauntOverlay img {
-            max-width: 80vw;
-            max-height: 80vh;
+            width: 95vw;
+            height: 95vh;
+            max-width: 1400px;
+            max-height: 1400px;
             object-fit: contain;
+            transform: scale(1.8);
         }
     </style>
 </head>
@@ -557,8 +530,8 @@
                 </div>
 
                 <div id="gameRankingUI" class="game-right-layout" style="display:none;">
-                    <div class="card tall-card">
-                        <div class="board-title">🏆 실시간 Top 5 랭킹</div>
+                    <div class="card tall-card" id="rankingCard">
+                        <div class="board-title" id="rankingTitle">🏆 실시간 Top 5 랭킹</div>
                         <div class="rank-list" id="rankingList"></div>
                     </div>
                     <div class="card short-card">
@@ -573,13 +546,6 @@
 
     <div class="modal-overlay" id="cardModalOverlay">
         <div class="card-container" id="cardContainer"></div>
-    </div>
-
-    <div class="modal-overlay" id="targetModalOverlay">
-        <div class="target-modal">
-            <div class="target-title">공격할 상대방을 선택하세요</div>
-            <div class="target-list" id="targetList"></div>
-        </div>
     </div>
 
     <div id="tauntOverlay">
@@ -622,13 +588,14 @@
 
         let baseNickname = '';
         let isTeacher = false;
-        let myNickname = '이름 없음';
+        let myNickname = '익명';
         let gameStarted = false;
         let myScore = 0;
         let currentBlocks = [];
         let hasGuessed = false;
         let activeUsers = [];
         let pendingAttackType = null;
+        let isTargetSelectMode = false;
 
         const room = supabase.channel('online-users-room', {
             config: { presence: { key: myId } },
@@ -646,7 +613,7 @@
                 myNickname = `(선생님) ${baseNickname !== '' ? baseNickname : '선생님'}`;
                 nicknameInput.value = myNickname;
             } else {
-                myNickname = baseNickname !== '' ? baseNickname : '이름 없음';
+                myNickname = baseNickname !== '' ? baseNickname : '익명';
             }
             updatePresence();
         }
@@ -665,12 +632,17 @@
 
         room.on('presence', { event: 'sync' }, () => {
             const state = room.presenceState();
-            let allUsers = [];
+            let userMap = new Map();
             Object.values(state).forEach(presences => {
                 if (Array.isArray(presences)) {
-                    presences.forEach(u => { if (u && u.id) allUsers.push(u); });
+                    presences.forEach(u => {
+                        if (u && u.id) {
+                            userMap.set(u.id, u);
+                        }
+                    });
                 }
             });
+            let allUsers = Array.from(userMap.values());
             activeUsers = allUsers;
 
             let isAnyGameStarted = allUsers.some(u => u.gameStarted);
@@ -757,7 +729,7 @@
                 const isMe = u.id === myId ? ' (나)' : '';
                 return `
                     <div class="user-item">
-                        <span class="user-name">${u.nickname || '이름 없음'}${isMe}</span>
+                        <span class="user-name">${u.nickname || '익명'}${isMe}</span>
                         <span style="font-size: 12px; color: #22c55e; font-weight: 600;">● 온라인</span>
                     </div>
                 `;
@@ -766,21 +738,63 @@
 
         function renderRankingList(users) {
             const container = document.getElementById('rankingList');
-            let sorted = [...users].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5);
+            const card = document.getElementById('rankingCard');
+            const title = document.getElementById('rankingTitle');
 
-            container.innerHTML = sorted.map((u, idx) => {
-                let badgeClass = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : 'rank-etc';
-                let tier = idx === 0 ? '마스터' : idx === 1 ? '다이아' : idx === 2 ? '골드' : '실버';
-                return `
-                    <div class="rank-item">
-                        <div>
-                            <span class="rank-badge ${badgeClass}">${idx + 1}등</span>
-                            <span style="margin-left: 6px;">${u.nickname || '이름 없음'}</span>
+            if (isTargetSelectMode) {
+                card.classList.add('target-select-active');
+                title.innerHTML = `<span style="color: #ef4444;">🎯 공격할 상대방을 클릭하세요!</span>`;
+
+                container.innerHTML = users.map((u, idx) => {
+                    const isMe = u.id === myId;
+                    const itemClass = isMe ? 'rank-item' : 'rank-item selectable';
+                    const targetBadge = isMe ? '<span style="color: #94a3b8; font-size: 11px;">(나)</span>' : '<span style="color: #ef4444; font-size: 11px; font-weight: bold;">[공격하기]</span>';
+                    
+                    return `
+                        <div class="${itemClass}" data-userid="${u.id}">
+                            <div>
+                                <span>${u.nickname || '익명'}</span>
+                            </div>
+                            ${targetBadge}
                         </div>
-                        <span style="color: #64748b; font-size: 12px;">${tier} (${u.score || 0}점)</span>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+
+                container.querySelectorAll('.selectable').forEach(el => {
+                    el.addEventListener('click', async () => {
+                        const targetId = el.getAttribute('data-userid');
+                        if (targetId && pendingAttackType) {
+                            await room.send({
+                                type: 'broadcast',
+                                event: 'attack_event',
+                                payload: { targetId: targetId, type: pendingAttackType }
+                            });
+                        }
+                        isTargetSelectMode = false;
+                        pendingAttackType = null;
+                        renderRankingList(activeUsers);
+                    });
+                });
+            } else {
+                card.classList.remove('target-select-active');
+                title.innerHTML = `🏆 실시간 Top 5 랭킹`;
+
+                let sorted = [...users].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5);
+
+                container.innerHTML = sorted.map((u, idx) => {
+                    let badgeClass = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : 'rank-etc';
+                    let tier = idx === 0 ? '마스터' : idx === 1 ? '다이아' : idx === 2 ? '골드' : '실버';
+                    return `
+                        <div class="rank-item">
+                            <div>
+                                <span class="rank-badge ${badgeClass}">${idx + 1}등</span>
+                                <span style="margin-left: 6px;">${u.nickname || '익명'}</span>
+                            </div>
+                            <span style="color: #64748b; font-size: 12px;">${tier} (${u.score || 0}점)</span>
+                        </div>
+                    `;
+                }).join('');
+            }
         }
 
         function generateValidBlocks() {
@@ -890,14 +904,14 @@
                 {
                     type: 'confusion',
                     title: '혼란 카드',
-                    img: 'https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400',
+                    img: 'https://media1.tenor.com/m/ZINlqqwHYQ4AAAAC/brawl-stars-brawl-stars-emoji.gif',
                     desc: '상대방을 지목하여 2초간 화면에 글리치를 생성합니다.'
                 },
                 {
                     type: 'taunt',
                     title: '괴롭히기 카드',
                     img: 'https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif',
-                    desc: '상대방 화면을 1초 동안 큰 이미지로 가립니다.'
+                    desc: '상대방 화면을 2.5초 동안 거대한 이미지로 가립니다.'
                 }
             ];
 
@@ -935,41 +949,9 @@
                 updatePresence();
             } else if (card.type === 'confusion' || card.type === 'taunt') {
                 pendingAttackType = card.type === 'confusion' ? 'glitch' : 'taunt';
-                openTargetModal();
+                isTargetSelectMode = true;
+                renderRankingList(activeUsers);
             }
-        }
-
-        function openTargetModal() {
-            const modal = document.getElementById('targetModalOverlay');
-            const list = document.getElementById('targetList');
-            list.innerHTML = '';
-
-            const targets = activeUsers.filter(u => u.id !== myId);
-
-            if (targets.length === 0) {
-                list.innerHTML = `<div class="empty-state">지목할 상대방이 없습니다.</div>`;
-            } else {
-                targets.forEach(u => {
-                    const item = document.createElement('div');
-                    item.className = 'target-item';
-                    item.innerHTML = `
-                        <span>${u.nickname || '이름 없음'}</span>
-                        <span style="font-size: 12px; color: #2563eb;">선택</span>
-                    `;
-                    item.addEventListener('click', async () => {
-                        modal.classList.remove('active');
-                        await room.send({
-                            type: 'broadcast',
-                            event: 'attack_event',
-                            payload: { targetId: u.id, type: pendingAttackType }
-                        });
-                        pendingAttackType = null;
-                    });
-                    list.appendChild(item);
-                });
-            }
-
-            modal.classList.add('active');
         }
 
         function triggerGlitchEffect() {
@@ -981,7 +963,7 @@
             glitchMeshes = [];
 
             const count = Math.floor(Math.random() * 8) + 5;
-            const geo = new THREE.BoxGeometry(0.96, 0.96, 0.96);
+            const geo = new THREE.BoxGeometry(1.0, 1.0, 1.0);
 
             for (let i = 0; i < count; i++) {
                 const mat = new THREE.MeshStandardMaterial({
@@ -1012,7 +994,7 @@
             overlay.style.display = 'flex';
             setTimeout(() => {
                 overlay.style.display = 'none';
-            }, 1000);
+            }, 2500);
         }
 
         let scene, camera, renderer, blockGroup, outlineGroup, glitchGroup;
@@ -1075,7 +1057,7 @@
             while(blockGroup.children.length > 0) blockGroup.remove(blockGroup.children[0]);
             while(outlineGroup.children.length > 0) outlineGroup.remove(outlineGroup.children[0]);
 
-            const boxGeo = new THREE.BoxGeometry(0.96, 0.96, 0.96);
+            const boxGeo = new THREE.BoxGeometry(1.0, 1.0, 1.0);
             const boxMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.3, metalness: 0.1 });
             const edgesGeo = new THREE.EdgesGeometry(boxGeo);
             const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, linewidth: 2, depthTest: false });
