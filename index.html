@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>미완성</title>
     
-    <!-- 이미지 사전 로드 (자바스크립트에서 랜덤 선택 후 적용) -->
+    <!-- 이미지 사전 로드 -->
     <link rel="preload" as="image" id="preloadLink" href="" fetchpriority="high">
 
     <!-- Supabase JS SDK -->
@@ -44,7 +44,6 @@
             "https://media.ffycdn.net/eu/supercell/7a6mrhbBHByusVgTvkoS.png?width=2400"
         ];
 
-        // 들어올 때마다 랜덤 이미지 선택
         const selectedImage = characterImages[Math.floor(Math.random() * characterImages.length)];
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -55,6 +54,7 @@
         let baseNickname = '';
         let isTeacher = false;
         let myNickname = '';
+        let gameStarted = false;
 
         // Supabase Realtime 채널 생성 (Presence 기능)
         const room = supabase.channel('online-users-room', {
@@ -65,12 +65,13 @@
             },
         });
 
-        // 내 상태(아이디, 닉네임)를 서버에 전송하는 함수 (고유 id 포함)
+        // 내 상태 전송 함수
         async function updatePresence() {
             try {
                 await room.track({
                     id: myId,
                     nickname: myNickname,
+                    gameStarted: gameStarted,
                     onlineAt: new Date().toISOString()
                 });
             } catch (err) {
@@ -78,33 +79,66 @@
             }
         }
 
-        // 다른 사람이 들어오거나 나갈 때, 이름을 바꿀 때 실시간 동기화
         room.on('presence', { event: 'sync' }, () => {
             const state = room.presenceState();
             renderUserList(state);
+            checkGameStatus(state);
         });
 
-        // 채널 접속 성공 시 내 상태 등록
         room.subscribe(async (status) => {
             if (status === 'SUBSCRIBED') {
                 await updatePresence();
             }
         });
 
-        // 닉네임과 선생님 코드 조합하여 닉네임 완성 및 전송 함수
         function processNicknameUpdate() {
             const prefix = isTeacher ? '(선생님) ' : '';
             myNickname = prefix + (baseNickname.trim() !== '' ? baseNickname : '이름 없음');
         }
 
+        // 전체 접속자 중 누군가(선생님) 게임을 시작했는지 확인하는 함수
+        function checkGameStatus(state) {
+            let isAnyGameStarted = false;
+            Object.values(state).forEach(presences => {
+                if (presences && Array.isArray(presences)) {
+                    presences.forEach(user => {
+                        if (user && user.gameStarted) {
+                            isAnyGameStarted = true;
+                        }
+                    });
+                }
+            });
+
+            const normalUI = document.getElementById('normalUI');
+            const gameUI = document.getElementById('gameUI');
+            const actionButton = document.getElementById('actionButton');
+
+            if (isAnyGameStarted) {
+                normalUI.style.display = 'none';
+                gameUI.style.display = 'flex';
+                actionButton.innerText = '종료';
+                actionButton.classList.add('end-mode');
+                startBlockAnimation();
+            } else {
+                normalUI.style.display = 'flex';
+                gameUI.style.display = 'none';
+                actionButton.innerText = '시작';
+                actionButton.classList.remove('end-mode');
+                if (!isTeacher) {
+                    actionButton.disabled = true;
+                    actionButton.classList.remove('active');
+                }
+                stopBlockAnimation();
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const nicknameInput = document.getElementById('nickname');
             const teacherCodeInput = document.getElementById('teacherCode');
-            const startButton = document.getElementById('startButton');
+            const actionButton = document.getElementById('actionButton');
 
             let typingTimer;
 
-            // 닉네임 입력 이벤트 (실시간 반영 및 디바운스 적용)
             nicknameInput.addEventListener('input', (e) => {
                 baseNickname = e.target.value;
                 processNicknameUpdate();
@@ -114,7 +148,6 @@
                 }, 300);
             });
 
-            // 포커스 해제될 때(blur) 즉시 반영
             nicknameInput.addEventListener('blur', async () => {
                 baseNickname = nicknameInput.value;
                 processNicknameUpdate();
@@ -122,7 +155,6 @@
                 await updatePresence();
             });
 
-            // 엔터키 누를 때 즉시 전송
             nicknameInput.addEventListener('keydown', async (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -134,43 +166,39 @@
                 }
             });
 
-            // 투명한 선생님 코드 입력칸 이벤트 (PANdA 감지 및 버튼 활성화 관리)
             teacherCodeInput.addEventListener('input', async (e) => {
                 const code = e.target.value.trim();
                 isTeacher = (code === 'PANdA');
                 
-                if (isTeacher) {
-                    startButton.disabled = false;
-                    startButton.classList.add('active');
-                } else {
-                    startButton.disabled = true;
-                    startButton.classList.remove('active');
+                if (!gameStarted) {
+                    if (isTeacher) {
+                        actionButton.disabled = false;
+                        actionButton.classList.add('active');
+                    } else {
+                        actionButton.disabled = true;
+                        actionButton.classList.remove('active');
+                    }
                 }
 
                 processNicknameUpdate();
                 await updatePresence();
             });
 
-            // 시작 버튼 클릭 시 즉시 전송
-            startButton.addEventListener('click', async () => {
-                if (startButton.disabled) return;
-                baseNickname = nicknameInput.value;
-                processNicknameUpdate();
-                clearTimeout(typingTimer);
+            // 시작 / 종료 버튼 클릭 이벤트
+            actionButton.addEventListener('click', async () => {
+                if (!isTeacher) {
+                    alert('선생님만 시작/종료할 수 있습니다!');
+                    return;
+                }
+
+                gameStarted = !gameStarted;
                 await updatePresence();
-                alert('선생님 모드로 시작되었습니다!');
             });
         });
 
-        // 🧹 [자원 절약] 페이지를 닫거나 다른 곳으로 이동할 때 서버에 신호 즉시 삭제 요청
-        window.addEventListener('beforeunload', () => {
-            room.untrack();
-        });
-        window.addEventListener('pagehide', () => {
-            room.untrack();
-        });
+        window.addEventListener('beforeunload', () => { room.untrack(); });
+        window.addEventListener('pagehide', () => { room.untrack(); });
 
-        // 접속자 목록 화면 렌더링 함수 (고유 id 기준 중복 제거 적용)
         function renderUserList(state) {
             const userListContainer = document.getElementById('userListContainer');
             const onlineCountBadgeText = document.getElementById('onlineCountText');
@@ -180,14 +208,13 @@
                 if (presences && Array.isArray(presences)) {
                     presences.forEach(user => {
                         if (user && user.id) {
-                            userMap[user.id] = user; // 고유 ID 기준으로 덮어씌워 중복 방지
+                            userMap[user.id] = user;
                         }
                     });
                 }
             });
 
             const allPresences = Object.values(userMap);
-
             onlineCountBadgeText.innerText = `접속중 ${allPresences.length}명`;
 
             if (allPresences.length === 0) {
@@ -213,6 +240,135 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // 🧊 쌓기나무 무작위 생성 및 회전 렌더링 로직
+        let animId = null;
+        function generateValidBlocks() {
+            let blocks = [];
+            let grid = {};
+            let possiblePositions = [];
+
+            // 3x3 바닥면 초기화
+            for (let x = 0; x < 3; x++) {
+                for (let y = 0; y < 3; y++) {
+                    possiblePositions.push({x: x, y: y, z: 0});
+                }
+            }
+
+            // 최대 10개 블록 쌓기 (공중 부양 없음, 무너지지 않는 구조)
+            while (blocks.length < 10 && possiblePositions.length > 0) {
+                let idx = Math.floor(Math.random() * possiblePositions.length);
+                let pos = possiblePositions.splice(idx, 1)[0];
+
+                let supported = (pos.z === 0) || grid[`${pos.x},${pos.y},${pos.z-1}`];
+                if (supported) {
+                    blocks.push(pos);
+                    grid[`${pos.x},${pos.y},${pos.z}`] = true;
+
+                    if (pos.z < 2) {
+                        possiblePositions.push({x: pos.x, y: pos.y, z: pos.z + 1});
+                    }
+                }
+            }
+            return blocks;
+        }
+
+        let currentBlocks = null;
+        function startBlockAnimation() {
+            const canvas = document.getElementById('blockCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            if (!currentBlocks) {
+                currentBlocks = generateValidBlocks();
+            }
+
+            let angle = 0;
+
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                angle += 0.015; // 회전 속도
+
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2 + 30;
+                const scale = 36;
+                const centerGrid = 1.0; // 3x3의 중심 (1, 1)
+
+                // 화가 알고리즘을 위해 깊이순 정렬 (회전된 Y 좌표 기준)
+                let sortedBlocks = [...currentBlocks].sort((a, b) => {
+                    let rxA = (a.x - centerGrid) * Math.cos(angle) - (a.y - centerGrid) * Math.sin(angle);
+                    let ryA = (a.x - centerGrid) * Math.sin(angle) + (a.y - centerGrid) * Math.cos(angle);
+                    let rxB = (b.x - centerGrid) * Math.cos(angle) - (b.y - centerGrid) * Math.sin(angle);
+                    let ryB = (b.x - centerGrid) * Math.sin(angle) + (b.y - centerGrid) * Math.cos(angle);
+                    return (rxA + ryA) - (rxB + ryB);
+                });
+
+                sortedBlocks.forEach(b => {
+                    // 회전 적용
+                    let rx = b.x - centerGrid;
+                    let ry = b.y - centerGrid;
+                    let rotX = rx * Math.cos(angle) - ry * Math.sin(angle);
+                    let rotY = rx * Math.sin(angle) + ry * Math.cos(angle);
+
+                    // 등각 투영(Isometric) 변환
+                    let screenX = cx + (rotX - rotY) * scale;
+                    let screenY = cy + (rotX + rotY) * (scale * 0.5) - (b.z * scale * 0.9);
+
+                    drawCube(ctx, screenX, screenY, scale);
+                });
+
+                animId = requestAnimationFrame(render);
+            }
+
+            render();
+        }
+
+        function stopBlockAnimation() {
+            if (animId) {
+                cancelAnimationFrame(animId);
+                animId = null;
+            }
+            currentBlocks = null; // 다음에 켤 때 새로운 모양 생성
+        }
+
+        function drawCube(ctx, x, y, size) {
+            const h = size * 0.85;
+
+            // 윗면 (Top)
+            ctx.fillStyle = '#60a5fa';
+            ctx.beginPath();
+            ctx.moveTo(x, y - h);
+            ctx.lineTo(x + size, y - h + size * 0.5);
+            ctx.lineTo(x, y - h + size);
+            ctx.lineTo(x - size, y - h + size * 0.5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // 왼쪽면 (Left)
+            ctx.fillStyle = '#3b82f6';
+            ctx.beginPath();
+            ctx.moveTo(x - size, y - h + size * 0.5);
+            ctx.lineTo(x, y - h + size);
+            ctx.lineTo(x, y + size);
+            ctx.lineTo(x - size, y + size * 0.5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // 오른쪽면 (Right)
+            ctx.fillStyle = '#1d4ed8';
+            ctx.beginPath();
+            ctx.moveTo(x, y - h + size);
+            ctx.lineTo(x + size, y - h + size * 0.5);
+            ctx.lineTo(x + size, y + size * 0.5);
+            ctx.lineTo(x, y + size);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
         }
     </script>
 
@@ -247,7 +403,6 @@
             transform-origin: center center;
         }
 
-        /* 모니터 상단 바 */
         .monitor-header {
             height: 38px;
             background-color: #f8fafc;
@@ -275,7 +430,6 @@
             font-weight: 600;
         }
 
-        /* 컴퓨터 화면 레이아웃 내용물 */
         .desktop-content {
             width: 900px;
             height: 500px;
@@ -300,6 +454,15 @@
             flex-direction: column;
             justify-content: space-between; 
             flex-shrink: 0; 
+        }
+
+        /* 기본 UI 영역 (이미지 + 닉네임 입력) */
+        .card-normal-section {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .card-image-container {
@@ -348,7 +511,32 @@
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
         }
 
-        /* 시작 버튼 스타일 (기본 비활성화 상태) */
+        /* 게임 모드 영역 (쌓기나무 캔버스) */
+        .card-game-section {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .block-canvas {
+            width: 100%;
+            height: 340px;
+        }
+
+        .game-title-badge {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333333;
+            margin-bottom: 5px;
+            background: #f1f5f9;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+
+        /* 시작 / 종료 버튼 스타일 */
         .start-btn {
             width: 100%;
             padding: 11px;
@@ -363,13 +551,18 @@
             margin-top: 4px;
         }
 
-        /* PANdA가 입력되어 활성화되었을 때의 스타일 */
         .start-btn.active {
             background-color: #e63946; 
             cursor: pointer;
         }
         .start-btn.active:hover {
             background-color: #d62828;
+        }
+
+        /* 종료 모드일 때 버튼 스타일 (빨간색) */
+        .start-btn.end-mode {
+            background-color: #e63946 !important;
+            cursor: pointer !important;
         }
 
         /* 오른쪽 큰 카드 영역 */
@@ -400,7 +593,6 @@
             color: #333333;
         }
 
-        /* 접속자 표시 영역 (투명 입력칸 포함) */
         .online-count-badge {
             background-color: #e6f4ea;
             color: #137333;
@@ -413,7 +605,6 @@
             gap: 6px;
         }
 
-        /* 접속자 뱃지 안의 투명한 입력칸 */
         .transparent-code-input {
             width: 45px;
             border: none;
@@ -512,19 +703,29 @@
         <div class="desktop-content">
             <!-- 왼쪽 카드 UI -->
             <div class="card">
-                <div class="card-image-container">
-                    <img id="cardImage" 
-                         alt="캐릭터 이미지" 
-                         class="card-image"
-                         fetchpriority="high"
-                         loading="eager">
+                <!-- 1. 기본 상태 (이미지 및 닉네임 입력) -->
+                <div class="card-normal-section" id="normalUI">
+                    <div class="card-image-container">
+                        <img id="cardImage" 
+                             alt="캐릭터 이미지" 
+                             class="card-image"
+                             fetchpriority="high"
+                             loading="eager">
+                    </div>
+                    <div class="nickname-section">
+                        <label for="nickname" class="nickname-label">닉네임</label>
+                        <input type="text" id="nickname" class="nickname-input" placeholder="이름을 입력하세요">
+                    </div>
                 </div>
-                <div class="nickname-section">
-                    <label for="nickname" class="nickname-label">닉네임</label>
-                    <input type="text" id="nickname" class="nickname-input" placeholder="이름을 입력하세요">
-                    <!-- 시작 버튼 (처음엔 비활성화 상태) -->
-                    <button id="startButton" class="start-btn" disabled>시작</button>
+
+                <!-- 2. 게임 시작 상태 (3D 쌓기나무 회전 검토) -->
+                <div class="card-game-section" id="gameUI">
+                    <div class="game-title-badge">쌓기나무 회전 검토 중</div>
+                    <canvas id="blockCanvas" class="block-canvas" width="300" height="340"></canvas>
                 </div>
+
+                <!-- 시작 / 종료 버튼 (하단 고정) -->
+                <button id="actionButton" class="start-btn" disabled>시작</button>
             </div>
 
             <!-- 오른쪽 카드: 실시간 실제 접속자 현황 -->
@@ -547,7 +748,6 @@
     </div>
 
     <script>
-        // 모바일 화면 크기에 맞춰 PC 모니터 프레임 전체를 자동으로 축소/확대하는 스크립트
         function resizeMonitor() {
             const monitor = document.getElementById('pcMonitor');
             const targetWidth = 940;  
