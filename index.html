@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>미완성</title>
     
-    <!-- 이미지 사전 로드 -->
-    <link rel="preload" as="image" href="https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400" fetchpriority="high">
+    <!-- 이미지 사전 로드 (자바스크립트에서 랜덤 선택 후 적용) -->
+    <link rel="preload" as="image" id="preloadLink" href="" fetchpriority="high">
 
     <!-- Supabase JS SDK -->
     <script type="module">
@@ -24,6 +24,34 @@
             localStorage.setItem('user_uuid', myId);
         }
 
+        // 🖼️ 이미지 랜덤 선택 리스트
+        const characterImages = [
+            "https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/QnZRLnpy7ckitzeuASFz.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/S6nkFKmpdZs1c8qRUo8f.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/tTtXs4ftdtuBh85yq9tY.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/s83nEEJ4ZKPXzgKjDrF3.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/HDkXgubferFDkbkHJAXo.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/w6fRpxtAdEXsWLjHEzHD.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/aVJ7E8hmdXBjNbT9CHeM.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/m823rLr57CeLZdx2ivfZ.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/6PVSgKBY4KNpkabWr9bj.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/fTRckDCnv8CLTEMDi3tt.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/6jGjY3JAbFrkSx4FaiVH.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/Qmxk7V5tFcmLGeCVueWT.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/XTTrodLDSVQVrjhYbs2Z.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/ACfDodL3WGgMD3ybdHvn.png?width=2400",
+            "https://media.ffycdn.net/eu/supercell/7a6mrhbBHByusVgTvkoS.png?width=2400"
+        ];
+
+        // 들어올 때마다 랜덤 이미지 선택
+        const selectedImage = characterImages[Math.floor(Math.random() * characterImages.length)];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('preloadLink').href = selectedImage;
+            document.getElementById('cardImage').src = selectedImage;
+        });
+
         let baseNickname = '';
         let isTeacher = false;
         let myNickname = '';
@@ -37,7 +65,7 @@
             },
         });
 
-        // 내 상태(아이디, 닉네임)를 서버에 전송하는 함수
+        // 내 상태(아이디, 닉네임)를 서버에 전송하는 함수 (고유 id 포함)
         async function updatePresence() {
             try {
                 await room.track({
@@ -69,68 +97,69 @@
             myNickname = prefix + (baseNickname.trim() !== '' ? baseNickname : '이름 없음');
         }
 
-        const nicknameInput = document.getElementById('nickname');
-        const teacherCodeInput = document.getElementById('teacherCode');
-        const startButton = document.getElementById('startButton');
+        document.addEventListener('DOMContentLoaded', () => {
+            const nicknameInput = document.getElementById('nickname');
+            const teacherCodeInput = document.getElementById('teacherCode');
+            const startButton = document.getElementById('startButton');
 
-        let typingTimer;
+            let typingTimer;
 
-        // 닉네임 입력 이벤트 (실시간 반영 및 디바운스 적용)
-        nicknameInput.addEventListener('input', (e) => {
-            baseNickname = e.target.value;
-            processNicknameUpdate();
-            clearTimeout(typingTimer);
-            typingTimer = setTimeout(async () => {
-                await updatePresence();
-            }, 300);
-        });
+            // 닉네임 입력 이벤트 (실시간 반영 및 디바운스 적용)
+            nicknameInput.addEventListener('input', (e) => {
+                baseNickname = e.target.value;
+                processNicknameUpdate();
+                clearTimeout(typingTimer);
+                typingTimer = setTimeout(async () => {
+                    await updatePresence();
+                }, 300);
+            });
 
-        // 💡 [버그 수정] 엔터를 안 누르고 바깥을 누르거나 포커스가 해제될 때(blur)도 즉시 반영되도록 처리
-        nicknameInput.addEventListener('blur', async () => {
-            baseNickname = nicknameInput.value;
-            processNicknameUpdate();
-            clearTimeout(typingTimer);
-            await updatePresence();
-        });
-
-        // 엔터키 누를 때 즉시 전송
-        nicknameInput.addEventListener('keydown', async (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
+            // 포커스 해제될 때(blur) 즉시 반영
+            nicknameInput.addEventListener('blur', async () => {
                 baseNickname = nicknameInput.value;
                 processNicknameUpdate();
                 clearTimeout(typingTimer);
                 await updatePresence();
-                nicknameInput.blur();
-            }
-        });
+            });
 
-        // 투명한 선생님 코드 입력칸 이벤트 (PANdA 감지 및 버튼 활성화 관리)
-        teacherCodeInput.addEventListener('input', async (e) => {
-            const code = e.target.value.trim();
-            isTeacher = (code === 'PANdA');
-            
-            // PANdA가 맞으면 시작 버튼 활성화, 아니면 비활성화
-            if (isTeacher) {
-                startButton.disabled = false;
-                startButton.classList.add('active');
-            } else {
-                startButton.disabled = true;
-                startButton.classList.remove('active');
-            }
+            // 엔터키 누를 때 즉시 전송
+            nicknameInput.addEventListener('keydown', async (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    baseNickname = nicknameInput.value;
+                    processNicknameUpdate();
+                    clearTimeout(typingTimer);
+                    await updatePresence();
+                    nicknameInput.blur();
+                }
+            });
 
-            processNicknameUpdate();
-            await updatePresence();
-        });
+            // 투명한 선생님 코드 입력칸 이벤트 (PANdA 감지 및 버튼 활성화 관리)
+            teacherCodeInput.addEventListener('input', async (e) => {
+                const code = e.target.value.trim();
+                isTeacher = (code === 'PANdA');
+                
+                if (isTeacher) {
+                    startButton.disabled = false;
+                    startButton.classList.add('active');
+                } else {
+                    startButton.disabled = true;
+                    startButton.classList.remove('active');
+                }
 
-        // 시작 버튼 클릭 시 즉시 전송
-        startButton.addEventListener('click', async () => {
-            if (startButton.disabled) return;
-            baseNickname = nicknameInput.value;
-            processNicknameUpdate();
-            clearTimeout(typingTimer);
-            await updatePresence();
-            alert('선생님 모드로 시작되었습니다!');
+                processNicknameUpdate();
+                await updatePresence();
+            });
+
+            // 시작 버튼 클릭 시 즉시 전송
+            startButton.addEventListener('click', async () => {
+                if (startButton.disabled) return;
+                baseNickname = nicknameInput.value;
+                processNicknameUpdate();
+                clearTimeout(typingTimer);
+                await updatePresence();
+                alert('선생님 모드로 시작되었습니다!');
+            });
         });
 
         // 🧹 [자원 절약] 페이지를 닫거나 다른 곳으로 이동할 때 서버에 신호 즉시 삭제 요청
@@ -141,17 +170,23 @@
             room.untrack();
         });
 
-        // 접속자 목록 화면 렌더링 함수
+        // 접속자 목록 화면 렌더링 함수 (고유 id 기준 중복 제거 적용)
         function renderUserList(state) {
             const userListContainer = document.getElementById('userListContainer');
             const onlineCountBadgeText = document.getElementById('onlineCountText');
 
-            const allPresences = [];
+            const userMap = {};
             Object.values(state).forEach(presences => {
-                if (presences && presences.length > 0) {
-                    allPresences.push(presences[0]);
+                if (presences && Array.isArray(presences)) {
+                    presences.forEach(user => {
+                        if (user && user.id) {
+                            userMap[user.id] = user; // 고유 ID 기준으로 덮어씌워 중복 방지
+                        }
+                    });
                 }
             });
+
+            const allPresences = Object.values(userMap);
 
             onlineCountBadgeText.innerText = `접속중 ${allPresences.length}명`;
 
@@ -279,7 +314,7 @@
 
         .card-image {
             max-width: 85%;
-            max-height: 210px; /* 이미지 크기를 조금 더 확대 */
+            max-height: 210px; 
             object-fit: contain;
         }
 
@@ -330,7 +365,7 @@
 
         /* PANdA가 입력되어 활성화되었을 때의 스타일 */
         .start-btn.active {
-            background-color: #e63946; /* 선생님 모드 강조 컬러 (빨간계열) 또는 #007bff */
+            background-color: #e63946; 
             cursor: pointer;
         }
         .start-btn.active:hover {
@@ -478,7 +513,7 @@
             <!-- 왼쪽 카드 UI -->
             <div class="card">
                 <div class="card-image-container">
-                    <img src="https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400" 
+                    <img id="cardImage" 
                          alt="캐릭터 이미지" 
                          class="card-image"
                          fetchpriority="high"
