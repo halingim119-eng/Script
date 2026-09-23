@@ -17,14 +17,14 @@
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 모바일 브라우저 고유 ID 부여 (로컬스토리지 활용)
+        // 모바일 브라우저 고유 ID 부여 (중복 접속자 오류 방지)
         let myId = localStorage.getItem('user_uuid');
         if (!myId) {
             myId = 'user_' + Math.random().toString(36).substring(2, 9);
             localStorage.setItem('user_uuid', myId);
         }
 
-        // 🖼️ 이미지 랜덤 선택 리스트
+        // 🖼️ 이미지 랜덤 선택 리스트 (총 16종)
         const characterImages = [
             "https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400",
             "https://media.ffycdn.net/eu/supercell/QnZRLnpy7ckitzeuASFz.png?width=2400",
@@ -44,6 +44,7 @@
             "https://media.ffycdn.net/eu/supercell/7a6mrhbBHByusVgTvkoS.png?width=2400"
         ];
 
+        // 들어올 때마다 랜덤 이미지 선택
         const selectedImage = characterImages[Math.floor(Math.random() * characterImages.length)];
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -79,12 +80,14 @@
             }
         }
 
+        // 실시간 동기화 수신
         room.on('presence', { event: 'sync' }, () => {
             const state = room.presenceState();
             renderUserList(state);
             checkGameStatus(state);
         });
 
+        // 접속 성공 시 내 상태 업데이트
         room.subscribe(async (status) => {
             if (status === 'SUBSCRIBED') {
                 await updatePresence();
@@ -96,7 +99,7 @@
             myNickname = prefix + (baseNickname.trim() !== '' ? baseNickname : '이름 없음');
         }
 
-        // 전체 접속자 중 누군가(선생님) 게임을 시작했는지 확인하는 함수
+        // 전체 접속자 중 누군가(선생님) 게임을 시작했는지 확인 및 화면 전환
         function checkGameStatus(state) {
             let isAnyGameStarted = false;
             Object.values(state).forEach(presences => {
@@ -166,6 +169,7 @@
                 }
             });
 
+            // 투명한 선생님 코드 감지 (PANdA)
             teacherCodeInput.addEventListener('input', async (e) => {
                 const code = e.target.value.trim();
                 isTeacher = (code === 'PANdA');
@@ -184,7 +188,7 @@
                 await updatePresence();
             });
 
-            // 시작 / 종료 버튼 클릭 이벤트
+            // 시작 / 종료 버튼 클릭 이벤트 (선생님 전용)
             actionButton.addEventListener('click', async () => {
                 if (!isTeacher) {
                     alert('선생님만 시작/종료할 수 있습니다!');
@@ -196,9 +200,11 @@
             });
         });
 
+        // 페이지 퇴장 시 접속자 목록에서 즉시 제거
         window.addEventListener('beforeunload', () => { room.untrack(); });
         window.addEventListener('pagehide', () => { room.untrack(); });
 
+        // 접속자 목록 화면 렌더링 (고유 ID 기준 중복 제거)
         function renderUserList(state) {
             const userListContainer = document.getElementById('userListContainer');
             const onlineCountBadgeText = document.getElementById('onlineCountText');
@@ -242,21 +248,21 @@
             }).join('');
         }
 
-        // 🧊 쌓기나무 무작위 생성 및 회전 렌더링 로직
+        // 🧊 논리적 3D 쌓기나무 무작위 생성 및 회전 렌더링 Engine
         let animId = null;
         function generateValidBlocks() {
             let blocks = [];
             let grid = {};
             let possiblePositions = [];
 
-            // 3x3 바닥면 초기화
+            // 3x3 바닥면 (Z=0)
             for (let x = 0; x < 3; x++) {
                 for (let y = 0; y < 3; y++) {
                     possiblePositions.push({x: x, y: y, z: 0});
                 }
             }
 
-            // 최대 10개 블록 쌓기 (공중 부양 없음, 무너지지 않는 구조)
+            // 공중 부양 없는 완벽한 구조로 최대 10개 생성
             while (blocks.length < 10 && possiblePositions.length > 0) {
                 let idx = Math.floor(Math.random() * possiblePositions.length);
                 let pos = possiblePositions.splice(idx, 1)[0];
@@ -293,9 +299,9 @@
                 const cx = canvas.width / 2;
                 const cy = canvas.height / 2 + 30;
                 const scale = 36;
-                const centerGrid = 1.0; // 3x3의 중심 (1, 1)
+                const centerGrid = 1.0; 
 
-                // 화가 알고리즘을 위해 깊이순 정렬 (회전된 Y 좌표 기준)
+                // 깊이 정렬 (시각적 잘림/겹침 방지)
                 let sortedBlocks = [...currentBlocks].sort((a, b) => {
                     let rxA = (a.x - centerGrid) * Math.cos(angle) - (a.y - centerGrid) * Math.sin(angle);
                     let ryA = (a.x - centerGrid) * Math.sin(angle) + (a.y - centerGrid) * Math.cos(angle);
@@ -305,13 +311,12 @@
                 });
 
                 sortedBlocks.forEach(b => {
-                    // 회전 적용
                     let rx = b.x - centerGrid;
                     let ry = b.y - centerGrid;
                     let rotX = rx * Math.cos(angle) - ry * Math.sin(angle);
                     let rotY = rx * Math.sin(angle) + ry * Math.cos(angle);
 
-                    // 등각 투영(Isometric) 변환
+                    // Isometric 3D 투영
                     let screenX = cx + (rotX - rotY) * scale;
                     let screenY = cy + (rotX + rotY) * (scale * 0.5) - (b.z * scale * 0.9);
 
@@ -329,7 +334,7 @@
                 cancelAnimationFrame(animId);
                 animId = null;
             }
-            currentBlocks = null; // 다음에 켤 때 새로운 모양 생성
+            currentBlocks = null;
         }
 
         function drawCube(ctx, x, y, size) {
@@ -390,7 +395,6 @@
             overflow: hidden;
         }
 
-        /* 컴퓨터 화면 모양의 직사각형 모니터 프레임 */
         .pc-monitor {
             width: 920px;
             background-color: #ffffff;
@@ -456,7 +460,6 @@
             flex-shrink: 0; 
         }
 
-        /* 기본 UI 영역 (이미지 + 닉네임 입력) */
         .card-normal-section {
             width: 100%;
             height: 100%;
@@ -511,7 +514,7 @@
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
         }
 
-        /* 게임 모드 영역 (쌓기나무 캔버스) */
+        /* 게임 모드 캔버스 영역 */
         .card-game-section {
             width: 100%;
             height: 100%;
@@ -536,7 +539,7 @@
             border-radius: 12px;
         }
 
-        /* 시작 / 종료 버튼 스타일 */
+        /* 시작 / 종료 버튼 */
         .start-btn {
             width: 100%;
             padding: 11px;
@@ -559,7 +562,6 @@
             background-color: #d62828;
         }
 
-        /* 종료 모드일 때 버튼 스타일 (빨간색) */
         .start-btn.end-mode {
             background-color: #e63946 !important;
             cursor: pointer !important;
@@ -691,7 +693,6 @@
 </head>
 <body>
 
-    <!-- 컴퓨터 화면 모양의 직사각형 모니터 프레임 -->
     <div class="pc-monitor" id="pcMonitor">
         <div class="monitor-header">
             <div class="window-dot dot-red"></div>
@@ -703,7 +704,7 @@
         <div class="desktop-content">
             <!-- 왼쪽 카드 UI -->
             <div class="card">
-                <!-- 1. 기본 상태 (이미지 및 닉네임 입력) -->
+                <!-- 1. 기본 상태 -->
                 <div class="card-normal-section" id="normalUI">
                     <div class="card-image-container">
                         <img id="cardImage" 
@@ -718,13 +719,13 @@
                     </div>
                 </div>
 
-                <!-- 2. 게임 시작 상태 (3D 쌓기나무 회전 검토) -->
+                <!-- 2. 게임 상태 (3D 쌓기나무 검토) -->
                 <div class="card-game-section" id="gameUI">
                     <div class="game-title-badge">쌓기나무 회전 검토 중</div>
                     <canvas id="blockCanvas" class="block-canvas" width="300" height="340"></canvas>
                 </div>
 
-                <!-- 시작 / 종료 버튼 (하단 고정) -->
+                <!-- 시작 / 종료 버튼 -->
                 <button id="actionButton" class="start-btn" disabled>시작</button>
             </div>
 
@@ -735,7 +736,6 @@
                     <div class="online-count-badge">
                         <div class="live-dot"></div>
                         <span id="onlineCountText">접속중 0명</span>
-                        <!-- 투명한 선생님 코드 입력칸 -->
                         <input type="text" id="teacherCode" class="transparent-code-input" placeholder="">
                     </div>
                 </div>
