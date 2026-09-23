@@ -34,6 +34,7 @@
             display: flex;
             flex-direction: column;
             transform-origin: center center;
+            position: relative;
         }
 
         .monitor-header {
@@ -178,7 +179,6 @@
         .btn-red:hover { background-color: #dc2626; }
         .btn-blue { background-color: #2563eb; }
         .btn-blue:hover { background-color: #1d4ed8; }
-        .btn-gray { background-color: #cbd5e1; cursor: not-allowed; }
 
         .teacher-btn-group {
             width: 100%;
@@ -368,6 +368,143 @@
             color: #94a3b8;
             font-size: 13px;
         }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .card-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .reward-card {
+            width: 200px;
+            height: 290px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e2e8f0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .reward-card:hover {
+            transform: translateY(-8px) scale(1.03);
+            border-color: #2563eb;
+        }
+
+        .reward-card-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0f172a;
+            text-align: center;
+        }
+
+        .reward-card-img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+        }
+
+        .reward-card-desc {
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+            word-break: keep-all;
+        }
+
+        .target-modal {
+            width: 360px;
+            max-height: 420px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .target-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0f172a;
+            text-align: center;
+        }
+
+        .target-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 300px;
+        }
+
+        .target-item {
+            padding: 10px 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .target-item:hover {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+        }
+
+        #tauntOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        #tauntOverlay img {
+            max-width: 80vw;
+            max-height: 80vh;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
@@ -434,6 +571,21 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="cardModalOverlay">
+        <div class="card-container" id="cardContainer"></div>
+    </div>
+
+    <div class="modal-overlay" id="targetModalOverlay">
+        <div class="target-modal">
+            <div class="target-title">공격할 상대방을 선택하세요</div>
+            <div class="target-list" id="targetList"></div>
+        </div>
+    </div>
+
+    <div id="tauntOverlay">
+        <img src="https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif" alt="야유">
+    </div>
+
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
@@ -475,6 +627,8 @@
         let myScore = 0;
         let currentBlocks = [];
         let hasGuessed = false;
+        let activeUsers = [];
+        let pendingAttackType = null;
 
         const room = supabase.channel('online-users-room', {
             config: { presence: { key: myId } },
@@ -517,6 +671,7 @@
                     presences.forEach(u => { if (u && u.id) allUsers.push(u); });
                 }
             });
+            activeUsers = allUsers;
 
             let isAnyGameStarted = allUsers.some(u => u.gameStarted);
             if (isAnyGameStarted !== gameStarted && !isTeacher) {
@@ -539,6 +694,16 @@
                 gameStarted = false;
                 currentBlocks = [];
                 applyUIState(false);
+            }
+        });
+
+        room.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
+            if (payload.targetId === myId) {
+                if (payload.type === 'glitch') {
+                    triggerGlitchEffect();
+                } else if (payload.type === 'taunt') {
+                    triggerTauntEffect();
+                }
             }
         });
 
@@ -621,29 +786,45 @@
         function generateValidBlocks() {
             let blocks = [];
             let grid = {};
-            let possible = [];
+            let targetCount = Math.floor(Math.random() * 5) + 5;
 
-            for (let x = 0; x < 3; x++) {
-                for (let y = 0; y < 3; y++) {
-                    possible.push({x: x, y: y, z: 0});
-                }
-            }
+            let startX = Math.floor(Math.random() * 2);
+            let startY = Math.floor(Math.random() * 2);
+            blocks.push({ x: startX, y: startY, z: 0 });
+            grid[`${startX},${startY},0`] = true;
 
-            const targetCount = Math.floor(Math.random() * 5) + 5;
-            while (blocks.length < targetCount && possible.length > 0) {
-                let idx = Math.floor(Math.random() * possible.length);
-                let pos = possible.splice(idx, 1)[0];
+            while (blocks.length < targetCount) {
+                let candidates = [];
+                for (let b of blocks) {
+                    let neighbors = [
+                        { x: b.x + 1, y: b.y, z: b.z },
+                        { x: b.x - 1, y: b.y, z: b.z },
+                        { x: b.x, y: b.y + 1, z: b.z },
+                        { x: b.x, y: b.y - 1, z: b.z },
+                        { x: b.x, y: b.y, z: b.z + 1 },
+                        { x: b.x, y: b.y, z: b.z - 1 }
+                    ];
 
-                let supported = (pos.z === 0) || grid[`${pos.x},${pos.y},${pos.z-1}`];
-                if (supported) {
-                    blocks.push(pos);
-                    grid[`${pos.x},${pos.y},${pos.z}`] = true;
-
-                    if (pos.z < 2) {
-                        possible.push({x: pos.x, y: pos.y, z: pos.z + 1});
+                    for (let n of neighbors) {
+                        if (n.x >= 0 && n.x < 3 && n.y >= 0 && n.y < 3 && n.z >= 0 && n.z < 3) {
+                            let key = `${n.x},${n.y},${n.z}`;
+                            if (!grid[key]) {
+                                if (n.z === 0 || grid[`${n.x},${n.y},${n.z - 1}`]) {
+                                    if (!candidates.some(c => c.x === n.x && c.y === n.y && c.z === n.z)) {
+                                        candidates.push(n);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
+
+                if (candidates.length === 0) break;
+                let next = candidates[Math.floor(Math.random() * candidates.length)];
+                blocks.push(next);
+                grid[`${next.x},${next.y},${next.z}`] = true;
             }
+
             return blocks;
         }
 
@@ -675,10 +856,11 @@
 
                     if (num === correctCount) {
                         btn.classList.add('correct');
-                        feedback.innerText = '정답입니다! (+10점)';
+                        feedback.innerText = '정답입니다! 카드 보상을 선택하세요.';
                         feedback.style.color = '#22c55e';
                         myScore += 10;
                         updatePresence();
+                        setTimeout(() => openCardModal(), 500);
                     } else {
                         btn.classList.add('wrong');
                         feedback.innerText = `틀렸습니다! (정답: ${correctCount}개)`;
@@ -689,7 +871,152 @@
             });
         }
 
-        let scene, camera, renderer, blockGroup, outlineGroup;
+        function generateCardOptions() {
+            const coinAmounts = [5, 7, 10];
+            const chosenCoin = coinAmounts[Math.floor(Math.random() * coinAmounts.length)];
+            let coinImg = "";
+            if (chosenCoin === 5) coinImg = "https://media.ffycdn.net/eu/supercell/XMEic2GRdS2qq7GJaEiB.png?width=2400";
+            else if (chosenCoin === 7) coinImg = "https://media.ffycdn.net/eu/supercell/TGQBtafzmsdeiJwZSmpo.png?width=2400";
+            else coinImg = "https://media.ffycdn.net/eu/supercell/ET4DYhvXCLzJPiw96NtX.png?width=2400";
+
+            const pool = [
+                {
+                    type: 'coin',
+                    title: `코인 ${chosenCoin}개`,
+                    img: coinImg,
+                    desc: `점수 +${chosenCoin}점을 즉시 획득합니다.`,
+                    val: chosenCoin
+                },
+                {
+                    type: 'confusion',
+                    title: '혼란 카드',
+                    img: 'https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400',
+                    desc: '상대방을 지목하여 2초간 화면에 글리치를 생성합니다.'
+                },
+                {
+                    type: 'taunt',
+                    title: '괴롭히기 카드',
+                    img: 'https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif',
+                    desc: '상대방 화면을 1초 동안 큰 이미지로 가립니다.'
+                }
+            ];
+
+            return pool.sort(() => Math.random() - 0.5).slice(0, 3);
+        }
+
+        function openCardModal() {
+            const modal = document.getElementById('cardModalOverlay');
+            const container = document.getElementById('cardContainer');
+            container.innerHTML = '';
+
+            const cards = generateCardOptions();
+
+            cards.forEach(card => {
+                const el = document.createElement('div');
+                el.className = 'reward-card';
+                el.innerHTML = `
+                    <div class="reward-card-title">${card.title}</div>
+                    <img class="reward-card-img" src="${card.img}" alt="${card.title}">
+                    <div class="reward-card-desc">${card.desc}</div>
+                `;
+                el.addEventListener('click', () => {
+                    modal.classList.remove('active');
+                    handleCardSelect(card);
+                });
+                container.appendChild(el);
+            });
+
+            modal.classList.add('active');
+        }
+
+        function handleCardSelect(card) {
+            if (card.type === 'coin') {
+                myScore += card.val;
+                updatePresence();
+            } else if (card.type === 'confusion' || card.type === 'taunt') {
+                pendingAttackType = card.type === 'confusion' ? 'glitch' : 'taunt';
+                openTargetModal();
+            }
+        }
+
+        function openTargetModal() {
+            const modal = document.getElementById('targetModalOverlay');
+            const list = document.getElementById('targetList');
+            list.innerHTML = '';
+
+            const targets = activeUsers.filter(u => u.id !== myId);
+
+            if (targets.length === 0) {
+                list.innerHTML = `<div class="empty-state">지목할 상대방이 없습니다.</div>`;
+            } else {
+                targets.forEach(u => {
+                    const item = document.createElement('div');
+                    item.className = 'target-item';
+                    item.innerHTML = `
+                        <span>${u.nickname || '이름 없음'}</span>
+                        <span style="font-size: 12px; color: #2563eb;">선택</span>
+                    `;
+                    item.addEventListener('click', async () => {
+                        modal.classList.remove('active');
+                        await room.send({
+                            type: 'broadcast',
+                            event: 'attack_event',
+                            payload: { targetId: u.id, type: pendingAttackType }
+                        });
+                        pendingAttackType = null;
+                    });
+                    list.appendChild(item);
+                });
+            }
+
+            modal.classList.add('active');
+        }
+
+        function triggerGlitchEffect() {
+            if (!scene || !glitchGroup) return;
+
+            while (glitchGroup.children.length > 0) {
+                glitchGroup.remove(glitchGroup.children[0]);
+            }
+            glitchMeshes = [];
+
+            const count = Math.floor(Math.random() * 8) + 5;
+            const geo = new THREE.BoxGeometry(0.96, 0.96, 0.96);
+
+            for (let i = 0; i < count; i++) {
+                const mat = new THREE.MeshStandardMaterial({
+                    color: Math.random() * 0xffffff,
+                    transparent: true,
+                    opacity: 0.85
+                });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(
+                    (Math.random() * 4) - 1,
+                    Math.random() * 3,
+                    (Math.random() * 4) - 1
+                );
+                glitchGroup.add(mesh);
+                glitchMeshes.push(mesh);
+            }
+
+            setTimeout(() => {
+                while (glitchGroup.children.length > 0) {
+                    glitchGroup.remove(glitchGroup.children[0]);
+                }
+                glitchMeshes = [];
+            }, 2000);
+        }
+
+        function triggerTauntEffect() {
+            const overlay = document.getElementById('tauntOverlay');
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 1000);
+        }
+
+        let scene, camera, renderer, blockGroup, outlineGroup, glitchGroup;
+        let glitchMeshes = [];
         let cameraAngle = 0;
         let isThreeInitialized = false;
 
@@ -716,8 +1043,11 @@
 
             blockGroup = new THREE.Group();
             outlineGroup = new THREE.Group();
+            glitchGroup = new THREE.Group();
+
             scene.add(blockGroup);
             scene.add(outlineGroup);
+            scene.add(glitchGroup);
 
             function animate() {
                 requestAnimationFrame(animate);
@@ -727,6 +1057,13 @@
                 camera.position.z = 1 + radius * Math.sin(cameraAngle);
                 camera.position.y = 5.5;
                 camera.lookAt(1, 0.8, 1);
+
+                if (glitchMeshes.length > 0) {
+                    glitchMeshes.forEach(m => {
+                        m.material.color.setHex(Math.random() * 0xffffff);
+                    });
+                }
+
                 renderer.render(scene, camera);
             }
             animate();
