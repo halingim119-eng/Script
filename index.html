@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>왼쪽 카드 UI - 캐릭터 및 닉네임</title>
+    <title>왼쪽 카드 UI - 캐릭터 및 닉네임 (40% 확대)</title>
     
     <!-- 브라우저가 이 이미지를 백그라운드에서 가장 먼저 다운로드하도록 사전 지시 -->
     <link rel="preload" as="image" href="https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400" fetchpriority="high">
@@ -26,15 +26,15 @@
             font-family: 'Malgun Gothic', sans-serif;
         }
 
-        /* 왼쪽 카드 UI 스타일 (세로 크기를 더 축소) */
+        /* 왼쪽 카드 UI 스타일 (기존 크기에서 40% 확대 적용) */
         .card {
-            width: 240px;           /* 카드의 너비 미세 조정 */
-            height: 310px;          /* 카드의 세로 높이를 더 대폭 축소 (기존 380px -> 310px) */
+            width: 336px;           /* 240px * 1.4 = 336px */
+            height: 434px;          /* 310px * 1.4 = 434px */
             background-color: #ffffff;
-            border-radius: 14px;    
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); 
+            border-radius: 20px;    /* 14px * 1.4 ≈ 20px */
+            box-shadow: 0 11px 34px rgba(0, 0, 0, 0.08); 
             border: 1px solid #f0f0f0; 
-            padding: 16px 14px;          
+            padding: 22px 20px;     /* 내부 여백 40% 확대 */
             display: flex;
             flex-direction: column;
             justify-content: space-between; 
@@ -47,13 +47,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transform: translateY(-4px); 
+            transform: translateY(-6px); 
             overflow: hidden;
         }
 
         .card-image {
             max-width: 75%;
-            max-height: 140px;      /* 줄어든 세로 높이에 맞춰 이미지 최대 높이 축소 */
+            max-height: 196px;      /* 140px * 1.4 = 196px */
             object-fit: contain;
         }
 
@@ -62,21 +62,21 @@
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;               /* 4px * 1.4 ≈ 6px */
         }
 
         .nickname-label {
-            font-size: 11px;
+            font-size: 15px;        /* 11px * 1.4 ≈ 15px */
             font-weight: 600;
             color: #555555;
         }
 
         .nickname-input {
             width: 100%;
-            padding: 8px 10px;
-            font-size: 13px;
+            padding: 11px 14px;     /* 패딩 40% 확대 */
+            font-size: 18px;        /* 13px * 1.4 ≈ 18px */
             border: 1px solid #ddd;
-            border-radius: 6px;
+            border-radius: 8px;     /* 6px * 1.4 ≈ 8px */
             outline: none;
             transition: border-color 0.2s, box-shadow 0.2s;
             background-color: #fafafa;
