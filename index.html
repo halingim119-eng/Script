@@ -66,7 +66,7 @@
         // 닉네임과 선생님 코드 조합하여 닉네임 완성 및 전송 함수
         function processNicknameUpdate() {
             const prefix = isTeacher ? '(선생님) ' : '';
-            myNickname = prefix + baseNickname;
+            myNickname = prefix + (baseNickname.trim() !== '' ? baseNickname : '이름 없음');
         }
 
         const nicknameInput = document.getElementById('nickname');
@@ -75,14 +75,22 @@
 
         let typingTimer;
 
-        // 닉네임 입력 이벤트 (디바운스 적용)
+        // 닉네임 입력 이벤트 (실시간 반영 및 디바운스 적용)
         nicknameInput.addEventListener('input', (e) => {
             baseNickname = e.target.value;
             processNicknameUpdate();
             clearTimeout(typingTimer);
             typingTimer = setTimeout(async () => {
                 await updatePresence();
-            }, 400);
+            }, 300);
+        });
+
+        // 💡 [버그 수정] 엔터를 안 누르고 바깥을 누르거나 포커스가 해제될 때(blur)도 즉시 반영되도록 처리
+        nicknameInput.addEventListener('blur', async () => {
+            baseNickname = nicknameInput.value;
+            processNicknameUpdate();
+            clearTimeout(typingTimer);
+            await updatePresence();
         });
 
         // 엔터키 누를 때 즉시 전송
@@ -93,24 +101,36 @@
                 processNicknameUpdate();
                 clearTimeout(typingTimer);
                 await updatePresence();
-                nicknameInput.blur(); // 키보드 내리기
+                nicknameInput.blur();
             }
         });
 
-        // 투명한 선생님 코드 입력칸 이벤트 (PANdA 입력 감지)
+        // 투명한 선생님 코드 입력칸 이벤트 (PANdA 감지 및 버튼 활성화 관리)
         teacherCodeInput.addEventListener('input', async (e) => {
-            isTeacher = (e.target.value.trim() === 'PANdA');
+            const code = e.target.value.trim();
+            isTeacher = (code === 'PANdA');
+            
+            // PANdA가 맞으면 시작 버튼 활성화, 아니면 비활성화
+            if (isTeacher) {
+                startButton.disabled = false;
+                startButton.classList.add('active');
+            } else {
+                startButton.disabled = true;
+                startButton.classList.remove('active');
+            }
+
             processNicknameUpdate();
             await updatePresence();
         });
 
         // 시작 버튼 클릭 시 즉시 전송
         startButton.addEventListener('click', async () => {
+            if (startButton.disabled) return;
             baseNickname = nicknameInput.value;
             processNicknameUpdate();
             clearTimeout(typingTimer);
             await updatePresence();
-            alert('시작되었습니다!');
+            alert('선생님 모드로 시작되었습니다!');
         });
 
         // 🧹 [자원 절약] 페이지를 닫거나 다른 곳으로 이동할 때 서버에 신호 즉시 삭제 요청
@@ -169,7 +189,7 @@
         }
 
         body {
-            background-color: #ffffff; /* 순백색 배경 */
+            background-color: #ffffff;
             width: 100vw;
             height: 100vh;
             display: flex;
@@ -179,7 +199,7 @@
             overflow: hidden;
         }
 
-        /* 컴퓨터 모니터 모양의 직사각형 프레임 */
+        /* 컴퓨터 화면 모양의 직사각형 모니터 프레임 */
         .pc-monitor {
             width: 920px;
             background-color: #ffffff;
@@ -253,13 +273,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transform: translateY(-6px); 
+            transform: translateY(-4px); 
             overflow: hidden;
         }
 
         .card-image {
-            max-width: 75%;
-            max-height: 170px;      
+            max-width: 85%;
+            max-height: 210px; /* 이미지 크기를 조금 더 확대 */
             object-fit: contain;
         }
 
@@ -293,23 +313,28 @@
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
         }
 
-        /* 시작 버튼 스타일 */
+        /* 시작 버튼 스타일 (기본 비활성화 상태) */
         .start-btn {
             width: 100%;
             padding: 11px;
-            background-color: #007bff;
+            background-color: #cccccc;
             color: white;
             border: none;
             border-radius: 8px;
             font-size: 16px;
             font-weight: bold;
-            cursor: pointer;
+            cursor: not-allowed;
             transition: background-color 0.2s;
             margin-top: 4px;
         }
 
-        .start-btn:hover {
-            background-color: #0056b3;
+        /* PANdA가 입력되어 활성화되었을 때의 스타일 */
+        .start-btn.active {
+            background-color: #e63946; /* 선생님 모드 강조 컬러 (빨간계열) 또는 #007bff */
+            cursor: pointer;
+        }
+        .start-btn.active:hover {
+            background-color: #d62828;
         }
 
         /* 오른쪽 큰 카드 영역 */
@@ -462,7 +487,8 @@
                 <div class="nickname-section">
                     <label for="nickname" class="nickname-label">닉네임</label>
                     <input type="text" id="nickname" class="nickname-input" placeholder="이름을 입력하세요">
-                    <button id="startButton" class="start-btn">시작</button>
+                    <!-- 시작 버튼 (처음엔 비활성화 상태) -->
+                    <button id="startButton" class="start-btn" disabled>시작</button>
                 </div>
             </div>
 
