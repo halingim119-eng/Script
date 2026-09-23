@@ -26,15 +26,15 @@
             font-family: 'Malgun Gothic', sans-serif;
         }
 
-        /* 왼쪽 카드 UI 스타일 (크기 및 높이 축소) */
+        /* 왼쪽 카드 UI 스타일 (더 작고 슬림하게 축소) */
         .card {
-            width: 310px;           /* 카드의 너비를 슬림하게 줄임 (기존 380px -> 310px) */
-            height: 480px;          /* 카드의 높이도 아담하게 줄임 (기존 580px -> 480px) */
+            width: 250px;           /* 카드의 너비를 대폭 축소 (기존 310px -> 250px) */
+            height: 380px;          /* 카드의 세로 높이도 대폭 축소 (기존 480px -> 380px) */
             background-color: #ffffff;
-            border-radius: 16px;    
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); 
+            border-radius: 14px;    
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); 
             border: 1px solid #f0f0f0; 
-            padding: 25px 20px;          
+            padding: 20px 16px;          
             display: flex;
             flex-direction: column;
             justify-content: space-between; 
@@ -47,14 +47,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            /* 위쪽으로 살짝 올리기 */
-            transform: translateY(-10px); 
+            transform: translateY(-8px); 
             overflow: hidden;
         }
 
         .card-image {
-            max-width: 85%;
-            max-height: 260px;      /* 줄어든 카드 크기에 맞게 이미지 최대 높이 조절 */
+            max-width: 80%;
+            max-height: 190px;      /* 줄어든 카드 크기에 맞춰 이미지 최대 높이 조정 */
             object-fit: contain;
         }
 
@@ -63,19 +62,19 @@
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 5px;
         }
 
         .nickname-label {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #555555;
         }
 
         .nickname-input {
             width: 100%;
-            padding: 10px 14px;
-            font-size: 14px;
+            padding: 9px 12px;
+            font-size: 13px;
             border: 1px solid #ddd;
             border-radius: 8px;
             outline: none;
