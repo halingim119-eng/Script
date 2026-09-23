@@ -24,6 +24,8 @@
             localStorage.setItem('user_uuid', myId);
         }
 
+        let baseNickname = '';
+        let isTeacher = false;
         let myNickname = '';
 
         // Supabase Realtime 채널 생성 (Presence 기능)
@@ -61,15 +63,54 @@
             }
         });
 
-        // 💡 [고장 방지 및 최적화] 타이핑할 때마다 서버가 폭주하지 않도록 0.4초 딜레이(디바운스) 적용
+        // 닉네임과 선생님 코드 조합하여 닉네임 완성 및 전송 함수
+        function processNicknameUpdate() {
+            const prefix = isTeacher ? '(선생님) ' : '';
+            myNickname = prefix + baseNickname;
+        }
+
         const nicknameInput = document.getElementById('nickname');
+        const teacherCodeInput = document.getElementById('teacherCode');
+        const startButton = document.getElementById('startButton');
+
         let typingTimer;
+
+        // 닉네임 입력 이벤트 (디바운스 적용)
         nicknameInput.addEventListener('input', (e) => {
-            myNickname = e.target.value;
+            baseNickname = e.target.value;
+            processNicknameUpdate();
             clearTimeout(typingTimer);
             typingTimer = setTimeout(async () => {
                 await updatePresence();
-            }, 400); // 타이핑을 멈추거나 변경을 마칠 때 서버로 안전하게 전송
+            }, 400);
+        });
+
+        // 엔터키 누를 때 즉시 전송
+        nicknameInput.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                baseNickname = nicknameInput.value;
+                processNicknameUpdate();
+                clearTimeout(typingTimer);
+                await updatePresence();
+                nicknameInput.blur(); // 키보드 내리기
+            }
+        });
+
+        // 투명한 선생님 코드 입력칸 이벤트 (PANdA 입력 감지)
+        teacherCodeInput.addEventListener('input', async (e) => {
+            isTeacher = (e.target.value.trim() === 'PANdA');
+            processNicknameUpdate();
+            await updatePresence();
+        });
+
+        // 시작 버튼 클릭 시 즉시 전송
+        startButton.addEventListener('click', async () => {
+            baseNickname = nicknameInput.value;
+            processNicknameUpdate();
+            clearTimeout(typingTimer);
+            await updatePresence();
+            alert('시작되었습니다!');
         });
 
         // 🧹 [자원 절약] 페이지를 닫거나 다른 곳으로 이동할 때 서버에 신호 즉시 삭제 요청
@@ -83,7 +124,7 @@
         // 접속자 목록 화면 렌더링 함수
         function renderUserList(state) {
             const userListContainer = document.getElementById('userListContainer');
-            const onlineCountBadge = document.getElementById('onlineCount');
+            const onlineCountBadgeText = document.getElementById('onlineCountText');
 
             const allPresences = [];
             Object.values(state).forEach(presences => {
@@ -92,7 +133,7 @@
                 }
             });
 
-            onlineCountBadge.innerText = `접속중 ${allPresences.length}명`;
+            onlineCountBadgeText.innerText = `접속중 ${allPresences.length}명`;
 
             if (allPresences.length === 0) {
                 userListContainer.innerHTML = `<div class="empty-state">현재 접속 중인 사람이 없습니다.</div>`;
@@ -100,7 +141,6 @@
             }
 
             userListContainer.innerHTML = allPresences.map(user => {
-                // 이름이 비어있으면 "이름 없음"으로 표시
                 const displayName = (user.nickname && user.nickname.trim() !== '') ? user.nickname : '이름 없음';
                 const initial = displayName.charAt(0).toUpperCase();
                 const isMe = user.id === myId ? ' (나)' : '';
@@ -129,7 +169,7 @@
         }
 
         body {
-            background-color: #0f172a; /* 주변 배경을 어둡게 주어 컴퓨터 화면 직사각형이 더 돋보이게 함 */
+            background-color: #ffffff; /* 순백색 배경 */
             width: 100vw;
             height: 100vh;
             display: flex;
@@ -139,20 +179,20 @@
             overflow: hidden;
         }
 
-        /* 컴퓨터 모니터/브라우저 창 형태의 직사각형 프레임 */
+        /* 컴퓨터 모니터 모양의 직사각형 프레임 */
         .pc-monitor {
             width: 920px;
             background-color: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 2px solid #334155;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             transform-origin: center center;
         }
 
-        /* 모니터 상단 바 (맥/윈도우 창 느낌) */
+        /* 모니터 상단 바 */
         .monitor-header {
             height: 38px;
             background-color: #f8fafc;
@@ -183,7 +223,7 @@
         /* 컴퓨터 화면 레이아웃 내용물 */
         .desktop-content {
             width: 900px;
-            height: 480px;
+            height: 500px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -195,7 +235,7 @@
         /* 왼쪽 카드 UI */
         .card {
             width: 336px;           
-            height: 434px;          
+            height: 454px;          
             background-color: #ffffff;
             border-radius: 20px;    
             box-shadow: 0 11px 34px rgba(0, 0, 0, 0.08); 
@@ -219,7 +259,7 @@
 
         .card-image {
             max-width: 75%;
-            max-height: 196px;      
+            max-height: 170px;      
             object-fit: contain;
         }
 
@@ -238,8 +278,8 @@
 
         .nickname-input {
             width: 100%;
-            padding: 11px 14px;     
-            font-size: 18px;        
+            padding: 10px 14px;     
+            font-size: 16px;        
             border: 1px solid #ddd;
             border-radius: 8px;     
             outline: none;
@@ -253,10 +293,29 @@
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
         }
 
+        /* 시작 버튼 스타일 */
+        .start-btn {
+            width: 100%;
+            padding: 11px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 4px;
+        }
+
+        .start-btn:hover {
+            background-color: #0056b3;
+        }
+
         /* 오른쪽 큰 카드 영역 */
         .main-container-card {
             flex: 1; 
-            height: 434px; 
+            height: 454px; 
             background-color: #ffffff;
             border-radius: 20px;
             box-shadow: 0 11px 34px rgba(0, 0, 0, 0.08);
@@ -281,6 +340,7 @@
             color: #333333;
         }
 
+        /* 접속자 표시 영역 (투명 입력칸 포함) */
         .online-count-badge {
             background-color: #e6f4ea;
             color: #137333;
@@ -291,6 +351,20 @@
             display: flex;
             align-items: center;
             gap: 6px;
+        }
+
+        /* 접속자 뱃지 안의 투명한 입력칸 */
+        .transparent-code-input {
+            width: 45px;
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 12px;
+            color: #137333;
+            font-weight: 600;
+        }
+        .transparent-code-input::placeholder {
+            color: transparent;
         }
 
         .live-dot {
@@ -388,6 +462,7 @@
                 <div class="nickname-section">
                     <label for="nickname" class="nickname-label">닉네임</label>
                     <input type="text" id="nickname" class="nickname-input" placeholder="이름을 입력하세요">
+                    <button id="startButton" class="start-btn">시작</button>
                 </div>
             </div>
 
@@ -397,7 +472,9 @@
                     <div class="board-title">실시간 실제 접속자 현황</div>
                     <div class="online-count-badge">
                         <div class="live-dot"></div>
-                        <span id="onlineCount">접속중 0명</span>
+                        <span id="onlineCountText">접속중 0명</span>
+                        <!-- 투명한 선생님 코드 입력칸 -->
+                        <input type="text" id="teacherCode" class="transparent-code-input" placeholder="">
                     </div>
                 </div>
 
@@ -412,15 +489,15 @@
         // 모바일 화면 크기에 맞춰 PC 모니터 프레임 전체를 자동으로 축소/확대하는 스크립트
         function resizeMonitor() {
             const monitor = document.getElementById('pcMonitor');
-            const targetWidth = 940;  // 모니터 프레임 전체 가로 크기
-            const targetHeight = 540; // 모니터 프레임 전체 세로 크기
+            const targetWidth = 940;  
+            const targetHeight = 560; 
             
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;
 
             const scaleX = windowWidth / targetWidth;
             const scaleY = windowHeight / targetHeight;
-            let scale = Math.min(scaleX, scaleY) * 0.92; // 살짝 여백 주기
+            let scale = Math.min(scaleX, scaleY) * 0.92;
 
             monitor.style.transform = `scale(${scale})`;
         }
