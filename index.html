@@ -3,680 +3,319 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 쌓기나무 실시간 클래스</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>접속자 정보 & 갤러리 대시보드</title>
     <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --accent: #38bdf8;
+            --border: #334155;
+        }
+
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
 
         body {
-            background-color: #f1f5f9;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Malgun Gothic', sans-serif;
-            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 2rem 1rem;
+            min-height: 100vh;
         }
 
-        .main-container {
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            padding: 20px;
-            max-width: 900px;
-            width: 100%;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-sub);
+            font-size: 0.95rem;
         }
 
         .card {
-            background-color: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-            border: 1px solid #e2e8f0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
         }
 
-        /* 왼쪽 카드 높이를 늘리고 Flex 구조 재정렬 */
-        .left-card {
-            width: 320px;
-            height: 520px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            flex-shrink: 0;
-            gap: 12px;
-        }
-
-        /* 프로필 & 닉네임 구역 (항상 고정 위치 유지) */
-        .fixed-profile-section {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .card-image-container {
-            width: 100%;
-            height: 140px; /* 고정 크기 유지 */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        .card-image {
-            max-height: 100%;
-            object-fit: contain;
-        }
-
-        .nickname-section {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .nickname-label {
-            font-size: 14px;
+        .card-title {
+            font-size: 1.2rem;
             font-weight: 600;
-            color: #475569;
-        }
-
-        .nickname-input {
-            width: 100%;
-            padding: 10px 12px;
-            font-size: 15px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            outline: none;
-            background-color: #f8fafc;
-            transition: all 0.2s;
-        }
-
-        .nickname-input:focus {
-            border-color: #2563eb;
-            background-color: #ffffff;
-        }
-
-        /* 게임 영역 */
-        .game-area-section {
-            width: 100%;
+            margin-bottom: 1rem;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            flex: 1;
+            gap: 0.5rem;
+            color: var(--accent);
         }
 
-        #threeContainer {
-            width: 100%;
-            height: 170px; /* 작아진 3D 화면 공간 */
-            border-radius: 12px;
-            overflow: hidden;
-            background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
+        /* 접속자 정보 그리드 */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
         }
 
-        .game-title-badge {
-            font-size: 12px;
-            font-weight: bold;
-            color: #1e293b;
-            background: #e2e8f0;
-            padding: 4px 10px;
-            border-radius: 12px;
-            margin-bottom: 8px;
-        }
-
-        .controls-area {
-            width: 100%;
-            margin-top: auto; /* 항상 하단으로 밀착 */
-        }
-
-        .btn {
-            width: 100%;
-            padding: 11px;
-            color: white;
-            border: none;
+        .info-item {
+            background-color: rgba(15, 23, 42, 0.6);
+            padding: 1rem;
             border-radius: 8px;
-            font-size: 14px;
-            font-weight: bold;
+            border: 1px solid var(--border);
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.3rem;
+        }
+
+        .info-value {
+            font-size: 1.05rem;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .flag-img {
+            height: 16px;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+
+        /* 갤러리 섹션 */
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .btn-refresh {
+            background-color: var(--accent);
+            color: #0f172a;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: opacity 0.2s;
         }
 
-        .btn-red { background-color: #ef4444; }
-        .btn-red:hover { background-color: #dc2626; }
-        .btn-blue { background-color: #2563eb; }
-        .btn-blue:hover { background-color: #1d4ed8; }
-        .btn-outline {
-            background-color: #f8fafc;
-            color: #475569;
-            border: 1px solid #cbd5e1;
-            padding: 8px;
-            font-size: 12px;
-        }
-        .btn-outline:hover {
-            background-color: #f1f5f9;
-            color: #1e293b;
+        .btn-refresh:hover {
+            opacity: 0.9;
         }
 
-        .teacher-btn-group {
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .img-container {
+            position: relative;
             width: 100%;
-            display: flex;
-            gap: 8px;
+            height: 200px;
+            background-color: #0f172a;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
         }
 
-        /* 오른쪽 카드 영역 */
-        .right-card-container {
-            flex: 1;
-            height: 520px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .right-card {
+        .img-container img {
             width: 100%;
             height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
         }
 
-        .board-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #f1f5f9;
+        .img-container:hover img {
+            transform: scale(1.05);
         }
 
-        .board-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #1e293b;
+        .loading-text {
+            color: var(--accent);
+            font-size: 0.9rem;
         }
-
-        .online-count-badge {
-            background-color: #dcfce7;
-            color: #15803d;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 4px 10px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .transparent-code-input {
-            width: 45px;
-            border: none;
-            background: transparent;
-            outline: none;
-            font-size: 12px;
-            color: #15803d;
-            font-weight: 600;
-            text-align: center;
-            letter-spacing: 1px;
-        }
-
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #22c55e;
-            border-radius: 50%;
-        }
-
-        .user-list-container, .rank-list, .profile-grid-container {
-            flex: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding-right: 4px;
-        }
-
-        .user-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 14px;
-            background-color: #f8fafc;
-            border-radius: 10px;
-            border: 1px solid #f1f5f9;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-avatar-mini {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: contain;
-            background-color: #ffffff;
-            border: 1px solid #cbd5e1;
-        }
-
-        .user-name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #334155;
-        }
-
-        .profile-grid-container {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-        }
-
-        .profile-thumb-card {
-            background-color: #f8fafc;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-
-        .profile-thumb-card:hover {
-            border-color: #2563eb;
-            background-color: #eff6ff;
-            transform: scale(1.03);
-        }
-
-        .profile-thumb-img {
-            width: 100%;
-            height: 65px;
-            object-fit: contain;
-        }
-
-        .game-right-layout {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .tall-card {
-            height: 300px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .short-card {
-            height: 206px;
-            justify-content: space-between;
-            align-items: center;
-            text-align: center;
-        }
-
-        .rank-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            background-color: #f8fafc;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s;
-            flex-shrink: 0;
-        }
-
-        .rank-item.selectable {
-            cursor: pointer;
-            border: 1px solid #cbd5e1;
-            background-color: #ffffff;
-        }
-
-        .rank-item.selectable:hover {
-            background-color: #f1f5f9;
-            border-color: #2563eb;
-        }
-
-        .rank-badge {
-            padding: 2px 8px;
-            border-radius: 12px;
-            color: white;
-            font-size: 11px;
-        }
-        .rank-1 { background-color: #eab308; }
-        .rank-2 { background-color: #94a3b8; }
-        .rank-3 { background-color: #b45309; }
-        .rank-etc { background-color: #cbd5e1; color: #475569; }
-
-        .quiz-title {
-            font-size: 15px;
-            font-weight: bold;
-            color: #1e293b;
-        }
-
-        .choice-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .choice-btn {
-            padding: 12px;
-            font-size: 15px;
-            font-weight: bold;
-            background-color: #f1f5f9;
-            color: #334155;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .choice-btn:hover { background-color: #e2e8f0; }
-
-        @keyframes btnGlowAnim {
-            0% { box-shadow: 0 0 5px #3b82f6; border-color: #3b82f6; }
-            50% { box-shadow: 0 0 15px #60a5fa, 0 0 10px #2563eb; border-color: #2563eb; }
-            100% { box-shadow: 0 0 5px #3b82f6; border-color: #3b82f6; }
-        }
-
-        .choice-btn.glowing-choice {
-            animation: btnGlowAnim 1.2s infinite alternate;
-            background-color: #eff6ff !important;
-            color: #1d4ed8 !important;
-        }
-
-        .choice-btn.correct {
-            background-color: #22c55e !important;
-            color: white !important;
-            border-color: #16a34a !important;
-            animation: none !important;
-        }
-
-        .choice-btn.wrong {
-            background-color: #ef4444 !important;
-            color: white !important;
-            border-color: #dc2626 !important;
-            animation: none !important;
-        }
-
-        .feedback-msg { font-size: 13px; font-weight: bold; height: 18px; }
-        .empty-state { margin: auto; color: #94a3b8; font-size: 13px; }
-
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(8px);
-            z-index: 2000; display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-        }
-        .modal-overlay.active { opacity: 1; pointer-events: auto; }
-        .card-container { display: flex; gap: 20px; }
-
-        .reward-card {
-            width: 200px; height: 290px; background: #ffffff; border-radius: 16px;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); border: 2px solid #e2e8f0;
-            padding: 16px; display: flex; flex-direction: column; align-items: center;
-            justify-content: space-between; cursor: pointer; transition: transform 0.2s ease;
-        }
-        .reward-card:hover { transform: translateY(-8px) scale(1.03); border-color: #2563eb; }
-        .reward-card-title { font-size: 16px; font-weight: bold; color: #0f172a; text-align: center; }
-        .reward-card-img { width: 100px; height: 100px; object-fit: contain; }
-        .reward-card-desc { font-size: 12px; color: #64748b; text-align: center; word-break: keep-all; }
-
-        #tauntOverlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999;
-            background: rgba(0, 0, 0, 0.7); display: none; align-items: center; justify-content: center;
-        }
-        #tauntOverlay img { width: 95vw; height: 95vh; object-fit: contain; transform: scale(1.8); }
     </style>
 </head>
 <body>
 
-    <div class="main-container">
-        <!-- 1. 좌측 3D 및 메인 카드 -->
-        <div class="card left-card">
-            
-            <!-- (항상 고정) 이미지 및 닉네임 구역 -->
-            <div class="fixed-profile-section">
-                <div class="card-image-container">
-                    <img id="cardImage" alt="캐릭터" class="card-image">
-                </div>
-                <div class="nickname-section">
-                    <label for="nickname" class="nickname-label">닉네임</label>
-                    <input type="text" id="nickname" class="nickname-input" placeholder="이름을 입력하세요">
-                    <button id="changeProfileBtn" class="btn btn-outline">📸 프로필 사진 변경</button>
-                </div>
-            </div>
+<div class="container">
+    <header>
+        <h1>실시간 접속자 정보 & 이미지 로더</h1>
+        <p>클라이언트 및 네트워크 상태 단일 페이지 확인 시스템</p>
+    </header>
 
-            <!-- (게임 시작 시) 3D 화면 구역 -->
-            <div id="gameUI" class="game-area-section" style="display:none;">
-                <div class="game-title-badge" id="cameraStatusBadge">3D 관찰 카메라 회전 중</div>
-                <div id="threeContainer"></div>
+    <!-- 접속자 정보 카드 -->
+    <section class="card">
+        <div class="card-title">🌐 접속자 정보 (Network & Device)</div>
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">IP 주소</div>
+                <div class="info-value" id="ip-address"><span class="loading-text">불러오는 중...</span></div>
             </div>
-
-            <!-- (컨트롤 버튼) 구역 -->
-            <div class="controls-area">
-                <button id="startBtn" class="btn btn-red" style="display:none;">시작</button>
-                <div id="teacherControls" class="teacher-btn-group" style="display:none;">
-                    <button id="nextBtn" class="btn btn-blue">다음 문제</button>
-                    <button id="endBtn" class="btn btn-red">종료</button>
-                </div>
+            <div class="info-item">
+                <div class="info-label">위치 (국가 / 도시)</div>
+                <div class="info-value" id="location"><span class="loading-text">불러오는 중...</span></div>
             </div>
-        </div>
-
-        <!-- 2. 우측 접속자 및 랭킹 카드 -->
-        <div class="right-card-container">
-            
-            <!-- 기본 접속자 현황 -->
-            <div id="defaultUserListUI" class="card right-card">
-                <div class="board-header">
-                    <div class="board-title">실시간 실제 접속자 현황</div>
-                    <div class="online-count-badge">
-                        <div class="live-dot"></div>
-                        <span id="onlineCountText">접속중 0명</span>
-                        <!-- 비밀번호(***) 처리를 위해 type="password" 적용 -->
-                        <input type="password" id="teacherCode" class="transparent-code-input" placeholder="코드">
-                    </div>
-                </div>
-                <div class="user-list-container" id="userListContainer">
-                    <div class="empty-state">접속자를 감지하는 중...</div>
-                </div>
+            <div class="info-item">
+                <div class="info-label">인터넷 서비스 제공업체 (ISP)</div>
+                <div class="info-value" id="isp"><span class="loading-text">불러오는 중...</span></div>
             </div>
-
-            <!-- 프로필 사진 선택 창 -->
-            <div id="profilePickerUI" class="card right-card" style="display: none;">
-                <div class="board-header">
-                    <div class="board-title">📸 프로필 사진 선택</div>
-                    <button id="closeProfilePickerBtn" style="border:none; background:none; cursor:pointer; font-size:13px; color:#64748b; font-weight:bold;">닫기 ✕</button>
-                </div>
-                <div class="profile-grid-container" id="profileGrid"></div>
+            <div class="info-item">
+                <div class="info-label">운영체제 / 브라우저</div>
+                <div class="info-value" id="browser-info">-</div>
             </div>
-
-            <!-- 게임 중 랭킹 & 퀴즈 창 -->
-            <div id="gameRankingUI" class="game-right-layout" style="display:none;">
-                <div class="card tall-card" id="rankingCard">
-                    <div class="board-title" id="rankingTitle">🏆 실시간 랭킹</div>
-                    <div class="rank-list" id="rankingList"></div>
-                </div>
-                <div class="card short-card">
-                    <div class="quiz-title">쌓기나무는 모두 몇 개일까요?</div>
-                    <div class="choice-grid" id="choiceButtons"></div>
-                    <div id="feedbackMessage" class="feedback-msg"></div>
-                </div>
+            <div class="info-item">
+                <div class="info-label">화면 해상도</div>
+                <div class="info-value" id="screen-res">-</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">시간대 및 언어</div>
+                <div class="info-value" id="time-lang">-</div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- 각종 오버레이 -->
-    <div class="modal-overlay" id="cardModalOverlay">
-        <div class="card-container" id="cardContainer"></div>
-    </div>
-    <div id="tauntOverlay">
-        <img src="https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif" alt="야유">
-    </div>
+    <!-- 이미지 갤러리 카드 -->
+    <section class="card">
+        <div class="gallery-header">
+            <div class="card-title" style="margin-bottom:0;">🖼️ 고화질 이미지 갤러리</div>
+            <button class="btn-refresh" onclick="loadImages()">이미지 새로고침</button>
+        </div>
+        <div class="gallery-grid" id="gallery-grid">
+            <!-- 자바스크립트로 이미지 삽입 -->
+        </div>
+    </section>
+</div>
 
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+<script>
+    // 1. 브라우저 로컬 정보 즉시 로드 (네트워크 미연결 시에도 동작)
+    function loadLocalDeviceInfo() {
+        const ua = navigator.userAgent;
+        let os = "Unknown OS";
+        if (ua.includes("Win")) os = "Windows";
+        else if (ua.includes("Mac")) os = "macOS";
+        else if (ua.includes("Linux")) os = "Linux";
+        else if (ua.includes("Android")) os = "Android";
+        else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
 
-        const SUPABASE_URL = "https://knjblcpgxcixfbzcrrqg.supabase.co"; 
-        const SUPABASE_KEY = "sb_publishable_Xn2UjMtIkzXQU_6xPlMvrg_Rtc9VY0v";
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        let browser = "Unknown Browser";
+        if (ua.includes("Chrome") && !ua.includes("Edg")) browser = "Chrome";
+        else if (ua.includes("Edg")) browser = "Edge";
+        else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
+        else if (ua.includes("Firefox")) browser = "Firefox";
 
-        // 유령 유저 방지: 접속 탭마다(Session) 완벽하게 고유한 새 ID를 발급
-        let myId = sessionStorage.getItem('user_uuid_session');
-        if (!myId) {
-            myId = 'user_' + Math.random().toString(36).substring(2, 11);
-            sessionStorage.setItem('user_uuid_session', myId);
-        }
-
-        const characterImages = [
-            "https://media.ffycdn.net/eu/supercell/w6fRpxtAdEXsWLjHEzHD.png?width=2400", // 첫 번째 메인 지정 이미지
-            "https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/QnZRLnpy7ckitzeuASFz.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/S6nkFKmpdZs1c8qRUo8f.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/tTtXs4ftdtuBh85yq9tY.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/s83nEEJ4ZKPXzgKjDrF3.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/HDkXgubferFDkbkHJAXo.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/aVJ7E8hmdXBjNbT9CHeM.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/m823rLr57CeLZdx2ivfZ.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/6PVSgKBY4KNpkabWr9bj.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/fTRckDCnv8CLTEMDi3tt.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/6jGjY3JAbFrkSx4FaiVH.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/Qmxk7V5tFcmLGeCVueWT.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/XTTrodLDSVQVrjhYbs2Z.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/ACfDodL3WGgMD3ybdHvn.png?width=2400",
-            "https://media.ffycdn.net/eu/supercell/7a6mrhbBHByusVgTvkoS.png?width=2400"
-        ];
+        document.getElementById('browser-info').textContent = `${os} / ${browser}`;
+        document.getElementById('screen-res').textContent = `${window.screen.width} x ${window.screen.height} (색상 깊이: ${window.screen.colorDepth}-bit)`;
         
-        let selectedImage = characterImages[Math.floor(Math.random() * characterImages.length)];
-        document.getElementById('cardImage').src = selectedImage;
-
-        let baseNickname = '';
-        let isTeacher = false;
-        let myNickname = '익명';
-        let gameStarted = false;
-        let myScore = 0;
-        let currentBlocks = [];
-        let hasGuessed = false;
-        let activeUsers = [];
-        let pendingAttackType = null;
-        let isTargetSelectMode = false;
-
-        let isCameraFrozen = false;
-        let hasTripleScoreMultiplier = false;
-        let hasShiningEyesBuff = false;
-        let activeShiningEyesRound = false;
-
-        const room = supabase.channel('3d_math_room', { config: { presence: { key: myId } } });
-
-        // 선생님/학생 권한 세팅
-        function checkTeacherCode() {
-            isTeacher = (document.getElementById('teacherCode').value === '1208');
-            document.getElementById('startBtn').style.display = isTeacher && !gameStarted ? 'block' : 'none';
-            document.getElementById('teacherControls').style.display = isTeacher && gameStarted ? 'flex' : 'none';
-        }
-        document.getElementById('teacherCode').addEventListener('input', () => {
-            checkTeacherCode();
-            syncNickname();
-        });
-
-        // 🌟 닉네임 실시간 동기화 개선 (디바운스 적용하여 UI 끊김 방지)
-        let nicknameDebounceTimeout;
-        function syncNickname(isBlur = false) {
-            const nicknameInput = document.getElementById('nickname');
-            if (!nicknameInput) return;
-
-            let val = nicknameInput.value.trim();
-            val = val.replace(/^\(선생님\)\s*/, '');
-            baseNickname = val;
-
-            if (isTeacher) {
-                myNickname = `(선생님) ${baseNickname !== '' ? baseNickname : '선생님'}`;
-                // 입력 방해 방지를 위해 blur(커서 빠짐) 시에만 인풋값 강제 변경
-                if (isBlur) nicknameInput.value = myNickname;
-            } else {
-                myNickname = baseNickname !== '' ? baseNickname : '익명';
-            }
-
-            // 내가 보는 로컬 접속자 리스트 즉시(Realtime) 업데이트
-            const meIndex = activeUsers.findIndex(u => u.id === myId);
-            if (meIndex !== -1) activeUsers[meIndex].nickname = myNickname;
-            renderUserList(activeUsers);
-            renderRankingList(activeUsers);
-
-            // Supabase 서버 전송은 0.3초 대기 (타이핑할 때마다 요청가면 네트워크 막힘)
-            clearTimeout(nicknameDebounceTimeout);
-            nicknameDebounceTimeout = setTimeout(() => {
-                updatePresence();
-            }, 300);
-        }
-
-        // 실시간 타이핑 시 반영, 커서 빠질 땐 텍스트 정리 반영
-        document.getElementById('nickname').addEventListener('input', () => syncNickname(false));
-        document.getElementById('nickname').addEventListener('blur', () => syncNickname(true));
-
-        function updatePresence() {
-            room.track({
-                id: myId,
-                nickname: myNickname,
-                profileImg: selectedImage,
-                isTeacher: isTeacher,
-                gameStarted: gameStarted,
-                score: myScore,
-                hasGuessed: hasGuessed
-            });
-        }
-
-        // Presence 동기화 수신 (유령 유저 완벽 제거 방식)
-        room.on('presence', { event: 'sync' }, () => {
-            const state = room.presenceState();
-            let allUsers = [];
-
-            // 객체 안의 배열들을 풀어서 하나의 최신 명단으로 압축
-            for (const id in state) {
-                if (state[id] && state[id].length작업하시면서 답답하셨을 부분들, 확실하게 해결할 수 있도록 **요청하신 모든 사항을 반영하여 코드를 정리해 드립니다.** 
-
-특히 접속자 동기화 오류는 서버와 클라이언트 간의 상태가 꼬일 때 자주 발생하는데, 이를 원천적으로 차단하는 '전체 목록 덮어쓰기' 방식으로 확실하게 고쳤습니다.
-
-코드 작성 시 요청하신 대로 ```` ```` (마크다운) 형식을 사용하여 복사하기 쉽게 제공합니다.
-
----
-
-### 1. 닉네임 강제 변경 및 동기화 완벽 수정
-닉네임을 입력하고 버튼을 누르거나 엔터를 치면 **무조건** 변경되고 서버에 반영되도록 클라이언트 로직을 수정합니다.
-
-```javascript
-// [클라이언트] 닉네임 변경 스크립트
-const nicknameInput = document.getElementById('nickname-input');
-const nicknameChangeBtn = document.getElementById('nickname-btn');
-
-function changeNickname() {
-    const newName = nicknameInput.value.trim();
-    if (newName !== "") {
-        // 1. 내 화면(로컬) 닉네임 즉시 변경
-        document.getElementById('my-nickname-display').innerText = newName;
-        
-        // 2. 서버로 닉네임 변경 이벤트 전송
-        socket.emit('changeNickname', newName);
-        
-        // 3. 입력창 비우기 (선택 사항)
-        nicknameInput.value = '';
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const lang = navigator.language;
+        document.getElementById('time-lang').textContent = `${tz} (${lang})`;
     }
-}
 
-// 버튼 클릭 시
-nicknameChangeBtn.addEventListener('click', changeNickname);
+    // 2. 접속자 IP 및 위치 정보 가져오기 (이중 폴백)
+    async function fetchVisitorNetworkInfo() {
+        const ipEl = document.getElementById('ip-address');
+        const locEl = document.getElementById('location');
+        const ispEl = document.getElementById('isp');
 
-// 엔터키 입력 시
-nicknameInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') changeNickname();
-});
+        try {
+            // 메인 API: ipwho.is (CORS 지원, HTTPS 안정적)
+            const response = await fetch('https://ipwho.is/');
+            if (!response.ok) throw new Error('Primary API failed');
+            const data = await response.json();
+
+            if (data.success) {
+                ipEl.textContent = data.ip;
+                locEl.innerHTML = `${data.country} (${data.city}) <img class="flag-img" src="${data.flag.img}" alt="flag" onerror="this.style.display='none'">`;
+                ispEl.textContent = data.connection.isp || data.connection.org || '정보 없음';
+                return;
+            }
+            throw new Error('IP API return unsuccessful');
+        } catch (err) {
+            console.warn('Primary IP API failed, trying fallback:', err);
+            
+            // 보조 API: ipify (IP 전용 백업)
+            try {
+                const fbRes = await fetch('https://api.ipify.org?format=json');
+                const fbData = await fbRes.json();
+                ipEl.textContent = fbData.ip;
+                locEl.textContent = '위치 정보 제한됨';
+                ispEl.textContent = 'ISP 정보 제한됨';
+            } catch (fbErr) {
+                ipEl.textContent = '불러오기 실패';
+                locEl.textContent = '불러오기 실패';
+                ispEl.textContent = '불러오기 실패';
+            }
+        }
+    }
+
+    // 3. 사진 불러오기 (안정적인 CDN 고화질 URL + Picsum 시드 조합)
+    function loadImages() {
+        const gallery = document.getElementById('gallery-grid');
+        gallery.innerHTML = ''; // 기존 이미지 삭제
+
+        // 실패 확률이 제로인 고화질 Unsplash CDN 이미지 및 랜덤 시드 URL 모음
+        const timeStamp = Date.now();
+        const imageUrls = [
+            `https://picsum.photos/600/400?random=${timeStamp + 1}`,
+            `https://picsum.photos/600/400?random=${timeStamp + 2}`,
+            `https://picsum.photos/600/400?random=${timeStamp + 3}`,
+            `https://picsum.photos/600/400?random=${timeStamp + 4}`,
+            `https://picsum.photos/600/400?random=${timeStamp + 5}`,
+            `https://picsum.photos/600/400?random=${timeStamp + 6}`
+        ];
+
+        imageUrls.forEach((url, idx) => {
+            const container = document.createElement('div');
+            container.className = 'img-container';
+            
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = `Gallery Image ${idx + 1}`;
+            img.loading = "lazy";
+            
+            // 로딩 실패 시 대처
+            img.onerror = function() {
+                this.src = `https://via.placeholder.com/600x400/334155/f8fafc?text=Image+Load+Failed`;
+            };
+
+            container.appendChild(img);
+            gallery.appendChild(container);
+        });
+    }
+
+    // 페이지 로드 시 즉시 실행
+    window.addEventListener('DOMContentLoaded', () => {
+        loadLocalDeviceInfo();
+        fetchVisitorNetworkInfo();
+        loadImages();
+    });
+</script>
+
+</body>
+</html>
