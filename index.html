@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>미완성</title>
+    <title>3D 쌓기나무 실시간 클래스</title>
     
     <!-- 이미지 사전 로드 -->
     <link rel="preload" as="image" id="preloadLink" href="" fetchpriority="high">
@@ -44,7 +44,6 @@
             "https://media.ffycdn.net/eu/supercell/7a6mrhbBHByusVgTvkoS.png?width=2400"
         ];
 
-        // 들어올 때마다 랜덤 이미지 선택
         const selectedImage = characterImages[Math.floor(Math.random() * characterImages.length)];
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -54,10 +53,10 @@
 
         let baseNickname = '';
         let isTeacher = false;
-        let myNickname = '';
+        let myNickname = '이름 없음';
         let gameStarted = false;
 
-        // Supabase Realtime 채널 생성 (Presence 기능)
+        // Supabase Realtime 채널 생성
         const room = supabase.channel('online-users-room', {
             config: {
                 presence: {
@@ -65,6 +64,21 @@
                 },
             },
         });
+
+        // 닉네임 포맷 처리 함수 (선생님일 경우 강제로 앞에 (선생님) 부착)
+        function processNicknameUpdate() {
+            const nicknameInput = document.getElementById('nickname');
+            if (!nicknameInput) return;
+
+            let rawVal = nicknameInput.value.replace(/^\(선생님\)\s*/, '').trim();
+            baseNickname = rawVal;
+
+            if (isTeacher) {
+                myNickname = `(선생님) ${baseNickname !== '' ? baseNickname : '선생님'}`;
+            } else {
+                myNickname = baseNickname !== '' ? baseNickname : '이름 없음';
+            }
+        }
 
         // 내 상태 전송 함수
         async function updatePresence() {
@@ -80,27 +94,41 @@
             }
         }
 
-        // 실시간 동기화 수신
+        // UI 모드 (시작/종료) 일괄 적용 함수
+        function applyGameUI(started) {
+            const normalUI = document.getElementById('normalUI');
+            const gameUI = document.getElementById('gameUI');
+            const actionButton = document.getElementById('actionButton');
+
+            if (started) {
+                normalUI.style.display = 'none';
+                gameUI.style.display = 'flex';
+                actionButton.innerText = '종료';
+                actionButton.classList.add('end-mode');
+                actionButton.disabled = !isTeacher;
+                if (isTeacher) actionButton.classList.add('active');
+                startBlockAnimation();
+            } else {
+                normalUI.style.display = 'flex';
+                gameUI.style.display = 'none';
+                actionButton.innerText = '시작';
+                actionButton.classList.remove('end-mode');
+                if (isTeacher) {
+                    actionButton.disabled = false;
+                    actionButton.classList.add('active');
+                } else {
+                    actionButton.disabled = true;
+                    actionButton.classList.remove('active');
+                }
+                stopBlockAnimation();
+            }
+        }
+
+        // 실시간 동기화 수신 (Presence)
         room.on('presence', { event: 'sync' }, () => {
             const state = room.presenceState();
             renderUserList(state);
-            checkGameStatus(state);
-        });
 
-        // 접속 성공 시 내 상태 업데이트
-        room.subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') {
-                await updatePresence();
-            }
-        });
-
-        function processNicknameUpdate() {
-            const prefix = isTeacher ? '(선생님) ' : '';
-            myNickname = prefix + (baseNickname.trim() !== '' ? baseNickname : '이름 없음');
-        }
-
-        // 전체 접속자 중 누군가(선생님) 게임을 시작했는지 확인 및 화면 전환
-        function checkGameStatus(state) {
             let isAnyGameStarted = false;
             Object.values(state).forEach(presences => {
                 if (presences && Array.isArray(presences)) {
@@ -112,28 +140,26 @@
                 }
             });
 
-            const normalUI = document.getElementById('normalUI');
-            const gameUI = document.getElementById('gameUI');
-            const actionButton = document.getElementById('actionButton');
-
-            if (isAnyGameStarted) {
-                normalUI.style.display = 'none';
-                gameUI.style.display = 'flex';
-                actionButton.innerText = '종료';
-                actionButton.classList.add('end-mode');
-                startBlockAnimation();
-            } else {
-                normalUI.style.display = 'flex';
-                gameUI.style.display = 'none';
-                actionButton.innerText = '시작';
-                actionButton.classList.remove('end-mode');
-                if (!isTeacher) {
-                    actionButton.disabled = true;
-                    actionButton.classList.remove('active');
-                }
-                stopBlockAnimation();
+            if (isAnyGameStarted !== gameStarted) {
+                gameStarted = isAnyGameStarted;
+                applyGameUI(gameStarted);
             }
-        }
+        });
+
+        // 실시간 브로드캐스트 수신 (시작/종료 명령)
+        room.on('broadcast', { event: 'game_toggle' }, ({ payload }) => {
+            if (payload && typeof payload.gameStarted === 'boolean') {
+                gameStarted = payload.gameStarted;
+                applyGameUI(gameStarted);
+            }
+        });
+
+        // 접속 성공 시 내 상태 업데이트
+        room.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                await updatePresence();
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             const nicknameInput = document.getElementById('nickname');
@@ -142,49 +168,27 @@
 
             let typingTimer;
 
+            // 닉네임 입력 이벤트
             nicknameInput.addEventListener('input', (e) => {
-                baseNickname = e.target.value;
                 processNicknameUpdate();
                 clearTimeout(typingTimer);
                 typingTimer = setTimeout(async () => {
                     await updatePresence();
-                }, 300);
+                }, 200);
             });
 
             nicknameInput.addEventListener('blur', async () => {
-                baseNickname = nicknameInput.value;
                 processNicknameUpdate();
-                clearTimeout(typingTimer);
                 await updatePresence();
             });
 
-            nicknameInput.addEventListener('keydown', async (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    baseNickname = nicknameInput.value;
-                    processNicknameUpdate();
-                    clearTimeout(typingTimer);
-                    await updatePresence();
-                    nicknameInput.blur();
-                }
-            });
-
-            // 투명한 선생님 코드 감지 (PANdA)
+            // 선생님 코드 감지 (PANdA)
             teacherCodeInput.addEventListener('input', async (e) => {
                 const code = e.target.value.trim();
                 isTeacher = (code === 'PANdA');
-                
-                if (!gameStarted) {
-                    if (isTeacher) {
-                        actionButton.disabled = false;
-                        actionButton.classList.add('active');
-                    } else {
-                        actionButton.disabled = true;
-                        actionButton.classList.remove('active');
-                    }
-                }
 
                 processNicknameUpdate();
+                applyGameUI(gameStarted);
                 await updatePresence();
             });
 
@@ -196,6 +200,20 @@
                 }
 
                 gameStarted = !gameStarted;
+
+                // 1. 다른 학생들에게 시작/종료 명령 즉시 전달
+                try {
+                    await room.send({
+                        type: 'broadcast',
+                        event: 'game_toggle',
+                        payload: { gameStarted: gameStarted }
+                    });
+                } catch(err) {
+                    console.error("Broadcast error:", err);
+                }
+
+                // 2. 내 상태 및 화면 업데이트
+                applyGameUI(gameStarted);
                 await updatePresence();
             });
         });
@@ -204,7 +222,7 @@
         window.addEventListener('beforeunload', () => { room.untrack(); });
         window.addEventListener('pagehide', () => { room.untrack(); });
 
-        // 접속자 목록 화면 렌더링 (고유 ID 기준 중복 제거)
+        // 접속자 목록 화면 렌더링
         function renderUserList(state) {
             const userListContainer = document.getElementById('userListContainer');
             const onlineCountBadgeText = document.getElementById('onlineCountText');
@@ -230,7 +248,7 @@
 
             userListContainer.innerHTML = allPresences.map(user => {
                 const displayName = (user.nickname && user.nickname.trim() !== '') ? user.nickname : '이름 없음';
-                const initial = displayName.charAt(0).toUpperCase();
+                const initial = displayName.replace('(선생님) ', '').charAt(0).toUpperCase();
                 const isMe = user.id === myId ? ' (나)' : '';
 
                 return `
@@ -248,21 +266,21 @@
             }).join('');
         }
 
-        // 🧊 논리적 3D 쌓기나무 무작위 생성 및 회전 렌더링 Engine
+        // 🧊 논리적 3D 쌓기나무 엔진
         let animId = null;
+        let currentBlocks = null;
+
         function generateValidBlocks() {
             let blocks = [];
             let grid = {};
             let possiblePositions = [];
 
-            // 3x3 바닥면 (Z=0)
             for (let x = 0; x < 3; x++) {
                 for (let y = 0; y < 3; y++) {
                     possiblePositions.push({x: x, y: y, z: 0});
                 }
             }
 
-            // 공중 부양 없는 완벽한 구조로 최대 10개 생성
             while (blocks.length < 10 && possiblePositions.length > 0) {
                 let idx = Math.floor(Math.random() * possiblePositions.length);
                 let pos = possiblePositions.splice(idx, 1)[0];
@@ -280,8 +298,8 @@
             return blocks;
         }
 
-        let currentBlocks = null;
         function startBlockAnimation() {
+            if (animId) return; // 이미 실행 중이면 중복 실행 방지
             const canvas = document.getElementById('blockCanvas');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
@@ -294,14 +312,13 @@
 
             function render() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                angle += 0.015; // 회전 속도
+                angle += 0.015;
 
                 const cx = canvas.width / 2;
                 const cy = canvas.height / 2 + 30;
                 const scale = 36;
                 const centerGrid = 1.0; 
 
-                // 깊이 정렬 (시각적 잘림/겹침 방지)
                 let sortedBlocks = [...currentBlocks].sort((a, b) => {
                     let rxA = (a.x - centerGrid) * Math.cos(angle) - (a.y - centerGrid) * Math.sin(angle);
                     let ryA = (a.x - centerGrid) * Math.sin(angle) + (a.y - centerGrid) * Math.cos(angle);
@@ -316,7 +333,6 @@
                     let rotX = rx * Math.cos(angle) - ry * Math.sin(angle);
                     let rotY = rx * Math.sin(angle) + ry * Math.cos(angle);
 
-                    // Isometric 3D 투영
                     let screenX = cx + (rotX - rotY) * scale;
                     let screenY = cy + (rotX + rotY) * (scale * 0.5) - (b.z * scale * 0.9);
 
@@ -340,7 +356,7 @@
         function drawCube(ctx, x, y, size) {
             const h = size * 0.85;
 
-            // 윗면 (Top)
+            // 윗면
             ctx.fillStyle = '#60a5fa';
             ctx.beginPath();
             ctx.moveTo(x, y - h);
@@ -353,7 +369,7 @@
             ctx.lineWidth = 1;
             ctx.stroke();
 
-            // 왼쪽면 (Left)
+            // 왼쪽면
             ctx.fillStyle = '#3b82f6';
             ctx.beginPath();
             ctx.moveTo(x - size, y - h + size * 0.5);
@@ -364,7 +380,7 @@
             ctx.fill();
             ctx.stroke();
 
-            // 오른쪽면 (Right)
+            // 오른쪽면
             ctx.fillStyle = '#1d4ed8';
             ctx.beginPath();
             ctx.moveTo(x, y - h + size);
@@ -607,17 +623,22 @@
             gap: 6px;
         }
 
+        /* 선생님 코드 입력창 (PANdA) */
         .transparent-code-input {
-            width: 45px;
-            border: none;
+            width: 60px;
+            border: 1px solid transparent;
             background: transparent;
             outline: none;
             font-size: 12px;
             color: #137333;
             font-weight: 600;
+            text-align: center;
+            border-radius: 4px;
+            transition: border-color 0.2s, background-color 0.2s;
         }
-        .transparent-code-input::placeholder {
-            color: transparent;
+        .transparent-code-input:focus {
+            border-color: #34a853;
+            background-color: #ffffff;
         }
 
         .live-dot {
@@ -698,7 +719,7 @@
             <div class="window-dot dot-red"></div>
             <div class="window-dot dot-yellow"></div>
             <div class="window-dot dot-green"></div>
-            <div class="monitor-title-text">컴퓨터 화면 모드</div>
+            <div class="monitor-title-text">3D 쌓기나무 실시간 수업</div>
         </div>
 
         <div class="desktop-content">
@@ -736,7 +757,7 @@
                     <div class="online-count-badge">
                         <div class="live-dot"></div>
                         <span id="onlineCountText">접속중 0명</span>
-                        <input type="text" id="teacherCode" class="transparent-code-input" placeholder="">
+                        <input type="text" id="teacherCode" class="transparent-code-input" placeholder="코드" title="선생님 코드를 입력하세요">
                     </div>
                 </div>
 
