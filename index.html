@@ -3,83 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>실시간 접속자 감지 (모바일 최적화)</title>
+    <title>실시간 접속자 감지 (Supabase)</title>
     
     <!-- 이미지 사전 로드 -->
     <link rel="preload" as="image" href="https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400" fetchpriority="high">
 
-    <!-- Firebase SDK (실시간 데이터 동기화) -->
+    <!-- Supabase JS SDK -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue, onDisconnect, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-        // 🔥 [중요] 본인의 Firebase 설정값으로 교체해주세요!
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+        // 🔗 입력해주신 Supabase 설정값 적용 완료
+        const SUPABASE_URL = "https://knjblcpgxcixfbzcrrqg.supabase.co"; 
+        const SUPABASE_KEY = "sb_publishable_Xn2UjMtIkzXQU_6xPlMvrg_Rtc9VY0v";
 
-        // Firebase 초기화
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 1. 모바일 브라우저에서도 고유하게 나를 식별할 ID 부여 (로컬스토리지 활용)
+        // 모바일 브라우저 고유 ID 부여 (로컬스토리지 활용)
         let myId = localStorage.getItem('user_uuid');
         if (!myId) {
-            myId = 'm_' + Math.random().toString(36).substring(2, 9);
+            myId = 'user_' + Math.random().toString(36).substring(2, 9);
             localStorage.setItem('user_uuid', myId);
         }
 
-        const myPresenceRef = ref(db, 'presence/' + myId);
+        let myNickname = '';
 
-        // 2. [접속 신호 전송] 페이지에 들어오자마자 내 존재와 빈 닉네임("이름 없음")을 서버에 등록
-        set(myPresenceRef, {
-            id: myId,
-            nickname: '',
-            lastActive: Date.now()
+        // Supabase Realtime 채널 생성 (Presence 기능)
+        const room = supabase.channel('online-users-room', {
+            config: {
+                presence: {
+                    key: myId,
+                },
+            },
         });
 
-        // 3. [퇴장 감지] 사용자가 브라우저를 끄거나 나가면 서버에서 자동으로 내 데이터 삭제
-        onDisconnect(myPresenceRef).remove();
-
-        // 모바일 환경에서 브라우저를 숨기거나 닫을 때 확실하게 처리하기 위한 이벤트
-        window.addEventListener('beforeunload', () => {
-            set(myPresenceRef, null);
-        });
-
-        // 4. [닉네임 실시간 동기화] 입력창에 타이핑하는 즉시 새로고침 없이 서버와 타인에게 전송
-        const nicknameInput = document.getElementById('nickname');
-        nicknameInput.addEventListener('input', (e) => {
-            const newName = e.target.value;
-            update(myPresenceRef, {
-                nickname: newName,
-                lastActive: Date.now()
+        // 내 상태(아이디, 닉네임)를 서버에 전송하는 함수
+        async function updatePresence() {
+            await room.track({
+                id: myId,
+                nickname: myNickname,
+                onlineAt: new Date().toISOString()
             });
+        }
+
+        // 다른 사람이 들어오거나 나갈 때, 이름을 바꿀 때 실시간 동기화
+        room.on('presence', { event: 'sync' }, () => {
+            const state = room.presenceState();
+            renderUserList(state);
         });
 
-        // 5. [실시간 수신 및 동기화] 다른 사람이 들어오거나 이름을 바꿀 때 실시간 반영 (새로고침 불필요)
-        const presenceRef = ref(db, 'presence');
-        onValue(presenceRef, (snapshot) => {
-            const data = snapshot.val();
+        // 채널 접속 성공 시 내 상태 등록
+        room.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                await updatePresence();
+            }
+        });
+
+        // 닉네임 입력창 타이핑 즉시 실시간 동기화 (새로고침 불필요)
+        const nicknameInput = document.getElementById('nickname');
+        nicknameInput.addEventListener('input', async (e) => {
+            myNickname = e.target.value;
+            await updatePresence();
+        });
+
+        // 접속자 목록 화면 렌더링 함수
+        function renderUserList(state) {
             const userListContainer = document.getElementById('userListContainer');
             const onlineCountBadge = document.getElementById('onlineCount');
 
-            if (!data) {
-                onlineCountBadge.innerText = '접속중 0명';
+            const allPresences = [];
+            Object.values(state).forEach(presences => {
+                if (presences && presences.length > 0) {
+                    allPresences.push(presences[0]);
+                }
+            });
+
+            onlineCountBadge.innerText = `접속중 ${allPresences.length}명`;
+
+            if (allPresences.length === 0) {
                 userListContainer.innerHTML = `<div class="empty-state">현재 접속 중인 사람이 없습니다.</div>`;
                 return;
             }
 
-            const users = Object.values(data);
-            onlineCountBadge.innerText = `접속중 ${users.length}명`;
-
-            userListContainer.innerHTML = users.map(user => {
-                // 이름이 없거나 공백이면 무조건 "이름 없음"으로 표시
+            userListContainer.innerHTML = allPresences.map(user => {
+                // 이름이 비어있으면 "이름 없음"으로 표시
                 const displayName = (user.nickname && user.nickname.trim() !== '') ? user.nickname : '이름 없음';
                 const initial = displayName.charAt(0).toUpperCase();
                 const isMe = user.id === myId ? ' (나)' : '';
@@ -97,7 +103,7 @@
                     </div>
                 `;
             }).join('');
-        });
+        }
     </script>
 
     <style>
@@ -119,7 +125,7 @@
             overflow: hidden;
         }
 
-        /* 왼쪽 카드 UI (40% 확대) */
+        /* 왼쪽 카드 UI */
         .card {
             width: 336px;           
             height: 434px;          
