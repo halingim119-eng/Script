@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>왼쪽 카드 UI - 캐릭터 및 닉네임</title>
     
-    <!-- 브라우저가 이 이미지를 백그라운드에서 가장 먼저 다운로드하도록 사전 지시 (초고속 로딩) -->
+    <!-- 브라우저가 이 이미지를 백그라운드에서 가장 먼저 다운로드하도록 사전 지시 -->
     <link rel="preload" as="image" href="https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400" fetchpriority="high">
 
     <style>
@@ -28,32 +28,33 @@
 
         /* 왼쪽 카드 UI 스타일 */
         .card {
-            width: 350px;           
-            height: 80%;            
+            width: 380px;           
+            height: 580px;          /* 고정 높이를 주어 내용물에 의해 카드가 깨지지 않고 안정적으로 유지되도록 설정 */
             background-color: #ffffff;
             border-radius: 16px;    
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); 
             border: 1px solid #f0f0f0; 
-            padding: 30px 24px;          
+            padding: 35px 24px;          
             display: flex;
             flex-direction: column;
             justify-content: space-between; 
-            position: relative;
         }
 
         /* 카드 중앙에서 살짝 위쪽을 차지하는 이미지 영역 */
         .card-image-container {
+            width: 100%;
             flex: 1;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            transform: translateY(-25px); 
+            /* 위쪽으로 살짝 올리기 */
+            transform: translateY(-15px); 
+            overflow: hidden;
         }
 
         .card-image {
-            max-width: 85%;
-            max-height: 220px;
+            max-width: 90%;
+            max-height: 320px;      /* 이미지가 너무 커져서 레이아웃을 밀어내는 것 방지 */
             object-fit: contain;
         }
 
@@ -63,7 +64,6 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            margin-bottom: 10px;
         }
 
         .nickname-label {
@@ -100,8 +100,7 @@
                  alt="캐릭터 이미지" 
                  class="card-image"
                  fetchpriority="high"
-                 loading="eager"
-                 onerror="this.style.display='none'; console.error('이미지 로드 실패');">
+                 loading="eager">
         </div>
 
         <!-- 카드 아래쪽 닉네임 입력 영역 -->
