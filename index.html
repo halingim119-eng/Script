@@ -5,103 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>미완성</title>
     
+    <!-- 이미지 사전 로드 -->
     <link rel="preload" as="image" href="https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400" fetchpriority="high">
 
-    <!-- Supabase 대신 MQTT.js를 사용하여 실시간 통신 구현 (회원가입/키 불필요) -->
+    <!-- Supabase JS SDK -->
     <script type="module">
-        import mqtt from 'https://cdn.jsdelivr.net/npm/mqtt@5.0.5/+esm';
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-        // 1. 내 고유 ID 생성 (로컬 스토리지 저장)
+        const SUPABASE_URL = "https://knjblcpgxcixfbzcrrqg.supabase.co"; 
+        const SUPABASE_KEY = "sb_publishable_Xn2UjMtIkzXQU_6xPlMvrg_Rtc9VY0v";
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 모바일 브라우저 고유 ID 부여 (로컬스토리지 활용)
         let myId = localStorage.getItem('user_uuid');
         if (!myId) {
-            myId = 'user_' + Math.random().toString(36).substring(2, 10);
+            myId = 'user_' + Math.random().toString(36).substring(2, 9);
             localStorage.setItem('user_uuid', myId);
         }
+
         let myNickname = '';
 
-        // 2. 실시간 접속자를 담을 맵(Map) 생성
-        const onlineUsers = new Map();
-
-        // 3. 무료 공개 MQTT 브로커 연결 (전 세계 누구나 사용 가능한 실시간 서버)
-        const brokerUrl = 'wss://broker.emqx.io:8083/mqtt';
-        
-        // 우리 사이트만의 고유한 접속 채널 (다른 사람과 겹치지 않게 고유한 이름 지정)
-        const roomTopic = 'my-netlify-chat-presence-v1/'; 
-
-        // 4. 연결 설정 (핵심: Last Will 기능으로 브라우저가 꺼지면 알아서 오프라인 알림)
-        const client = mqtt.connect(brokerUrl, {
-            clientId: myId,
-            clean: true,
-            connectTimeout: 4000,
-            will: {
-                topic: roomTopic + myId,
-                payload: JSON.stringify({ status: 'offline' }), // 내가 갑자기 튕기면 전송될 메시지
-                qos: 1,
-                retain: true // 서버가 마지막 상태를 기억함
-            }
+        // Supabase Realtime 채널 생성 (Presence 기능)
+        const room = supabase.channel('online-users-room', {
+            config: {
+                presence: {
+                    key: myId,
+                },
+            },
         });
 
-        // 내 상태를 서버에 뿌리는 함수
-        function updatePresence() {
-            if (client.connected) {
-                client.publish(roomTopic + myId, JSON.stringify({
-                    id: myId,
-                    nickname: myNickname,
-                    status: 'online',
-                    timestamp: new Date().toISOString()
-                }), { qos: 1, retain: true }); // retain: true로 설정해야 새로 들어온 사람도 내 상태를 즉시 봄
-            }
+        // 내 상태(아이디, 닉네임)를 서버에 전송하는 함수
+        async function updatePresence() {
+            await room.track({
+                id: myId,
+                nickname: myNickname,
+                onlineAt: new Date().toISOString()
+            });
         }
 
-        // 5. 서버 접속 완료 시
-        client.on('connect', () => {
-            console.log('실시간 서버 연결 완료!');
-            // 이 방에서 일어나는 모든 상태 변화 구독
-            client.subscribe(roomTopic + '+');
-            
-            // 내 현재 상태 전송
-            updatePresence();
+        // 다른 사람이 들어오거나 나갈 때, 이름을 바꿀 때 실시간 동기화
+        room.on('presence', { event: 'sync' }, () => {
+            const state = room.presenceState();
+            renderUserList(state);
         });
 
-        // 6. 누군가 들어오거나 나가거나 닉네임을 바꿨을 때 수신
-        client.on('message', (topic, message) => {
-            const userId = topic.split('/').pop();
-            try {
-                const data = JSON.parse(message.toString());
-                
-                // 오프라인 상태 메시지를 받으면 목록에서 제거
-                if (data.status === 'offline') {
-                    onlineUsers.delete(userId);
-                } else {
-                    // 온라인 상태면 목록에 추가하거나 닉네임 업데이트
-                    onlineUsers.set(userId, data);
-                }
-                renderUserList();
-            } catch(e) {
-                console.error('데이터 처리 에러', e);
+        // 채널 접속 성공 시 내 상태 등록
+        room.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') {
+                await updatePresence();
             }
         });
 
-        // 7. 닉네임 입력창 타이핑 즉시 실시간 동기화
+        // 닉네임 입력창 타이핑 즉시 실시간 동기화 (새로고침 불필요)
         const nicknameInput = document.getElementById('nickname');
-        nicknameInput.addEventListener('input', (e) => {
+        nicknameInput.addEventListener('input', async (e) => {
             myNickname = e.target.value;
-            updatePresence();
+            await updatePresence();
         });
 
-        // 정상적으로 브라우저를 닫고 나갈 때 오프라인 신호 전송
+        // 🧹 [자원 절약/정리] 페이지를 닫거나 다른 곳으로 이동할 때 서버에 신호 즉시 삭제 요청
         window.addEventListener('beforeunload', () => {
-            client.publish(roomTopic + myId, JSON.stringify({ status: 'offline' }), { retain: true });
-            client.end();
+            room.untrack();
+        });
+        window.addEventListener('pagehide', () => {
+            room.untrack();
         });
 
-        // 8. 화면에 접속자 목록 렌더링
-        function renderUserList() {
+        // 접속자 목록 화면 렌더링 함수
+        function renderUserList(state) {
             const userListContainer = document.getElementById('userListContainer');
             const onlineCountBadge = document.getElementById('onlineCount');
 
-            // Map 데이터를 배열로 변환
-            const allPresences = Array.from(onlineUsers.values());
+            const allPresences = [];
+            Object.values(state).forEach(presences => {
+                if (presences && presences.length > 0) {
+                    allPresences.push(presences[0]);
+                }
+            });
 
             onlineCountBadge.innerText = `접속중 ${allPresences.length}명`;
 
@@ -111,6 +92,7 @@
             }
 
             userListContainer.innerHTML = allPresences.map(user => {
+                // 이름이 비어있으면 "이름 없음"으로 표시
                 const displayName = (user.nickname && user.nickname.trim() !== '') ? user.nickname : '이름 없음';
                 const initial = displayName.charAt(0).toUpperCase();
                 const isMe = user.id === myId ? ' (나)' : '';
@@ -132,29 +114,194 @@
     </script>
 
     <style>
-        /* (이하 CSS 코드는 기존과 완벽하게 동일합니다) */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #ffffff; width: 100vw; height: 100vh; display: flex; align-items: center; padding: 40px; gap: 30px; font-family: 'Malgun Gothic', sans-serif; overflow: hidden; }
-        .card { width: 336px; height: 434px; background-color: #ffffff; border-radius: 20px; box-shadow: 0 11px 34px rgba(0, 0, 0, 0.08); border: 1px solid #f0f0f0; padding: 22px 20px; display: flex; flex-direction: column; justify-content: space-between; flex-shrink: 0; }
-        .card-image-container { width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; transform: translateY(-6px); overflow: hidden; }
-        .card-image { max-width: 75%; max-height: 196px; object-fit: contain; }
-        .nickname-section { width: 100%; display: flex; flex-direction: column; gap: 6px; }
-        .nickname-label { font-size: 15px; font-weight: 600; color: #555555; }
-        .nickname-input { width: 100%; padding: 11px 14px; font-size: 18px; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; background-color: #fafafa; }
-        .nickname-input:focus { border-color: #007bff; background-color: #ffffff; box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1); }
-        .main-container-card { flex: 1; height: 434px; background-color: #ffffff; border-radius: 20px; box-shadow: 0 11px 34px rgba(0, 0, 0, 0.08); border: 1px solid #f0f0f0; padding: 30px; display: flex; flex-direction: column; }
-        .board-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; }
-        .board-title { font-size: 18px; font-weight: bold; color: #333333; }
-        .online-count-badge { background-color: #e6f4ea; color: #137333; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 6px; }
-        .live-dot { width: 8px; height: 8px; background-color: #34a853; border-radius: 50%; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
-        .user-list-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 5px; }
-        .user-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background-color: #f9f9f9; border-radius: 12px; border: 1px solid #eeeeee; }
-        .user-info { display: flex; align-items: center; gap: 12px; }
-        .user-avatar { width: 36px; height: 36px; background-color: #e2e8f0; color: #475569; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
-        .user-name { font-size: 15px; font-weight: 600; color: #333333; }
-        .user-status-text { font-size: 12px; color: #888888; }
-        .empty-state { margin: auto; text-align: center; color: #888888; font-size: 14px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #ffffff;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 40px;
+            gap: 30px; 
+            font-family: 'Malgun Gothic', sans-serif;
+            overflow: hidden;
+        }
+
+        /* 왼쪽 카드 UI */
+        .card {
+            width: 336px;           
+            height: 434px;          
+            background-color: #ffffff;
+            border-radius: 20px;    
+            box-shadow: 0 11px 34px rgba(0, 0, 0, 0.08); 
+            border: 1px solid #f0f0f0; 
+            padding: 22px 20px;     
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+            flex-shrink: 0; 
+        }
+
+        .card-image-container {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateY(-6px); 
+            overflow: hidden;
+        }
+
+        .card-image {
+            max-width: 75%;
+            max-height: 196px;      
+            object-fit: contain;
+        }
+
+        .nickname-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;               
+        }
+
+        .nickname-label {
+            font-size: 15px;        
+            font-weight: 600;
+            color: #555555;
+        }
+
+        .nickname-input {
+            width: 100%;
+            padding: 11px 14px;     
+            font-size: 18px;        
+            border: 1px solid #ddd;
+            border-radius: 8px;     
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-color: #fafafa;
+        }
+
+        .nickname-input:focus {
+            border-color: #007bff;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+
+        /* 오른쪽 큰 카드 영역 */
+        .main-container-card {
+            flex: 1; 
+            height: 434px; 
+            background-color: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 11px 34px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f0f0f0;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .board-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .board-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333333;
+        }
+
+        .online-count-badge {
+            background-color: #e6f4ea;
+            color: #137333;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #34a853;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .user-list-container {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 5px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background-color: #f9f9f9;
+            border-radius: 12px;
+            border: 1px solid #eeeeee;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background-color: #e2e8f0;
+            color: #475569;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .user-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333333;
+        }
+
+        .user-status-text {
+            font-size: 12px;
+            color: #888888;
+        }
+
+        .empty-state {
+            margin: auto;
+            text-align: center;
+            color: #888888;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -174,10 +321,10 @@
         </div>
     </div>
 
-    <!-- 오른쪽 카드: 실제 실시간 접속자 현황 -->
+    <!-- 오른쪽 카드: 미완성 현황판 -->
     <div class="main-container-card">
         <div class="board-header">
-            <div class="board-title">실시간 실제 접속자 현황</div>
+            <div class="board-title">미완성</div>
             <div class="online-count-badge">
                 <div class="live-dot"></div>
                 <span id="onlineCount">접속중 0명</span>
