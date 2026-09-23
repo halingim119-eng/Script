@@ -129,15 +129,24 @@
         }
 
         body {
-            background-color: #ffffff;
+            background-color: #f4f6f8;
             width: 100vw;
             height: 100vh;
             display: flex;
             align-items: center;
-            padding: 40px;
-            gap: 30px; 
+            justify-content: center;
             font-family: 'Malgun Gothic', sans-serif;
             overflow: hidden;
+        }
+
+        /* 모바일에서도 컴퓨터 화면 비율을 유지하기 위한 스케일링 래퍼 */
+        .desktop-scaler {
+            width: 900px;
+            height: 514px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            transform-origin: center center;
         }
 
         /* 왼쪽 카드 UI */
@@ -201,7 +210,7 @@
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
         }
 
-        /* 오른쪽 큰 카드 영역 (제목 원상복구 완료) */
+        /* 오른쪽 큰 카드 영역 */
         .main-container-card {
             flex: 1; 
             height: 434px; 
@@ -314,34 +323,62 @@
 </head>
 <body>
 
-    <!-- 왼쪽 카드 UI -->
-    <div class="card">
-        <div class="card-image-container">
-            <img src="https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400" 
-                 alt="캐릭터 이미지" 
-                 class="card-image"
-                 fetchpriority="high"
-                 loading="eager">
-        </div>
-        <div class="nickname-section">
-            <label for="nickname" class="nickname-label">닉네임</label>
-            <input type="text" id="nickname" class="nickname-input" placeholder="이름을 입력하세요">
-        </div>
-    </div>
-
-    <!-- 오른쪽 카드: 실시간 실제 접속자 현황 (제목 원상복구) -->
-    <div class="main-container-card">
-        <div class="board-header">
-            <div class="board-title">실시간 실제 접속자 현황</div>
-            <div class="online-count-badge">
-                <div class="live-dot"></div>
-                <span id="onlineCount">접속중 0명</span>
+    <!-- 컴퓨터 화면 레이아웃을 감싸는 스케일링 컨테이너 -->
+    <div class="desktop-scaler" id="desktopScaler">
+        <!-- 왼쪽 카드 UI -->
+        <div class="card">
+            <div class="card-image-container">
+                <img src="https://media.ffycdn.net/eu/supercell/B9aSwkAt73UKJgmPgSun.png?width=2400" 
+                     alt="캐릭터 이미지" 
+                     class="card-image"
+                     fetchpriority="high"
+                     loading="eager">
+            </div>
+            <div class="nickname-section">
+                <label for="nickname" class="nickname-label">닉네임</label>
+                <input type="text" id="nickname" class="nickname-input" placeholder="이름을 입력하세요">
             </div>
         </div>
 
-        <div class="user-list-container" id="userListContainer">
-            <div class="empty-state">접속자를 감지하는 중...</div>
+        <!-- 오른쪽 카드: 실시간 실제 접속자 현황 -->
+        <div class="main-container-card">
+            <div class="board-header">
+                <div class="board-title">실시간 실제 접속자 현황</div>
+                <div class="online-count-badge">
+                    <div class="live-dot"></div>
+                    <span id="onlineCount">접속중 0명</span>
+                </div>
+            </div>
+
+            <div class="user-list-container" id="userListContainer">
+                <div class="empty-state">접속자를 감지하는 중...</div>
+            </div>
         </div>
     </div>
+
+    <script>
+        // 모바일 화면 크기에 맞춰 가로 화면 UI를 자동으로 축소/확대해주는 스크립트
+        function resizeDesktopView() {
+            const scaler = document.getElementById('desktopScaler');
+            const targetWidth = 920;  // 기준 컴퓨터 화면 가로 너비
+            const targetHeight = 520; // 기준 컴퓨터 화면 세로 높이
+            
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+
+            const scaleX = windowWidth / targetWidth;
+            const scaleY = windowHeight / targetHeight;
+            let scale = Math.min(scaleX, scaleY);
+
+            // 여백을 조금 주기 위해 0.95 곱하기 (너무 꽉 차지 않도록)
+            scale = scale * 0.92;
+
+            scaler.style.transform = `scale(${scale})`;
+        }
+
+        window.addEventListener('resize', resizeDesktopView);
+        window.addEventListener('load', resizeDesktopView);
+        resizeDesktopView();
+    </script>
 </body>
 </html>
