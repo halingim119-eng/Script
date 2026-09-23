@@ -202,8 +202,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
             border-bottom: 1px solid #f1f5f9;
         }
 
@@ -277,12 +277,8 @@
 
         .tall-card {
             height: 270px;
-            overflow-y: auto;
-        }
-
-        .tall-card.target-select-active {
-            border: 2px solid #ef4444;
-            background-color: #fff5f5;
+            display: flex;
+            flex-direction: column;
         }
 
         .short-card {
@@ -296,7 +292,10 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            margin-top: 10px;
+            margin-top: 8px;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
         }
 
         .rank-item {
@@ -309,18 +308,18 @@
             font-size: 13px;
             font-weight: 600;
             transition: all 0.2s;
+            flex-shrink: 0;
         }
 
         .rank-item.selectable {
             cursor: pointer;
-            border: 1px solid #fca5a5;
+            border: 1px solid #cbd5e1;
             background-color: #ffffff;
         }
 
         .rank-item.selectable:hover {
-            background-color: #fee2e2;
-            transform: scale(1.02);
-            border-color: #ef4444;
+            background-color: #f1f5f9;
+            border-color: #2563eb;
         }
 
         .rank-badge {
@@ -363,16 +362,30 @@
             background-color: #e2e8f0;
         }
 
+        @keyframes btnGlowAnim {
+            0% { box-shadow: 0 0 5px #3b82f6; border-color: #3b82f6; }
+            50% { box-shadow: 0 0 15px #60a5fa, 0 0 10px #2563eb; border-color: #2563eb; }
+            100% { box-shadow: 0 0 5px #3b82f6; border-color: #3b82f6; }
+        }
+
+        .choice-btn.glowing-choice {
+            animation: btnGlowAnim 1.2s infinite alternate;
+            background-color: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+
         .choice-btn.correct {
             background-color: #22c55e !important;
             color: white !important;
             border-color: #16a34a !important;
+            animation: none !important;
         }
 
         .choice-btn.wrong {
             background-color: #ef4444 !important;
             color: white !important;
             border-color: #dc2626 !important;
+            animation: none !important;
         }
 
         .feedback-msg {
@@ -503,7 +516,7 @@
                 </div>
 
                 <div id="gameUI" class="card-section" style="display:none;">
-                    <div class="game-title-badge">3D 관찰 카메라 회전 중</div>
+                    <div class="game-title-badge" id="cameraStatusBadge">3D 관찰 카메라 회전 중</div>
                     <div id="threeContainer"></div>
                 </div>
 
@@ -531,7 +544,7 @@
 
                 <div id="gameRankingUI" class="game-right-layout" style="display:none;">
                     <div class="card tall-card" id="rankingCard">
-                        <div class="board-title" id="rankingTitle">🏆 실시간 Top 5 랭킹</div>
+                        <div class="board-title" id="rankingTitle">🏆 실시간 랭킹</div>
                         <div class="rank-list" id="rankingList"></div>
                     </div>
                     <div class="card short-card">
@@ -597,6 +610,11 @@
         let pendingAttackType = null;
         let isTargetSelectMode = false;
 
+        let isCameraFrozen = false;
+        let hasTripleScoreMultiplier = false;
+        let hasShiningEyesBuff = false;
+        let activeShiningEyesRound = false;
+
         const room = supabase.channel('online-users-room', {
             config: { presence: { key: myId } },
         });
@@ -659,12 +677,18 @@
             if (payload.action === 'start' || payload.action === 'next') {
                 gameStarted = true;
                 currentBlocks = payload.blocks;
+                
+                activeShiningEyesRound = hasShiningEyesBuff;
+                hasShiningEyesBuff = false;
+
                 applyUIState(true);
                 rebuildBlocks(currentBlocks);
                 setupChoices(currentBlocks.length);
             } else if (payload.action === 'end') {
                 gameStarted = false;
                 currentBlocks = [];
+                activeShiningEyesRound = false;
+                hasShiningEyesBuff = false;
                 applyUIState(false);
             }
         });
@@ -675,6 +699,8 @@
                     triggerGlitchEffect();
                 } else if (payload.type === 'taunt') {
                     triggerTauntEffect();
+                } else if (payload.type === 'freeze') {
+                    triggerFreezeEffect();
                 }
             }
         });
@@ -738,17 +764,15 @@
 
         function renderRankingList(users) {
             const container = document.getElementById('rankingList');
-            const card = document.getElementById('rankingCard');
             const title = document.getElementById('rankingTitle');
 
             if (isTargetSelectMode) {
-                card.classList.add('target-select-active');
                 title.innerHTML = `<span style="color: #ef4444;">🎯 공격할 상대방을 클릭하세요!</span>`;
 
-                container.innerHTML = users.map((u, idx) => {
+                container.innerHTML = users.map((u) => {
                     const isMe = u.id === myId;
                     const itemClass = isMe ? 'rank-item' : 'rank-item selectable';
-                    const targetBadge = isMe ? '<span style="color: #94a3b8; font-size: 11px;">(나)</span>' : '<span style="color: #ef4444; font-size: 11px; font-weight: bold;">[공격하기]</span>';
+                    const targetBadge = isMe ? '<span style="color: #94a3b8; font-size: 11px;">(나)</span>' : '<span style="color: #ef4444; font-size: 11px; font-weight: bold;">[지목하기]</span>';
                     
                     return `
                         <div class="${itemClass}" data-userid="${u.id}">
@@ -776,21 +800,20 @@
                     });
                 });
             } else {
-                card.classList.remove('target-select-active');
-                title.innerHTML = `🏆 실시간 Top 5 랭킹`;
+                title.innerHTML = `🏆 실시간 랭킹`;
 
-                let sorted = [...users].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 5);
+                let sorted = [...users].sort((a, b) => (b.score || 0) - (a.score || 0));
 
                 container.innerHTML = sorted.map((u, idx) => {
                     let badgeClass = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : 'rank-etc';
-                    let tier = idx === 0 ? '마스터' : idx === 1 ? '다이아' : idx === 2 ? '골드' : '실버';
+                    let rankText = idx < 3 ? `${idx + 1}등` : `${idx + 1}등`;
                     return `
                         <div class="rank-item">
                             <div>
-                                <span class="rank-badge ${badgeClass}">${idx + 1}등</span>
+                                <span class="rank-badge ${badgeClass}">${rankText}</span>
                                 <span style="margin-left: 6px;">${u.nickname || '익명'}</span>
                             </div>
-                            <span style="color: #64748b; font-size: 12px;">${tier} (${u.score || 0}점)</span>
+                            <span style="color: #64748b; font-size: 12px;">${u.score || 0}점</span>
                         </div>
                     `;
                 }).join('');
@@ -848,7 +871,8 @@
             container.innerHTML = '';
             feedback.innerText = '';
             hasGuessed = false;
-            toggleOutline(false);
+            
+            toggleOutline(activeShiningEyesRound);
 
             let choices = new Set([correctCount]);
             while (choices.size < 4) {
@@ -862,6 +886,9 @@
             arr.forEach(num => {
                 const btn = document.createElement('button');
                 btn.className = 'choice-btn';
+                if (activeShiningEyesRound) {
+                    btn.classList.add('glowing-choice');
+                }
                 btn.innerText = `${num}개`;
                 btn.addEventListener('click', () => {
                     if (hasGuessed || isTeacher) return;
@@ -870,9 +897,16 @@
 
                     if (num === correctCount) {
                         btn.classList.add('correct');
-                        feedback.innerText = '정답입니다! 카드 보상을 선택하세요.';
+                        let gainScore = 10;
+                        if (hasTripleScoreMultiplier) {
+                            gainScore = 30;
+                            hasTripleScoreMultiplier = false;
+                            feedback.innerText = `정답입니다! ⚡벼락치기 발동 (+30점)!`;
+                        } else {
+                            feedback.innerText = '정답입니다! 카드 보상을 선택하세요.';
+                        }
                         feedback.style.color = '#22c55e';
-                        myScore += 10;
+                        myScore += gainScore;
                         updatePresence();
                         setTimeout(() => openCardModal(), 500);
                     } else {
@@ -912,6 +946,24 @@
                     title: '괴롭히기 카드',
                     img: 'https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif',
                     desc: '상대방 화면을 2.5초 동안 거대한 이미지로 가립니다.'
+                },
+                {
+                    type: 'freeze',
+                    title: '얼음 카드',
+                    img: 'https://media.ffycdn.net/eu/supercell/6UFbyzBNqp1V5z9EASqM.png?width=2400',
+                    desc: '상대방을 지목하여 3초간 쌓기나무 회전을 멈춥니다.'
+                },
+                {
+                    type: 'lightning',
+                    title: '벼락 치기 카드',
+                    img: 'https://media.ffycdn.net/eu/supercell/Cz9rD81f7Qrva9kzgZvA.png?width=2400',
+                    desc: '다음 문제를 맞히면 얻는 점수가 3배(30점)로 폭증합니다.'
+                },
+                {
+                    type: 'shining_eyes',
+                    title: '빛나는 눈 카드',
+                    img: 'https://media.ffycdn.net/eu/supercell/Y7xeUH3uBvNkQBzSXkA6.png?width=2400',
+                    desc: '다음 라운드에 쌓기나무가 반투명해지고 윤곽선과 정답 버튼이 빛납니다.'
                 }
             ];
 
@@ -947,10 +999,17 @@
             if (card.type === 'coin') {
                 myScore += card.val;
                 updatePresence();
-            } else if (card.type === 'confusion' || card.type === 'taunt') {
-                pendingAttackType = card.type === 'confusion' ? 'glitch' : 'taunt';
+            } else if (card.type === 'confusion' || card.type === 'taunt' || card.type === 'freeze') {
+                if (card.type === 'confusion') pendingAttackType = 'glitch';
+                else if (card.type === 'taunt') pendingAttackType = 'taunt';
+                else if (card.type === 'freeze') pendingAttackType = 'freeze';
+                
                 isTargetSelectMode = true;
                 renderRankingList(activeUsers);
+            } else if (card.type === 'lightning') {
+                hasTripleScoreMultiplier = true;
+            } else if (card.type === 'shining_eyes') {
+                hasShiningEyesBuff = true;
             }
         }
 
@@ -997,6 +1056,16 @@
             }, 2500);
         }
 
+        function triggerFreezeEffect() {
+            isCameraFrozen = true;
+            const badge = document.getElementById('cameraStatusBadge');
+            if (badge) badge.innerText = "❄️ 카메라가 3초간 얼어붙었습니다!";
+            setTimeout(() => {
+                isCameraFrozen = false;
+                if (badge) badge.innerText = "3D 관찰 카메라 회전 중";
+            }, 3000);
+        }
+
         let scene, camera, renderer, blockGroup, outlineGroup, glitchGroup;
         let glitchMeshes = [];
         let cameraAngle = 0;
@@ -1033,7 +1102,11 @@
 
             function animate() {
                 requestAnimationFrame(animate);
-                cameraAngle += 0.012;
+                
+                if (!isCameraFrozen) {
+                    cameraAngle += 0.012;
+                }
+                
                 const radius = 8.5;
                 camera.position.x = 1 + radius * Math.cos(cameraAngle);
                 camera.position.z = 1 + radius * Math.sin(cameraAngle);
@@ -1058,9 +1131,22 @@
             while(outlineGroup.children.length > 0) outlineGroup.remove(outlineGroup.children[0]);
 
             const boxGeo = new THREE.BoxGeometry(1.0, 1.0, 1.0);
-            const boxMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.3, metalness: 0.1 });
+            
+            const isTransparent = activeShiningEyesRound;
+            const boxMat = new THREE.MeshStandardMaterial({ 
+                color: 0x3b82f6, 
+                roughness: 0.3, 
+                metalness: 0.1,
+                transparent: isTransparent,
+                opacity: isTransparent ? 0.6 : 1.0
+            });
+
             const edgesGeo = new THREE.EdgesGeometry(boxGeo);
-            const lineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, linewidth: 2, depthTest: false });
+            const lineMat = new THREE.LineBasicMaterial({ 
+                color: isTransparent ? 0x00ffff : 0x00ffcc, 
+                linewidth: 2, 
+                depthTest: false 
+            });
 
             blocks.forEach(b => {
                 const mesh = new THREE.Mesh(boxGeo, boxMat);
@@ -1069,7 +1155,7 @@
 
                 const line = new THREE.LineSegments(edgesGeo, lineMat);
                 line.position.set(b.x, b.z, b.y);
-                line.visible = false;
+                line.visible = activeShiningEyesRound;
                 outlineGroup.add(line);
             });
         }
