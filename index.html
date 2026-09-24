@@ -1,321 +1,567 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>접속자 정보 & 갤러리 대시보드</title>
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-sub: #94a3b8;
-            --accent: #38bdf8;
-            --border: #334155;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            padding: 2rem 1rem;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        header {
-            text-align: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-        }
-
-        header h1 {
-            font-size: 1.8rem;
-            color: var(--accent);
-            margin-bottom: 0.5rem;
-        }
-
-        header p {
-            color: var(--text-sub);
-            font-size: 0.95rem;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-        }
-
-        .card-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--accent);
-        }
-
-        /* 접속자 정보 그리드 */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 1rem;
-        }
-
-        .info-item {
-            background-color: rgba(15, 23, 42, 0.6);
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-        }
-
-        .info-label {
-            font-size: 0.8rem;
-            color: var(--text-sub);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.3rem;
-        }
-
-        .info-value {
-            font-size: 1.05rem;
-            font-weight: 600;
-            word-break: break-all;
-        }
-
-        .flag-img {
-            height: 16px;
-            vertical-align: middle;
-            margin-left: 6px;
-        }
-
-        /* 갤러리 섹션 */
-        .gallery-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .btn-refresh {
-            background-color: var(--accent);
-            color: #0f172a;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .btn-refresh:hover {
-            opacity: 0.9;
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1rem;
-        }
-
-        .img-container {
-            position: relative;
-            width: 100%;
-            height: 200px;
-            background-color: #0f172a;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
-
-        .img-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-
-        .img-container:hover img {
-            transform: scale(1.05);
-        }
-
-        .loading-text {
-            color: var(--accent);
-            font-size: 0.9rem;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D 쌓기나무 실시간 클래스</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Malgun Gothic',sans-serif;overflow:hidden}
+.main-container{display:flex;align-items:center;justify-content:center;gap:20px;padding:20px;max-width:900px;width:100%}
+.card{background:#fff;border-radius:16px;box-shadow:0 10px 25px -5px rgba(0,0,0,.08);border:1px solid #e2e8f0;padding:20px;display:flex;flex-direction:column}
+.left-card{width:320px;height:490px;flex-shrink:0;gap:8px}
+/* 이미지 카드: 게임 전/중 항상 같은 크기·위치 */
+.card-image-container{width:100%;height:170px;flex:none;display:flex;align-items:center;justify-content:center}
+.card-image{width:85%;height:100%;object-fit:contain}
+.card-section{width:100%;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+#gameUI{justify-content:flex-start}
+.nickname-section{width:100%;display:flex;flex-direction:column;gap:6px}
+.nickname-label{font-size:14px;font-weight:600;color:#475569}
+.nickname-input{width:100%;padding:10px 12px;font-size:15px;border:1px solid #cbd5e1;border-radius:8px;outline:none;background:#f8fafc}
+.nickname-input:focus{border-color:#2563eb;background:#fff}
+#threeContainer{width:100%;flex:1;min-height:0;position:relative;border-radius:12px;overflow:hidden;background:#f8fafc}
+#threeContainer canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.game-title-badge{flex:none;font-size:13px;font-weight:bold;color:#1e293b;background:#e2e8f0;padding:4px 12px;border-radius:12px;margin-bottom:6px}
+.btn{width:100%;padding:11px;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;transition:all .2s;margin-top:6px;flex:none}
+.btn-red{background:#ef4444}.btn-red:hover{background:#dc2626}
+.btn-blue{background:#2563eb}.btn-blue:hover{background:#1d4ed8}
+.btn-outline{background:#f8fafc;color:#475569;border:1px solid #cbd5e1}.btn-outline:hover{background:#f1f5f9;color:#1e293b}
+.teacher-btn-group{width:100%;display:flex;gap:8px;flex:none}
+.right-card-container{flex:1;height:490px;display:flex;flex-direction:column}
+.right-card{width:100%;height:100%}
+.board-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f1f5f9}
+.board-title{font-size:16px;font-weight:bold;color:#1e293b}
+.online-count-badge{background:#dcfce7;color:#15803d;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:6px}
+.transparent-code-input{width:56px;border:none;background:transparent;outline:none;font-size:12px;color:#15803d;font-weight:600;text-align:center}
+.live-dot{width:8px;height:8px;background:#22c55e;border-radius:50%}
+.user-list-container{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px}
+.user-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #f1f5f9}
+.user-info{display:flex;align-items:center;gap:10px}
+.user-avatar-mini{width:32px;height:32px;border-radius:50%;object-fit:contain;background:#fff;border:1px solid #cbd5e1}
+.user-name{font-size:14px;font-weight:600;color:#334155}
+.profile-grid-container{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-right:4px}
+.profile-thumb-card{background:#f8fafc;border:2px solid #e2e8f0;border-radius:10px;padding:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.profile-thumb-card:hover{border-color:#2563eb;background:#eff6ff;transform:scale(1.03)}
+.profile-thumb-img{width:100%;height:65px;object-fit:contain}
+.game-right-layout{width:100%;height:100%;display:flex;flex-direction:column;gap:14px}
+.tall-card{height:280px}
+.short-card{height:196px;justify-content:space-between;align-items:center;text-align:center}
+.rank-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;flex:1;overflow-y:auto;padding-right:4px}
+.rank-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#f8fafc;border-radius:8px;font-size:13px;font-weight:600;flex-shrink:0}
+.rank-item.selectable{cursor:pointer;border:1px solid #cbd5e1;background:#fff}
+.rank-item.selectable:hover{background:#f1f5f9;border-color:#2563eb}
+.rank-badge{padding:2px 8px;border-radius:12px;color:#fff;font-size:11px}
+.rank-1{background:#eab308}.rank-2{background:#94a3b8}.rank-3{background:#b45309}.rank-etc{background:#cbd5e1;color:#475569}
+.quiz-title{font-size:15px;font-weight:bold;color:#1e293b}
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.choice-btn{padding:12px;font-size:15px;font-weight:bold;background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;transition:all .2s}
+.choice-btn:hover{background:#e2e8f0}
+@keyframes btnGlowAnim{0%{box-shadow:0 0 5px #3b82f6;border-color:#3b82f6}50%{box-shadow:0 0 15px #60a5fa,0 0 10px #2563eb;border-color:#2563eb}100%{box-shadow:0 0 5px #3b82f6;border-color:#3b82f6}}
+.choice-btn.glowing-choice{animation:btnGlowAnim 1.2s infinite alternate;background:#eff6ff!important;color:#1d4ed8!important}
+.choice-btn.correct{background:#22c55e!important;color:#fff!important;border-color:#16a34a!important;animation:none!important}
+.choice-btn.wrong{background:#ef4444!important;color:#fff!important;border-color:#dc2626!important;animation:none!important}
+.feedback-msg{font-size:13px;font-weight:bold;height:18px}
+.empty-state{margin:auto;color:#94a3b8;font-size:13px}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.active{opacity:1;pointer-events:auto}
+.card-container{display:flex;gap:20px}
+.reward-card{width:200px;height:290px;background:#fff;border-radius:16px;box-shadow:0 20px 25px -5px rgba(0,0,0,.2);border:2px solid #e2e8f0;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;cursor:pointer;transition:transform .2s,border-color .2s}
+.reward-card:hover{transform:translateY(-8px) scale(1.03);border-color:#2563eb}
+.reward-card-title{font-size:16px;font-weight:bold;color:#0f172a;text-align:center}
+.reward-card-img{width:100px;height:100px;object-fit:contain}
+.reward-card-desc{font-size:12px;color:#64748b;text-align:center;word-break:keep-all}
+#tauntOverlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
+#tauntOverlay img{width:95vw;height:95vh;max-width:1400px;max-height:1400px;object-fit:contain;transform:scale(1.8)}
+</style>
 </head>
 <body>
+<div class="main-container">
+  <div class="card left-card">
+    <div class="card-image-container"><img id="cardImage" alt="캐릭터" class="card-image"></div>
 
-<div class="container">
-    <header>
-        <h1>실시간 접속자 정보 & 이미지 로더</h1>
-        <p>클라이언트 및 네트워크 상태 단일 페이지 확인 시스템</p>
-    </header>
+    <div id="normalUI" class="card-section">
+      <div class="nickname-section">
+        <label for="nickname" class="nickname-label">닉네임</label>
+        <input type="text" id="nickname" class="nickname-input" placeholder="이름을 입력하세요" maxlength="12" autocomplete="off">
+        <button id="changeProfileBtn" class="btn btn-outline">📸 프로필 사진 변경</button>
+      </div>
+    </div>
 
-    <!-- 접속자 정보 카드 -->
-    <section class="card">
-        <div class="card-title">🌐 접속자 정보 (Network & Device)</div>
-        <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">IP 주소</div>
-                <div class="info-value" id="ip-address"><span class="loading-text">불러오는 중...</span></div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">위치 (국가 / 도시)</div>
-                <div class="info-value" id="location"><span class="loading-text">불러오는 중...</span></div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">인터넷 서비스 제공업체 (ISP)</div>
-                <div class="info-value" id="isp"><span class="loading-text">불러오는 중...</span></div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">운영체제 / 브라우저</div>
-                <div class="info-value" id="browser-info">-</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">화면 해상도</div>
-                <div class="info-value" id="screen-res">-</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">시간대 및 언어</div>
-                <div class="info-value" id="time-lang">-</div>
-            </div>
-        </div>
-    </section>
+    <div id="gameUI" class="card-section" style="display:none;">
+      <div class="game-title-badge" id="cameraStatusBadge">3D 관찰 카메라 회전 중</div>
+      <div id="threeContainer"></div>
+    </div>
 
-    <!-- 이미지 갤러리 카드 -->
-    <section class="card">
-        <div class="gallery-header">
-            <div class="card-title" style="margin-bottom:0;">🖼️ 고화질 이미지 갤러리</div>
-            <button class="btn-refresh" onclick="loadImages()">이미지 새로고침</button>
+    <div id="teacherControls" class="teacher-btn-group" style="display:none;">
+      <button id="nextBtn" class="btn btn-blue">다음 문제</button>
+      <button id="endBtn" class="btn btn-red">종료</button>
+    </div>
+    <button id="startBtn" class="btn btn-red" style="display:none;">시작</button>
+  </div>
+
+  <div class="right-card-container">
+    <div id="defaultUserListUI" class="card right-card">
+      <div class="board-header">
+        <div class="board-title">실시간 실제 접속자 현황</div>
+        <div class="online-count-badge">
+          <div class="live-dot"></div>
+          <span id="onlineCountText">접속중 0명</span>
+          <input type="password" id="teacherCode" class="transparent-code-input" placeholder="코드" autocomplete="new-password">
         </div>
-        <div class="gallery-grid" id="gallery-grid">
-            <!-- 자바스크립트로 이미지 삽입 -->
-        </div>
-    </section>
+      </div>
+      <div class="user-list-container" id="userListContainer"><div class="empty-state">접속자를 감지하는 중...</div></div>
+    </div>
+
+    <div id="profilePickerUI" class="card right-card" style="display:none;">
+      <div class="board-header">
+        <div class="board-title">📸 프로필 사진 선택</div>
+        <button id="closeProfilePickerBtn" style="border:none;background:none;cursor:pointer;font-size:13px;color:#64748b;font-weight:bold;">닫기 ✕</button>
+      </div>
+      <div class="profile-grid-container" id="profileGrid"></div>
+    </div>
+
+    <div id="gameRankingUI" class="game-right-layout" style="display:none;">
+      <div class="card tall-card">
+        <div class="board-title" id="rankingTitle">🏆 실시간 랭킹</div>
+        <div class="rank-list" id="rankingList"></div>
+      </div>
+      <div class="card short-card">
+        <div class="quiz-title">쌓기나무는 모두 몇 개일까요?</div>
+        <div class="choice-grid" id="choiceButtons"></div>
+        <div id="feedbackMessage" class="feedback-msg"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<script>
-    // 1. 브라우저 로컬 정보 즉시 로드 (네트워크 미연결 시에도 동작)
-    function loadLocalDeviceInfo() {
-        const ua = navigator.userAgent;
-        let os = "Unknown OS";
-        if (ua.includes("Win")) os = "Windows";
-        else if (ua.includes("Mac")) os = "macOS";
-        else if (ua.includes("Linux")) os = "Linux";
-        else if (ua.includes("Android")) os = "Android";
-        else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
+<div class="modal-overlay" id="cardModalOverlay"><div class="card-container" id="cardContainer"></div></div>
+<div id="tauntOverlay"><img src="https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif" alt="야유"></div>
 
-        let browser = "Unknown Browser";
-        if (ua.includes("Chrome") && !ua.includes("Edg")) browser = "Chrome";
-        else if (ua.includes("Edg")) browser = "Edge";
-        else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
-        else if (ua.includes("Firefox")) browser = "Firefox";
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-        document.getElementById('browser-info').textContent = `${os} / ${browser}`;
-        document.getElementById('screen-res').textContent = `${window.screen.width} x ${window.screen.height} (색상 깊이: ${window.screen.colorDepth}-bit)`;
-        
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const lang = navigator.language;
-        document.getElementById('time-lang').textContent = `${tz} (${lang})`;
+const supabase = createClient("https://knjblcpgxcixfbzcrrqg.supabase.co", "sb_publishable_Xn2UjMtIkzXQU_6xPlMvrg_Rtc9VY0v");
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// 탭마다 고유 ID (같은 브라우저 탭끼리 한 명으로 합쳐지는 문제 방지, 새로고침해도 유지)
+let myId = sessionStorage.getItem('user_uuid');
+if (!myId) { myId = 'user_' + Math.random().toString(36).slice(2, 9); sessionStorage.setItem('user_uuid', myId); }
+
+const GAME_CARD_IMAGE = "https://media.ffycdn.net/eu/supercell/w6fRpxtAdEXsWLjHEzHD.png?width=2400";
+const characterImages = [
+  "B9aSwkAt73UKJgmPgSun","QnZRLnpy7ckitzeuASFz","S6nkFKmpdZs1c8qRUo8f","tTtXs4ftdtuBh85yq9tY",
+  "s83nEEJ4ZKPXzgKjDrF3","HDkXgubferFDkbkHJAXo","w6fRpxtAdEXsWLjHEzHD","aVJ7E8hmdXBjNbT9CHeM",
+  "m823rLr57CeLZdx2ivfZ","6PVSgKBY4KNpkabWr9bj","fTRckDCnv8CLTEMDi3tt","6jGjY3JAbFrkSx4FaiVH",
+  "Qmxk7V5tFcmLGeCVueWT","XTTrodLDSVQVrjhYbs2Z","ACfDodL3WGgMD3ybdHvn","7a6mrhbBHByusVgTvkoS"
+].map(id => `https://media.ffycdn.net/eu/supercell/${id}.png?width=2400`);
+
+let selectedImage = characterImages[Math.floor(Math.random() * characterImages.length)];
+$('cardImage').src = selectedImage;
+
+let isTeacher = false, myNickname = '익명', gameStarted = false, myScore = 0;
+let currentBlocks = [], currentRoundId = 0, hasGuessed = false, activeUsers = [];
+let pendingAttackType = null, isTargetSelectMode = false;
+let isCameraFrozen = false, hasTripleScoreMultiplier = false, hasShiningEyesBuff = false, activeShiningEyesRound = false;
+
+const joinedAt = Date.now();
+let isSubscribed = false, presenceTimer = null;
+const seenMap = new Map();          // 다른 사람의 마지막 하트비트 확인 시각
+const HEARTBEAT_MS = 15000, STALE_MS = 45000;
+let lastListHtml = '', lastRankHtml = '';
+
+const room = supabase.channel('online-users-room', { config: { presence: { key: myId } } });
+
+/* ---------- 접속자 동기화 ---------- */
+function getMyPayload() {
+  return {
+    id: myId, nickname: myNickname, avatarUrl: selectedImage, score: myScore,
+    isTeacher, gameStarted: isTeacher && gameStarted,
+    round: isTeacher ? currentRoundId : 0, blocks: isTeacher ? currentBlocks : [],
+    joinedAt, hb: Date.now()
+  };
+}
+
+function syncNickname() {
+  const base = $('nickname').value.trim();
+  const name = base || (isTeacher ? '선생님' : '익명');
+  myNickname = isTeacher ? `(선생님) ${name}` : name;
+  updatePresence();
+}
+
+function updatePresence() {
+  renderAll();                                   // 내 화면엔 즉시 반영
+  clearTimeout(presenceTimer);
+  presenceTimer = setTimeout(doTrack, 200);      // 서버 전송은 살짝 모아서
+}
+
+async function doTrack() {
+  if (!isSubscribed) return;
+  try { await room.track(getMyPayload()); } catch (e) { console.warn('track 실패', e); }
+}
+
+function collectUsers() {
+  const now = Date.now(), map = new Map();
+  Object.values(room.presenceState()).forEach(list => (list || []).forEach(u => {
+    if (!u || !u.id) return;
+    const prev = map.get(u.id);
+    if (!prev || (u.hb || 0) >= (prev.hb || 0)) map.set(u.id, u);
+  }));
+  // 하트비트가 멈춘 유령 접속자 제거
+  map.forEach((u, id) => {
+    if (id === myId) return;
+    const s = seenMap.get(id);
+    if (!s || s.hb !== u.hb) seenMap.set(id, { hb: u.hb, at: now });
+  });
+  [...seenMap.keys()].forEach(id => { if (!map.has(id)) seenMap.delete(id); });
+  [...map.keys()].forEach(id => { if (id !== myId && now - seenMap.get(id).at > STALE_MS) map.delete(id); });
+  map.set(myId, getMyPayload());
+  return [...map.values()].sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0) || String(a.id).localeCompare(String(b.id)));
+}
+
+function renderAll() {
+  const users = collectUsers();
+  activeUsers = users;
+  if (!isTeacher) {
+    const t = users.find(u => u.isTeacher && u.gameStarted);
+    if (t) { if (t.blocks && t.blocks.length && t.round !== currentRoundId) applyRound(t.blocks, t.round); }
+    else if (gameStarted) endGameLocal();
+  }
+  renderUserList(users);
+  renderRankingList(users);
+}
+
+function applyRound(blocks, roundId) {
+  if (roundId && roundId === currentRoundId && gameStarted) return;
+  currentRoundId = roundId;
+  gameStarted = true;
+  currentBlocks = blocks;
+  activeShiningEyesRound = hasShiningEyesBuff;
+  hasShiningEyesBuff = false;
+  applyUIState(true);
+  rebuildBlocks(blocks);
+  setupChoices(blocks.length);
+}
+
+function endGameLocal() {
+  gameStarted = false; currentBlocks = [];
+  activeShiningEyesRound = false; hasShiningEyesBuff = false;
+  applyUIState(false);
+}
+
+room.on('presence', { event: 'sync' }, renderAll);
+
+room.on('broadcast', { event: 'game_control' }, ({ payload }) => {
+  if (isTeacher) return;
+  if (payload.action === 'end') endGameLocal();
+  else applyRound(payload.blocks, payload.round);
+});
+
+room.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
+  if (payload.targetId !== myId) return;
+  if (payload.type === 'glitch') triggerGlitchEffect();
+  else if (payload.type === 'taunt') triggerTauntEffect();
+  else if (payload.type === 'freeze') triggerFreezeEffect();
+});
+
+room.subscribe(async status => {
+  if (status === 'SUBSCRIBED') { isSubscribed = true; await doTrack(); renderAll(); }
+  else if (['CLOSED', 'CHANNEL_ERROR', 'TIMED_OUT'].includes(status)) isSubscribed = false;
+});
+
+setInterval(() => { if (isSubscribed) doTrack(); }, HEARTBEAT_MS + Math.floor(Math.random() * 3000));
+setInterval(renderAll, 5000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { doTrack(); renderAll(); } });
+window.addEventListener('online', doTrack);
+window.addEventListener('pageshow', e => { if (e.persisted) doTrack(); });
+window.addEventListener('pagehide', () => { try { room.untrack(); } catch (e) {} });
+
+/* ---------- UI ---------- */
+function applyUIState(started) {
+  $('cardImage').src = started ? GAME_CARD_IMAGE : selectedImage;
+  $('normalUI').style.display = started ? 'none' : 'flex';
+  $('gameUI').style.display = started ? 'flex' : 'none';
+  $('defaultUserListUI').style.display = started ? 'none' : 'flex';
+  $('profilePickerUI').style.display = 'none';
+  $('gameRankingUI').style.display = started ? 'flex' : 'none';
+  $('startBtn').style.display = (isTeacher && !started) ? 'block' : 'none';
+  $('teacherControls').style.display = (isTeacher && started) ? 'flex' : 'none';
+  if (started) initThreeOnce();
+}
+
+function renderUserList(users) {
+  $('onlineCountText').innerText = `접속중 ${users.length}명`;
+  const html = users.length === 0 ? `<div class="empty-state">접속자가 없습니다.</div>` : users.map(u => `
+    <div class="user-item">
+      <div class="user-info">
+        <img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" alt="프로필">
+        <span class="user-name">${esc(u.nickname || '익명')}${u.id === myId ? ' (나)' : ''}</span>
+      </div>
+      <span style="font-size:12px;color:#22c55e;font-weight:600;">● 온라인</span>
+    </div>`).join('');
+  if (html !== lastListHtml) { $('userListContainer').innerHTML = html; lastListHtml = html; }
+}
+
+function renderRankingList(users) {
+  let html;
+  if (isTargetSelectMode) {
+    $('rankingTitle').innerHTML = `<span style="color:#ef4444;">🎯 공격할 상대방을 클릭하세요!</span>`;
+    html = users.map(u => {
+      const me = u.id === myId;
+      return `<div class="${me ? 'rank-item' : 'rank-item selectable'}" data-userid="${esc(u.id)}">
+        <div class="user-info"><img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필"><span>${esc(u.nickname || '익명')}</span></div>
+        ${me ? '<span style="color:#94a3b8;font-size:11px;">(나)</span>' : '<span style="color:#ef4444;font-size:11px;font-weight:bold;">[지목하기]</span>'}
+      </div>`;
+    }).join('');
+  } else {
+    $('rankingTitle').innerHTML = `🏆 실시간 랭킹`;
+    html = [...users].sort((a, b) => (b.score || 0) - (a.score || 0)).map((u, i) => {
+      const cls = ['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc';
+      return `<div class="rank-item">
+        <div class="user-info"><span class="rank-badge ${cls}">${i + 1}등</span><img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필"><span>${esc(u.nickname || '익명')}</span></div>
+        <span style="color:#64748b;font-size:12px;">${u.score || 0}점</span>
+      </div>`;
+    }).join('');
+  }
+  const key = (isTargetSelectMode ? 'T' : 'R') + html;
+  if (key !== lastRankHtml) { $('rankingList').innerHTML = html; lastRankHtml = key; }
+}
+
+/* ---------- 문제 / 카드 ---------- */
+function generateValidBlocks() {
+  const blocks = [], grid = {};
+  const target = Math.floor(Math.random() * 5) + 5;
+  const sx = Math.floor(Math.random() * 2), sy = Math.floor(Math.random() * 2);
+  blocks.push({ x: sx, y: sy, z: 0 }); grid[`${sx},${sy},0`] = true;
+  while (blocks.length < target) {
+    const cands = [];
+    for (const b of blocks) {
+      for (const n of [{x:b.x+1,y:b.y,z:b.z},{x:b.x-1,y:b.y,z:b.z},{x:b.x,y:b.y+1,z:b.z},{x:b.x,y:b.y-1,z:b.z},{x:b.x,y:b.y,z:b.z+1},{x:b.x,y:b.y,z:b.z-1}]) {
+        if (n.x < 0 || n.x > 2 || n.y < 0 || n.y > 2 || n.z < 0 || n.z > 2) continue;
+        if (grid[`${n.x},${n.y},${n.z}`]) continue;
+        if (n.z !== 0 && !grid[`${n.x},${n.y},${n.z - 1}`]) continue;
+        if (!cands.some(c => c.x === n.x && c.y === n.y && c.z === n.z)) cands.push(n);
+      }
     }
+    if (!cands.length) break;
+    const next = cands[Math.floor(Math.random() * cands.length)];
+    blocks.push(next); grid[`${next.x},${next.y},${next.z}`] = true;
+  }
+  return blocks;
+}
 
-    // 2. 접속자 IP 및 위치 정보 가져오기 (이중 폴백)
-    async function fetchVisitorNetworkInfo() {
-        const ipEl = document.getElementById('ip-address');
-        const locEl = document.getElementById('location');
-        const ispEl = document.getElementById('isp');
-
-        try {
-            // 메인 API: ipwho.is (CORS 지원, HTTPS 안정적)
-            const response = await fetch('https://ipwho.is/');
-            if (!response.ok) throw new Error('Primary API failed');
-            const data = await response.json();
-
-            if (data.success) {
-                ipEl.textContent = data.ip;
-                locEl.innerHTML = `${data.country} (${data.city}) <img class="flag-img" src="${data.flag.img}" alt="flag" onerror="this.style.display='none'">`;
-                ispEl.textContent = data.connection.isp || data.connection.org || '정보 없음';
-                return;
-            }
-            throw new Error('IP API return unsuccessful');
-        } catch (err) {
-            console.warn('Primary IP API failed, trying fallback:', err);
-            
-            // 보조 API: ipify (IP 전용 백업)
-            try {
-                const fbRes = await fetch('https://api.ipify.org?format=json');
-                const fbData = await fbRes.json();
-                ipEl.textContent = fbData.ip;
-                locEl.textContent = '위치 정보 제한됨';
-                ispEl.textContent = 'ISP 정보 제한됨';
-            } catch (fbErr) {
-                ipEl.textContent = '불러오기 실패';
-                locEl.textContent = '불러오기 실패';
-                ispEl.textContent = '불러오기 실패';
-            }
-        }
-    }
-
-    // 3. 사진 불러오기 (안정적인 CDN 고화질 URL + Picsum 시드 조합)
-    function loadImages() {
-        const gallery = document.getElementById('gallery-grid');
-        gallery.innerHTML = ''; // 기존 이미지 삭제
-
-        // 실패 확률이 제로인 고화질 Unsplash CDN 이미지 및 랜덤 시드 URL 모음
-        const timeStamp = Date.now();
-        const imageUrls = [
-            `https://picsum.photos/600/400?random=${timeStamp + 1}`,
-            `https://picsum.photos/600/400?random=${timeStamp + 2}`,
-            `https://picsum.photos/600/400?random=${timeStamp + 3}`,
-            `https://picsum.photos/600/400?random=${timeStamp + 4}`,
-            `https://picsum.photos/600/400?random=${timeStamp + 5}`,
-            `https://picsum.photos/600/400?random=${timeStamp + 6}`
-        ];
-
-        imageUrls.forEach((url, idx) => {
-            const container = document.createElement('div');
-            container.className = 'img-container';
-            
-            const img = document.createElement('img');
-            img.src = url;
-            img.alt = `Gallery Image ${idx + 1}`;
-            img.loading = "lazy";
-            
-            // 로딩 실패 시 대처
-            img.onerror = function() {
-                this.src = `https://via.placeholder.com/600x400/334155/f8fafc?text=Image+Load+Failed`;
-            };
-
-            container.appendChild(img);
-            gallery.appendChild(container);
-        });
-    }
-
-    // 페이지 로드 시 즉시 실행
-    window.addEventListener('DOMContentLoaded', () => {
-        loadLocalDeviceInfo();
-        fetchVisitorNetworkInfo();
-        loadImages();
+function setupChoices(correct) {
+  const box = $('choiceButtons'), fb = $('feedbackMessage');
+  box.innerHTML = ''; fb.innerText = ''; hasGuessed = false;
+  toggleOutline(activeShiningEyesRound);
+  const set = new Set([correct]);
+  while (set.size < 4) {
+    const d = Math.random() < 0.7 ? (Math.random() < 0.5 ? 1 : -1) : (Math.random() < 0.5 ? 2 : -2);
+    if (correct + d > 0) set.add(correct + d);
+  }
+  [...set].sort(() => Math.random() - 0.5).forEach(num => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn' + (activeShiningEyesRound ? ' glowing-choice' : '');
+    btn.innerText = `${num}개`;
+    btn.addEventListener('click', () => {
+      if (hasGuessed || isTeacher) return;
+      hasGuessed = true; toggleOutline(true);
+      if (num === correct) {
+        btn.classList.add('correct');
+        let gain = 10;
+        if (hasTripleScoreMultiplier) { gain = 30; hasTripleScoreMultiplier = false; fb.innerText = '정답입니다! ⚡벼락치기 발동 (+30점)!'; }
+        else fb.innerText = '정답입니다! 카드 보상을 선택하세요.';
+        fb.style.color = '#22c55e';
+        myScore += gain; updatePresence();
+        setTimeout(openCardModal, 500);
+      } else {
+        btn.classList.add('wrong');
+        fb.innerText = `틀렸습니다! (정답: ${correct}개)`; fb.style.color = '#ef4444';
+      }
     });
-</script>
+    box.appendChild(btn);
+  });
+}
 
+function generateCardOptions() {
+  const coin = [5, 7, 10][Math.floor(Math.random() * 3)];
+  const coinImg = { 5: 'XMEic2GRdS2qq7GJaEiB', 7: 'TGQBtafzmsdeiJwZSmpo', 10: 'ET4DYhvXCLzJPiw96NtX' }[coin];
+  const S = id => `https://media.ffycdn.net/eu/supercell/${id}.png?width=2400`;
+  const pool = [
+    { type: 'coin', title: `코인 ${coin}개`, img: S(coinImg), desc: `점수 +${coin}점을 즉시 획득합니다.`, val: coin },
+    { type: 'confusion', title: '혼란 카드', img: 'https://media1.tenor.com/m/ZINlqqwHYQ4AAAAC/brawl-stars-brawl-stars-emoji.gif', desc: '상대방을 지목하여 2초간 화면에 글리치를 생성합니다.' },
+    { type: 'taunt', title: '괴롭히기 카드', img: 'https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif', desc: '상대방 화면을 2.5초 동안 거대한 이미지로 가립니다.' },
+    { type: 'freeze', title: '얼음 카드', img: S('6UFbyzBNqp1V5z9EASqM'), desc: '상대방을 지목하여 3초간 쌓기나무 회전을 멈춥니다.' },
+    { type: 'lightning', title: '벼락 치기 카드', img: S('Cz9rD81f7Qrva9kzgZvA'), desc: '다음 문제를 맞히면 얻는 점수가 3배(30점)로 폭증합니다.' },
+    { type: 'shining_eyes', title: '빛나는 눈 카드', img: S('Y7xeUH3uBvNkQBzSXkA6'), desc: '다음 라운드에 쌓기나무가 반투명해지고 윤곽선과 정답 버튼이 빛납니다.' }
+  ];
+  return pool.sort(() => Math.random() - 0.5).slice(0, 3);
+}
+
+function openCardModal() {
+  const modal = $('cardModalOverlay'), box = $('cardContainer');
+  box.innerHTML = '';
+  generateCardOptions().forEach(card => {
+    const el = document.createElement('div');
+    el.className = 'reward-card';
+    el.innerHTML = `<div class="reward-card-title">${card.title}</div><img class="reward-card-img" src="${card.img}" alt="${card.title}"><div class="reward-card-desc">${card.desc}</div>`;
+    el.addEventListener('click', () => { modal.classList.remove('active'); handleCardSelect(card); });
+    box.appendChild(el);
+  });
+  modal.classList.add('active');
+}
+
+function handleCardSelect(card) {
+  if (card.type === 'coin') { myScore += card.val; updatePresence(); }
+  else if (['confusion', 'taunt', 'freeze'].includes(card.type)) {
+    pendingAttackType = card.type === 'confusion' ? 'glitch' : card.type;
+    isTargetSelectMode = true; renderRankingList(activeUsers);
+  }
+  else if (card.type === 'lightning') hasTripleScoreMultiplier = true;
+  else if (card.type === 'shining_eyes') hasShiningEyesBuff = true;
+}
+
+/* ---------- 공격 효과 ---------- */
+function triggerGlitchEffect() {
+  if (!scene || !glitchGroup) return;
+  while (glitchGroup.children.length) glitchGroup.remove(glitchGroup.children[0]);
+  glitchMeshes = [];
+  const geo = new THREE.BoxGeometry(1, 1, 1), count = Math.floor(Math.random() * 8) + 5;
+  for (let i = 0; i < count; i++) {
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff, transparent: true, opacity: .85 }));
+    m.position.set(Math.random() * 4 - 1, Math.random() * 3, Math.random() * 4 - 1);
+    glitchGroup.add(m); glitchMeshes.push(m);
+  }
+  setTimeout(() => { while (glitchGroup.children.length) glitchGroup.remove(glitchGroup.children[0]); glitchMeshes = []; }, 2000);
+}
+function triggerTauntEffect() {
+  $('tauntOverlay').style.display = 'flex';
+  setTimeout(() => { $('tauntOverlay').style.display = 'none'; }, 2500);
+}
+function triggerFreezeEffect() {
+  isCameraFrozen = true; $('cameraStatusBadge').innerText = '❄️ 카메라가 3초간 얼어붙었습니다!';
+  setTimeout(() => { isCameraFrozen = false; $('cameraStatusBadge').innerText = '3D 관찰 카메라 회전 중'; }, 3000);
+}
+
+/* ---------- 3D ---------- */
+let scene, camera, renderer, blockGroup, outlineGroup, glitchGroup, glitchMeshes = [], cameraAngle = 0, isThreeInitialized = false;
+
+function initThreeOnce() {
+  if (isThreeInitialized) return;
+  isThreeInitialized = true;
+  const container = $('threeContainer');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xf8fafc);
+  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  container.appendChild(renderer.domElement);
+  const resize = () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+  };
+  resize();
+  new ResizeObserver(resize).observe(container);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+  const dir = new THREE.DirectionalLight(0xffffff, 0.5);
+  dir.position.set(10, 20, 15); scene.add(dir);
+
+  blockGroup = new THREE.Group(); outlineGroup = new THREE.Group(); glitchGroup = new THREE.Group();
+  scene.add(blockGroup, outlineGroup, glitchGroup);
+  if (currentBlocks.length) rebuildBlocks(currentBlocks);
+
+  (function animate() {
+    requestAnimationFrame(animate);
+    if (!isCameraFrozen) cameraAngle += 0.012;
+    const r = 9.5;                                   // 카메라를 멀리 → 쌓기나무가 작게 보임
+    camera.position.set(1 + r * Math.cos(cameraAngle), 6.5, 1 + r * Math.sin(cameraAngle));
+    camera.lookAt(1, 0.9, 1);
+    glitchMeshes.forEach(m => m.material.color.setHex(Math.random() * 0xffffff));
+    renderer.render(scene, camera);
+  })();
+}
+
+function rebuildBlocks(blocks) {
+  if (!blockGroup || !outlineGroup) return;
+  [blockGroup, outlineGroup].forEach(g => { while (g.children.length) g.remove(g.children[0]); });
+  const geo = new THREE.BoxGeometry(1, 1, 1), edges = new THREE.EdgesGeometry(geo), t = activeShiningEyesRound;
+  const boxMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: .3, metalness: .1, transparent: t, opacity: t ? .6 : 1, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  const edgeMat = new THREE.LineBasicMaterial({ color: 0x0f172a });                    // 기본 윤곽선(항상 표시)
+  const glowMat = new THREE.LineBasicMaterial({ color: 0x00ffff, depthTest: false });  // 투시 윤곽선
+  blocks.forEach(b => {
+    const mesh = new THREE.Mesh(geo, boxMat); mesh.position.set(b.x, b.z, b.y); blockGroup.add(mesh);
+    const edge = new THREE.LineSegments(edges, edgeMat); edge.position.copy(mesh.position); blockGroup.add(edge);
+    const glow = new THREE.LineSegments(edges, glowMat); glow.position.copy(mesh.position); glow.visible = t; outlineGroup.add(glow);
+  });
+}
+
+function toggleOutline(visible) {
+  if (outlineGroup) outlineGroup.children.forEach(c => { c.visible = visible; });
+}
+
+/* ---------- 이벤트 ---------- */
+function initUI() {
+  $('nickname').addEventListener('input', syncNickname);
+  $('nickname').addEventListener('change', syncNickname);
+  $('nickname').addEventListener('blur', syncNickname);
+
+  $('changeProfileBtn').addEventListener('click', () => {
+    $('defaultUserListUI').style.display = 'none';
+    $('profilePickerUI').style.display = 'flex';
+    $('profileGrid').innerHTML = characterImages.map(u => `<div class="profile-thumb-card" data-img="${u}"><img src="${u}" class="profile-thumb-img" alt="프로필선택"></div>`).join('');
+    $('profileGrid').querySelectorAll('.profile-thumb-card').forEach(c => c.addEventListener('click', () => {
+      selectedImage = c.getAttribute('data-img');
+      $('cardImage').src = selectedImage;
+      $('profilePickerUI').style.display = 'none';
+      $('defaultUserListUI').style.display = 'flex';
+      updatePresence();
+    }));
+  });
+  $('closeProfilePickerBtn').addEventListener('click', () => {
+    $('profilePickerUI').style.display = 'none';
+    $('defaultUserListUI').style.display = 'flex';
+  });
+
+  $('rankingList').addEventListener('click', async e => {
+    const el = e.target.closest('.selectable');
+    if (!el || !isTargetSelectMode) return;
+    const targetId = el.dataset.userid;
+    if (targetId && pendingAttackType) {
+      try { await room.send({ type: 'broadcast', event: 'attack_event', payload: { targetId, type: pendingAttackType } }); } catch (err) {}
+    }
+    isTargetSelectMode = false; pendingAttackType = null;
+    renderRankingList(activeUsers);
+  });
+
+  $('teacherCode').addEventListener('input', e => {
+    const ok = e.target.value.trim() === 'PANdA';
+    if (ok === isTeacher) return;
+    isTeacher = ok; syncNickname(); applyUIState(gameStarted);
+  });
+
+  const newRound = async action => {
+    if (!isTeacher) return;
+    const blocks = generateValidBlocks(), round = Date.now();
+    applyRound(blocks, round);
+    updatePresence();
+    try { await room.send({ type: 'broadcast', event: 'game_control', payload: { action, blocks, round } }); } catch (err) {}
+  };
+  $('startBtn').addEventListener('click', () => newRound('start'));
+  $('nextBtn').addEventListener('click', () => newRound('next'));
+  $('endBtn').addEventListener('click', async () => {
+    if (!isTeacher) return;
+    endGameLocal(); updatePresence();
+    try { await room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'end' } }); } catch (err) {}
+  });
+
+  syncNickname();
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUI); else initUI();
+</script>
 </body>
 </html>
