@@ -145,9 +145,8 @@ const supabase = createClient("https://knjblcpgxcixfbzcrrqg.supabase.co", "sb_pu
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-// 탭마다 고유 ID (같은 브라우저 탭끼리 한 명으로 합쳐지는 문제 방지, 새로고침해도 유지)
-let myId = sessionStorage.getItem('user_uuid');
-if (!myId) { myId = 'user_' + Math.random().toString(36).slice(2, 9); sessionStorage.setItem('user_uuid', myId); }
+// 접속(페이지 로드)할 때마다 고유 ID
+const myId = 'user_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 const GAME_CARD_IMAGE = "https://media.ffycdn.net/eu/supercell/w6fRpxtAdEXsWLjHEzHD.png?width=2400";
 const characterImages = [
@@ -174,12 +173,12 @@ let isCameraFrozen = false, hasTripleScoreMultiplier = false, hasShiningEyesBuff
 const joinedAt = Date.now();
 let isSubscribed = false, presenceTimer = null;
 const seenMap = new Map();          // 다른 사람의 마지막 하트비트 확인 시각
-const HEARTBEAT_MS = 1000, STALE_MS = 6000;   // 접속 신호 주기 / 신호 끊김 판정 시간
+const HEARTBEAT_MS = 10000, STALE_MS = 25000, LEAVE_GRACE_MS = 2500;   // 신호 주기 / 신호 끊김 판정 / 퇴장 확정 대기
 let tracking = false, trackAgain = false, noTeacherSince = 0;
 const deadMap = new Map();
 let lastListHtml = '', lastRankHtml = '';
 
-const room = supabase.channel('online-users-room', { config: { presence: { key: myId } } });
+let room = null, reconnectTimer = null;
 
 /* ---------- 접속자 동기화 ---------- */
 function getMyPayload() {
@@ -205,12 +204,13 @@ function updatePresence() {
 }
 
 async function doTrack() {
-  if (!isSubscribed) return;
+  const ch = room;
+  if (!isSubscribed || !ch) return;
   if (tracking) { trackAgain = true; return; }
   tracking = true;
   try {
-    await room.untrack();                 // 이전 접속 신호 삭제 요청
-    await room.track(getMyPayload());     // 새 접속 신호 등록
+    await ch.untrack();                   // 이전 접속 신호 삭제 요청
+    await ch.track(getMyPayload());       // 새 접속 신호 등록
   } catch (e) { console.warn('track 실패', e); }
   tracking = false;
   if (trackAgain) { trackAgain = false; doTrack(); }
@@ -218,7 +218,8 @@ async function doTrack() {
 
 function collectUsers() {
   const now = Date.now(), cur = new Map();
-  Object.values(room.presenceState()).forEach(list => (list || []).forEach(u => {
+  const state = room ? room.presenceState() : {};
+  Object.values(state).forEach(list => (list || []).forEach(u => {
     if (!u || !u.id || u.id === myId) return;
     const p = cur.get(u.id);
     if (!p || (u.hb || 0) >= (p.hb || 0)) cur.set(u.id, u);
@@ -226,13 +227,18 @@ function collectUsers() {
   cur.forEach((u, id) => {
     if (deadMap.has(id)) { if (deadMap.get(id) === u.hb) return; deadMap.delete(id); }
     const s = seenMap.get(id);
-    if (!s || s.user.hb !== u.hb) seenMap.set(id, { user: u, at: now });
-    else s.user = u;
+    if (!s || s.user.hb !== u.hb) seenMap.set(id, { user: u, at: now, miss: 0 });
+    else { s.user = u; s.miss = 0; }
   });
   const out = new Map();
   seenMap.forEach((s, id) => {
-    if (now - s.at > STALE_MS) { deadMap.set(id, s.user.hb); seenMap.delete(id); return; }
-    out.set(id, s.user);                // 재등록 중 잠깐 사라져도 STALE_MS 동안은 유지
+    if (!cur.has(id)) {                       // 서버 목록에서 사라짐 → 잠깐(재등록 순간) 기다렸다가 퇴장 처리
+      s.miss = s.miss || now;
+      if (now - s.miss > LEAVE_GRACE_MS) { seenMap.delete(id); return; }
+    } else if (now - s.at > STALE_MS) {       // 목록엔 있는데 신호가 멈춤 → 유령
+      deadMap.set(id, s.user.hb); seenMap.delete(id); return;
+    }
+    out.set(id, s.user);
   });
   out.set(myId, getMyPayload());
   return [...out.values()].sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0) || String(a.id).localeCompare(String(b.id)));
@@ -274,32 +280,45 @@ function endGameLocal() {
   applyUIState(false);
 }
 
-room.on('presence', { event: 'sync' }, renderAll);
+async function connect() {
+  const old = room;
+  room = null; isSubscribed = false;          // 옛 채널의 콜백은 무시
+  if (old) { try { await supabase.removeChannel(old); } catch (e) {} }
+  const ch = room = supabase.channel('online-users-room', { config: { presence: { key: myId } } });
 
-room.on('broadcast', { event: 'game_control' }, ({ payload }) => {
-  if (isTeacher) return;
-  if (payload.action === 'end') endGameLocal();
-  else applyRound(payload.blocks, payload.round);
-});
+  ch.on('presence', { event: 'sync' }, renderAll);
 
-room.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
-  if (payload.targetId !== myId) return;
-  if (payload.type === 'glitch') triggerGlitchEffect();
-  else if (payload.type === 'taunt') triggerTauntEffect();
-  else if (payload.type === 'freeze') triggerFreezeEffect();
-});
+  ch.on('broadcast', { event: 'game_control' }, ({ payload }) => {
+    if (isTeacher) return;
+    if (payload.action === 'end') endGameLocal();
+    else applyRound(payload.blocks, payload.round);
+  });
 
-room.subscribe(async status => {
-  if (status === 'SUBSCRIBED') { isSubscribed = true; await doTrack(); renderAll(); }
-  else if (['CLOSED', 'CHANNEL_ERROR', 'TIMED_OUT'].includes(status)) isSubscribed = false;
-});
+  ch.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
+    if (payload.targetId !== myId) return;
+    if (payload.type === 'glitch') triggerGlitchEffect();
+    else if (payload.type === 'taunt') triggerTauntEffect();
+    else if (payload.type === 'freeze') triggerFreezeEffect();
+  });
+
+  ch.subscribe(status => {
+    if (ch !== room) return;
+    if (status === 'SUBSCRIBED') {            // 접속 즉시 신호 전송
+      clearTimeout(reconnectTimer); isSubscribed = true;
+      doTrack().then(renderAll);
+    } else if (['CLOSED', 'CHANNEL_ERROR', 'TIMED_OUT'].includes(status)) {
+      isSubscribed = false;                   // 자동 복구가 안 되면 4초 뒤 채널을 새로 만들어 재접속
+      clearTimeout(reconnectTimer); reconnectTimer = setTimeout(connect, 4000);
+    }
+  });
+}
 
 setInterval(doTrack, HEARTBEAT_MS);
 setInterval(renderAll, 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { doTrack(); renderAll(); } });
 window.addEventListener('online', doTrack);
-window.addEventListener('pageshow', e => { if (e.persisted) doTrack(); });
-window.addEventListener('pagehide', () => { try { room.untrack(); } catch (e) {} });
+window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
+window.addEventListener('pagehide', () => { try { room.untrack(); supabase.removeChannel(room); } catch (e) {} });
 
 /* ---------- UI ---------- */
 function applyUIState(started) {
@@ -586,6 +605,7 @@ function initUI() {
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUI); else initUI();
+connect();
 </script>
 </body>
 </html>
