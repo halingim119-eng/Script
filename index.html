@@ -157,6 +157,12 @@ const characterImages = [
   "Qmxk7V5tFcmLGeCVueWT","XTTrodLDSVQVrjhYbs2Z","ACfDodL3WGgMD3ybdHvn","7a6mrhbBHByusVgTvkoS"
 ].map(id => `https://media.ffycdn.net/eu/supercell/${id}.png?width=2400`);
 
+const SC = id => `https://media.ffycdn.net/eu/supercell/${id}.png?width=2400`;
+const cardImages = [SC('XMEic2GRdS2qq7GJaEiB'), SC('TGQBtafzmsdeiJwZSmpo'), SC('ET4DYhvXCLzJPiw96NtX'),
+  'https://media1.tenor.com/m/ZINlqqwHYQ4AAAAC/brawl-stars-brawl-stars-emoji.gif',
+  'https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif',
+  SC('6UFbyzBNqp1V5z9EASqM'), SC('Cz9rD81f7Qrva9kzgZvA'), SC('Y7xeUH3uBvNkQBzSXkA6')];
+const profileImages = [...characterImages, ...cardImages];
 let selectedImage = characterImages[Math.floor(Math.random() * characterImages.length)];
 $('cardImage').src = selectedImage;
 
@@ -168,7 +174,9 @@ let isCameraFrozen = false, hasTripleScoreMultiplier = false, hasShiningEyesBuff
 const joinedAt = Date.now();
 let isSubscribed = false, presenceTimer = null;
 const seenMap = new Map();          // 다른 사람의 마지막 하트비트 확인 시각
-const HEARTBEAT_MS = 15000, STALE_MS = 45000;
+const HEARTBEAT_MS = 1000, STALE_MS = 6000;   // 접속 신호 주기 / 신호 끊김 판정 시간
+let tracking = false, trackAgain = false, noTeacherSince = 0;
+const deadMap = new Map();
 let lastListHtml = '', lastRankHtml = '';
 
 const room = supabase.channel('online-users-room', { config: { presence: { key: myId } } });
@@ -198,42 +206,58 @@ function updatePresence() {
 
 async function doTrack() {
   if (!isSubscribed) return;
-  try { await room.track(getMyPayload()); } catch (e) { console.warn('track 실패', e); }
+  if (tracking) { trackAgain = true; return; }
+  tracking = true;
+  try {
+    await room.untrack();                 // 이전 접속 신호 삭제 요청
+    await room.track(getMyPayload());     // 새 접속 신호 등록
+  } catch (e) { console.warn('track 실패', e); }
+  tracking = false;
+  if (trackAgain) { trackAgain = false; doTrack(); }
 }
 
 function collectUsers() {
-  const now = Date.now(), map = new Map();
+  const now = Date.now(), cur = new Map();
   Object.values(room.presenceState()).forEach(list => (list || []).forEach(u => {
-    if (!u || !u.id) return;
-    const prev = map.get(u.id);
-    if (!prev || (u.hb || 0) >= (prev.hb || 0)) map.set(u.id, u);
+    if (!u || !u.id || u.id === myId) return;
+    const p = cur.get(u.id);
+    if (!p || (u.hb || 0) >= (p.hb || 0)) cur.set(u.id, u);
   }));
-  // 하트비트가 멈춘 유령 접속자 제거
-  map.forEach((u, id) => {
-    if (id === myId) return;
+  cur.forEach((u, id) => {
+    if (deadMap.has(id)) { if (deadMap.get(id) === u.hb) return; deadMap.delete(id); }
     const s = seenMap.get(id);
-    if (!s || s.hb !== u.hb) seenMap.set(id, { hb: u.hb, at: now });
+    if (!s || s.user.hb !== u.hb) seenMap.set(id, { user: u, at: now });
+    else s.user = u;
   });
-  [...seenMap.keys()].forEach(id => { if (!map.has(id)) seenMap.delete(id); });
-  [...map.keys()].forEach(id => { if (id !== myId && now - seenMap.get(id).at > STALE_MS) map.delete(id); });
-  map.set(myId, getMyPayload());
-  return [...map.values()].sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0) || String(a.id).localeCompare(String(b.id)));
+  const out = new Map();
+  seenMap.forEach((s, id) => {
+    if (now - s.at > STALE_MS) { deadMap.set(id, s.user.hb); seenMap.delete(id); return; }
+    out.set(id, s.user);                // 재등록 중 잠깐 사라져도 STALE_MS 동안은 유지
+  });
+  out.set(myId, getMyPayload());
+  return [...out.values()].sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0) || String(a.id).localeCompare(String(b.id)));
 }
 
 function renderAll() {
   const users = collectUsers();
   activeUsers = users;
   if (!isTeacher) {
-    const t = users.find(u => u.isTeacher && u.gameStarted);
-    if (t) { if (t.blocks && t.blocks.length && t.round !== currentRoundId) applyRound(t.blocks, t.round); }
-    else if (gameStarted) endGameLocal();
+    const t = users.find(u => u.isTeacher);
+    if (t) {
+      noTeacherSince = 0;
+      if (t.gameStarted) { if (t.blocks && t.blocks.length && t.round > currentRoundId) applyRound(t.blocks, t.round); }
+      else if (gameStarted && t.round >= currentRoundId) endGameLocal();
+    } else if (gameStarted) {
+      noTeacherSince = noTeacherSince || Date.now();
+      if (Date.now() - noTeacherSince > 30000) endGameLocal();
+    }
   }
   renderUserList(users);
   renderRankingList(users);
 }
 
 function applyRound(blocks, roundId) {
-  if (roundId && roundId === currentRoundId && gameStarted) return;
+  if (!roundId || roundId <= currentRoundId) return;   // 이미 받은/더 옛날 문제는 무시
   currentRoundId = roundId;
   gameStarted = true;
   currentBlocks = blocks;
@@ -270,8 +294,8 @@ room.subscribe(async status => {
   else if (['CLOSED', 'CHANNEL_ERROR', 'TIMED_OUT'].includes(status)) isSubscribed = false;
 });
 
-setInterval(() => { if (isSubscribed) doTrack(); }, HEARTBEAT_MS + Math.floor(Math.random() * 3000));
-setInterval(renderAll, 5000);
+setInterval(doTrack, HEARTBEAT_MS);
+setInterval(renderAll, 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { doTrack(); renderAll(); } });
 window.addEventListener('online', doTrack);
 window.addEventListener('pageshow', e => { if (e.persisted) doTrack(); });
@@ -512,7 +536,7 @@ function initUI() {
   $('changeProfileBtn').addEventListener('click', () => {
     $('defaultUserListUI').style.display = 'none';
     $('profilePickerUI').style.display = 'flex';
-    $('profileGrid').innerHTML = characterImages.map(u => `<div class="profile-thumb-card" data-img="${u}"><img src="${u}" class="profile-thumb-img" alt="프로필선택"></div>`).join('');
+    $('profileGrid').innerHTML = profileImages.map(u => `<div class="profile-thumb-card" data-img="${u}"><img src="${u}" class="profile-thumb-img" alt="프로필선택"></div>`).join('');
     $('profileGrid').querySelectorAll('.profile-thumb-card').forEach(c => c.addEventListener('click', () => {
       selectedImage = c.getAttribute('data-img');
       $('cardImage').src = selectedImage;
