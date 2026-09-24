@@ -171,18 +171,13 @@ let pendingAttackType = null, isTargetSelectMode = false;
 let isCameraFrozen = false, hasTripleScoreMultiplier = false, hasShiningEyesBuff = false, activeShiningEyesRound = false;
 
 const joinedAt = Date.now();
-let isSubscribed = false, presenceTimer = null;
-const seenMap = new Map();          // 다른 사람의 마지막 하트비트 확인 시각
-const HEARTBEAT_MS = 10000, STALE_MS = 25000, LEAVE_GRACE_MS = 2500;   // 신호 주기 / 신호 끊김 판정 / 퇴장 확정 대기
-let tracking = false, trackAgain = false, noTeacherSince = 0;
-const deadMap = new Map();
-let lastCollectAt = 0, graceUntil = 0, lastConnectAt = 0, hiddenAt = 0, failCount = 0;
-const USE_UNTRACK = false;   // true: 매번 이전 신호 삭제 후 재등록 (테스트 중 깜빡임/사라짐 원인이 될 수 있어 기본 꺼둠)
+const HEARTBEAT_MS = 10000, STALE_MS = 25000;   // 상태 방송 주기 / 신호 끊김 판정
+let isSubscribed = false, room = null, presenceTimer = null, reconnectTimer = null, helloTimer = null;
+let lastCollectAt = 0, graceUntil = 0, lastConnectAt = 0, hiddenAt = 0, noTeacherSince = 0;
 let lastListHtml = '', lastRankHtml = '';
+const roster = new Map();   // 다른 접속자들: id -> { user, at(마지막으로 받은 시각) }
 
-let room = null, reconnectTimer = null;
-
-/* ---------- 접속자 동기화 ---------- */
+/* ---------- 접속자 동기화 (Presence 대신 직접 방송) ---------- */
 function getMyPayload() {
   return {
     id: myId, nickname: myNickname, avatarUrl: selectedImage, score: myScore,
@@ -202,55 +197,33 @@ function syncNickname() {
 function updatePresence() {
   renderAll();                                   // 내 화면엔 즉시 반영
   clearTimeout(presenceTimer);
-  presenceTimer = setTimeout(doTrack, 200);      // 서버 전송은 살짝 모아서
+  presenceTimer = setTimeout(sendState, 200);    // 다른 사람에겐 살짝 모아서 방송
 }
 
-async function doTrack() {
+async function sendState() {
   const ch = room;
   if (!isSubscribed || !ch) return;
-  if (tracking) { trackAgain = true; return; }
-  tracking = true;
-  try {
-    if (USE_UNTRACK) await ch.untrack();
-    const r = await ch.track(getMyPayload());
-    if (r && r !== 'ok') {                         // 전송 실패 → 재시도, 3번 연속이면 재접속
-      console.warn('track 결과:', r);
-      if (++failCount >= 3) { failCount = 0; tracking = false; connect(); return; }
-      setTimeout(doTrack, 2000);
-    } else failCount = 0;
-  } catch (e) { console.warn('track 실패', e); }
-  tracking = false;
-  if (trackAgain) { trackAgain = false; doTrack(); }
+  try { await ch.send({ type: 'broadcast', event: 'state', payload: getMyPayload() }); }
+  catch (e) { console.warn('상태 전송 실패', e); }
+}
+
+function receiveState(u) {
+  if (!u || !u.id || u.id === myId) return;
+  const prev = roster.get(u.id);
+  if (prev && (prev.user.hb || 0) > (u.hb || 0)) return;   // 늦게 도착한 옛 정보 무시
+  roster.set(u.id, { user: u, at: Date.now() });
+  renderAll();
 }
 
 function collectUsers() {
-  const now = Date.now(), cur = new Map();
-  if (now - lastCollectAt > 4000 || now < graceUntil) seenMap.forEach(s => { s.at = now; s.miss = 0; });
+  const now = Date.now();
+  // 타이머가 멈췄다 돌아왔거나 재접속 직후엔 '끊김 판정' 시계를 리셋
+  if (now - lastCollectAt > 4000 || now < graceUntil) roster.forEach(r => { r.at = now; });
   lastCollectAt = now;
-  const state = room ? room.presenceState() : {};
-  Object.values(state).forEach(list => (list || []).forEach(u => {
-    if (!u || !u.id || u.id === myId) return;
-    const p = cur.get(u.id);
-    if (!p || (u.hb || 0) >= (p.hb || 0)) cur.set(u.id, u);
-  }));
-  cur.forEach((u, id) => {
-    if (deadMap.has(id)) { if (deadMap.get(id) === u.hb) return; deadMap.delete(id); }
-    const s = seenMap.get(id);
-    if (!s || s.user.hb !== u.hb) seenMap.set(id, { user: u, at: now, miss: 0 });
-    else { s.user = u; s.miss = 0; }
-  });
-  const out = new Map();
-  seenMap.forEach((s, id) => {
-    if (!cur.has(id)) {                       // 서버 목록에서 사라짐 → 잠깐(재등록 순간) 기다렸다가 퇴장 처리
-      s.miss = s.miss || now;
-      if (now - s.miss > LEAVE_GRACE_MS) { seenMap.delete(id); return; }
-    } else if (now - s.at > STALE_MS) {       // 목록엔 있는데 신호가 멈춤 → 유령
-      deadMap.set(id, s.user.hb); seenMap.delete(id); return;
-    }
-    out.set(id, s.user);
-  });
-  out.set(myId, getMyPayload());
-  return [...out.values()].sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0) || String(a.id).localeCompare(String(b.id)));
+  roster.forEach((r, id) => { if (now - r.at > STALE_MS) roster.delete(id); });
+  const list = [...roster.values()].map(r => r.user);
+  list.push(getMyPayload());
+  return list.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0) || String(a.id).localeCompare(String(b.id)));
 }
 
 function renderAll() {
@@ -292,11 +265,16 @@ function endGameLocal() {
 async function connect() {
   lastConnectAt = Date.now(); graceUntil = lastConnectAt + 6000;
   const old = room;
-  room = null; isSubscribed = false;          // 옛 채널의 콜백은 무시
+  room = null; isSubscribed = false;             // 옛 채널의 콜백은 무시
   if (old) { try { await supabase.removeChannel(old); } catch (e) {} }
-  const ch = room = supabase.channel('online-users-room', { config: { presence: { key: myId } } });
+  const ch = room = supabase.channel('blocks-class-room-v2', { config: { broadcast: { self: false } } });
 
-  ch.on('presence', { event: 'sync' }, renderAll);
+  ch.on('broadcast', { event: 'state' }, ({ payload }) => receiveState(payload));
+  ch.on('broadcast', { event: 'hello' }, ({ payload }) => {      // 새로 들어온 사람에게 내 상태 알려주기
+    if (!payload || payload.id === myId || helloTimer) return;
+    helloTimer = setTimeout(() => { helloTimer = null; sendState(); }, Math.random() * 2500);
+  });
+  ch.on('broadcast', { event: 'bye' }, ({ payload }) => { if (payload && roster.delete(payload.id)) renderAll(); });
 
   ch.on('broadcast', { event: 'game_control' }, ({ payload }) => {
     if (isTeacher) return;
@@ -313,19 +291,20 @@ async function connect() {
 
   ch.subscribe(status => {
     if (ch !== room) return;
-    if (status === 'SUBSCRIBED') {            // 접속 즉시 신호 전송
+    if (status === 'SUBSCRIBED') {               // 접속 즉시: 인사 + 내 상태 방송
       clearTimeout(reconnectTimer); isSubscribed = true;
-      doTrack().then(renderAll);
+      Promise.resolve(ch.send({ type: 'broadcast', event: 'hello', payload: { id: myId } })).catch(() => {});
+      sendState(); renderAll();
     } else if (['CLOSED', 'CHANNEL_ERROR', 'TIMED_OUT'].includes(status)) {
-      isSubscribed = false;                   // 자동 복구가 안 되면 4초 뒤 채널을 새로 만들어 재접속
+      isSubscribed = false;                      // 자동 복구가 안 되면 4초 뒤 채널을 새로 만들어 재접속
       clearTimeout(reconnectTimer); reconnectTimer = setTimeout(connect, 4000);
     }
   });
 }
 
-// 백그라운드 탭에서도 멈추지 않도록 Web Worker 타이머 사용 (h: 10초 신호, r: 1초 화면 갱신)
+// 백그라운드 탭에서도 멈추지 않도록 Web Worker 타이머 사용 (h: 10초 상태 방송, r: 1초 화면 갱신)
 function onTick(t) {
-  if (t === 'h') { if (!isSubscribed && Date.now() - lastConnectAt > 8000) connect(); else doTrack(); }
+  if (t === 'h') { if (!isSubscribed && Date.now() - lastConnectAt > 8000) connect(); else sendState(); }
   else renderAll();
 }
 function startTicker() {
@@ -343,12 +322,14 @@ startTicker();
 // 다른 창/탭에 갔다가 돌아오면 재접속
 function revive() {
   const away = hiddenAt ? Date.now() - hiddenAt : 0; hiddenAt = 0;
-  if (!isSubscribed || away > 5000) connect(); else { doTrack(); renderAll(); }
+  if (!isSubscribed || away > 5000) connect(); else { sendState(); renderAll(); }
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else revive(); });
 window.addEventListener('online', () => connect());
 window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
-window.addEventListener('pagehide', () => { try { room.untrack(); supabase.removeChannel(room); } catch (e) {} });
+window.addEventListener('pagehide', () => {      // 나갈 때 "나감" 방송
+  try { room.send({ type: 'broadcast', event: 'bye', payload: { id: myId } }); } catch (e) {}
+});
 
 /* ---------- UI ---------- */
 function applyUIState(started) {
