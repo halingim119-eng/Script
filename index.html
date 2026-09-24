@@ -141,7 +141,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-const supabase = createClient("https://knjblcpgxcixfbzcrrqg.supabase.co", "sb_publishable_Xn2UjMtIkzXQU_6xPlMvrg_Rtc9VY0v");
+const supabase = createClient("https://knjblcpgxcixfbzcrrqg.supabase.co", "sb_publishable_Xn2UjMtIkzXQU_6xPlMvrg_Rtc9VY0v", { realtime: { worker: true } });
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -176,6 +176,8 @@ const seenMap = new Map();          // 다른 사람의 마지막 하트비트 �
 const HEARTBEAT_MS = 10000, STALE_MS = 25000, LEAVE_GRACE_MS = 2500;   // 신호 주기 / 신호 끊김 판정 / 퇴장 확정 대기
 let tracking = false, trackAgain = false, noTeacherSince = 0;
 const deadMap = new Map();
+let lastCollectAt = 0, graceUntil = 0, lastConnectAt = 0, hiddenAt = 0, failCount = 0;
+const USE_UNTRACK = false;   // true: 매번 이전 신호 삭제 후 재등록 (테스트 중 깜빡임/사라짐 원인이 될 수 있어 기본 꺼둠)
 let lastListHtml = '', lastRankHtml = '';
 
 let room = null, reconnectTimer = null;
@@ -209,8 +211,13 @@ async function doTrack() {
   if (tracking) { trackAgain = true; return; }
   tracking = true;
   try {
-    await ch.untrack();                   // 이전 접속 신호 삭제 요청
-    await ch.track(getMyPayload());       // 새 접속 신호 등록
+    if (USE_UNTRACK) await ch.untrack();
+    const r = await ch.track(getMyPayload());
+    if (r && r !== 'ok') {                         // 전송 실패 → 재시도, 3번 연속이면 재접속
+      console.warn('track 결과:', r);
+      if (++failCount >= 3) { failCount = 0; tracking = false; connect(); return; }
+      setTimeout(doTrack, 2000);
+    } else failCount = 0;
   } catch (e) { console.warn('track 실패', e); }
   tracking = false;
   if (trackAgain) { trackAgain = false; doTrack(); }
@@ -218,6 +225,8 @@ async function doTrack() {
 
 function collectUsers() {
   const now = Date.now(), cur = new Map();
+  if (now - lastCollectAt > 4000 || now < graceUntil) seenMap.forEach(s => { s.at = now; s.miss = 0; });
+  lastCollectAt = now;
   const state = room ? room.presenceState() : {};
   Object.values(state).forEach(list => (list || []).forEach(u => {
     if (!u || !u.id || u.id === myId) return;
@@ -281,6 +290,7 @@ function endGameLocal() {
 }
 
 async function connect() {
+  lastConnectAt = Date.now(); graceUntil = lastConnectAt + 6000;
   const old = room;
   room = null; isSubscribed = false;          // 옛 채널의 콜백은 무시
   if (old) { try { await supabase.removeChannel(old); } catch (e) {} }
@@ -313,10 +323,30 @@ async function connect() {
   });
 }
 
-setInterval(doTrack, HEARTBEAT_MS);
-setInterval(renderAll, 1000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { doTrack(); renderAll(); } });
-window.addEventListener('online', doTrack);
+// 백그라운드 탭에서도 멈추지 않도록 Web Worker 타이머 사용 (h: 10초 신호, r: 1초 화면 갱신)
+function onTick(t) {
+  if (t === 'h') { if (!isSubscribed && Date.now() - lastConnectAt > 8000) connect(); else doTrack(); }
+  else renderAll();
+}
+function startTicker() {
+  let fell = false;
+  const fallback = () => { if (fell) return; fell = true; setInterval(() => onTick('r'), 1000); setInterval(() => onTick('h'), HEARTBEAT_MS); };
+  try {
+    const src = `setInterval(()=>postMessage('r'),1000);setInterval(()=>postMessage('h'),${HEARTBEAT_MS});`;
+    const w = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    w.onmessage = e => onTick(e.data);
+    w.onerror = () => { try { w.terminate(); } catch (e) {} fallback(); };
+  } catch (e) { fallback(); }
+}
+startTicker();
+
+// 다른 창/탭에 갔다가 돌아오면 재접속
+function revive() {
+  const away = hiddenAt ? Date.now() - hiddenAt : 0; hiddenAt = 0;
+  if (!isSubscribed || away > 5000) connect(); else { doTrack(); renderAll(); }
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else revive(); });
+window.addEventListener('online', () => connect());
 window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
 window.addEventListener('pagehide', () => { try { room.untrack(); supabase.removeChannel(room); } catch (e) {} });
 
