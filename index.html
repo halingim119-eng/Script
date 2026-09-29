@@ -65,6 +65,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 /* 모드 투표 오버레이 (접속자 카드를 하얗게 덮음) */
 .vote-overlay{position:absolute;inset:0;background:#fff;border-radius:16px;z-index:5;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
 .vote-title{font-size:18px;font-weight:bold;color:#1e293b}
+.vote-stage{display:none;flex-direction:column;gap:14px;align-items:center}
 .vote-row{display:flex;gap:16px;justify-content:center}
 .mode-btn{width:200px;height:150px;border-radius:14px;border:3px solid #cbd5e1;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:bold;color:#334155;cursor:pointer;transition:all .2s;font-family:inherit}
 .mode-btn img{width:90px;height:90px;object-fit:contain}
@@ -123,12 +124,18 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 
       <div class="vote-overlay" id="voteOverlay">
         <div class="vote-title">게임 모드 투표 ⏱ <span id="voteTimer">10</span>초</div>
-        <div class="vote-row">
-          <button class="mode-btn" id="soloBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="솔로 쇼다운"><span>솔로 쇼다운</span><span class="vote-count" id="soloCount">0표</span></button>
-          <button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button>
+        <div class="vote-stage" id="voteStage1">
+          <div class="vote-row">
+            <button class="mode-btn" id="showdownBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="쇼다운"><span>쇼다운</span><span class="vote-count" id="showdownCount">0표</span></button>
+            <button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button>
+          </div>
+          <div class="vote-row"><button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button></div>
         </div>
-        <div class="vote-row">
-          <button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button>
+        <div class="vote-stage" id="voteStage2">
+          <div class="vote-row">
+            <button class="mode-btn" id="soloBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="솔로 쇼다운"><span>솔로 쇼다운</span><span class="vote-count" id="soloCount">0표</span></button>
+            <button class="mode-btn" id="duoBtn"><img src="https://gcdnb.pbrd.co/images/B1HRT4kn89U_.png" alt="듀오 쇼다운"><span>듀오 쇼다운</span><span class="vote-count" id="duoCount">0표</span></button>
+          </div>
         </div>
       </div>
     </div>
@@ -189,7 +196,8 @@ let currentBlocks = [], currentSession = 0, hasGuessed = false, activeUsers = []
 let pendingAttackType = null, isTargetSelectMode = false;
 let isCameraFrozen = false, hasTripleScoreMultiplier = false, hasShiningEyesBuff = false, activeShiningEyesRound = false;
 // 모드 투표 상태
-let phase = '', voteEnd = 0, myVote = '', voteTimer = null;
+let phase = '', voteEnd = 0, myVote = '', curStage = '', gameMode = 'solo', teams = {};
+const TEAM_NAMES = ['🔴 레드팀', '🔵 블루팀'], TEAM_COLORS = ['#ef4444', '#2563eb'];
 let uiScale = 1;
 
 const joinedAt = Date.now();
@@ -214,7 +222,8 @@ function getMyPayload() {
     id: myId, nickname: myNickname, avatarUrl: selectedImage, score: myScore,
     isTeacher, gameStarted: isTeacher && gameStarted,
     phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
-    vote: isTeacher ? '' : myVote,
+    mode: isTeacher ? gameMode : '', teams: isTeacher ? teams : null,
+    vote: myVote,
     joinedAt, hb: Date.now()
   };
 }
@@ -264,13 +273,14 @@ function renderAll() {
     const t = users.find(u => u.isTeacher);
     if (t) {
       noTeacherSince = 0;
-      if (t.gameStarted) { if (t.session && t.session !== currentSession) startLocal(t.session); }
+      if (t.gameStarted) { gameMode = t.mode || 'solo'; teams = t.teams || {}; if (t.session && t.session !== currentSession) startLocal(t.session); }
       else if (gameStarted) endGameLocal();
     } else if (gameStarted) {
       noTeacherSince = noTeacherSince || Date.now();
       if (Date.now() - noTeacherSince > 30000) endGameLocal();
     }
   }
+  teacherTick(users);
   renderVote(users);
   renderUserList(users);
   renderRankingList(users);
@@ -295,31 +305,62 @@ function nextProblem() {
 }
 
 function endGameLocal() {
-  gameStarted = false; currentBlocks = []; phase = ''; myVote = '';
+  gameStarted = false; currentBlocks = []; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
   activeShiningEyesRound = false; hasShiningEyesBuff = false;
   applyUIState(false);
 }
 
-/* ---------- 모드 투표 ---------- */
-function renderVote(users) {
-  const t = users.find(u => u.isTeacher);
-  const active = !!t && t.phase === 'vote' && !gameStarted;
-  $('voteOverlay').style.display = active ? 'flex' : 'none';
-  $('startBtn').style.display = (isTeacher && !gameStarted && !active) ? 'block' : 'none';
-  if (!active) { if (!isTeacher) myVote = ''; return; }
-  $('profilePickerUI').style.display = 'none';
-  $('defaultUserListUI').style.display = 'flex';
-  $('voteTimer').innerText = Math.max(0, Math.ceil((t.voteEnd - Date.now()) / 1000));
-  $('soloCount').innerText = users.filter(u => !u.isTeacher && u.vote === 'solo').length + '표';
-  $('soloBtn').classList.toggle('voted', myVote === 'solo');
+/* ---------- 모드 투표 (선생님 화면의 워커 타이머로 진행 → 다른 앱에 있어도 진행됨) ---------- */
+function sendSoon() { clearTimeout(presenceTimer); presenceTimer = setTimeout(sendState, 200); }
+
+function teacherTick(users) {
+  if (!isTeacher) return;
+  const now = Date.now();
+  if (phase === 'vote1' && now >= voteEnd) { phase = 'vote2'; voteEnd = now + 5000; sendSoon(); }
+  else if (phase === 'vote2' && now >= voteEnd) finishVote(users);
+  else if (gameStarted && gameMode === 'duo') {      // 중간에 들어온 사람은 인원이 적은 팀에 배정
+    let changed = false;
+    users.forEach(u => {
+      if (teams[u.id] !== undefined) return;
+      const c = [0, 0]; users.forEach(x => { if (teams[x.id] !== undefined) c[teams[x.id]]++; });
+      teams[u.id] = c[0] <= c[1] ? 0 : 1; changed = true;
+    });
+    if (changed) sendSoon();
+  }
 }
 
-function finishVote() {
-  if (!isTeacher || phase !== 'vote') return;
-  const session = Date.now();   // 현재는 솔로 쇼다운만 있으므로 항상 솔로 쇼다운으로 시작
+function renderVote(users) {
+  const t = users.find(u => u.isTeacher);
+  const stage = (t && !gameStarted) ? t.phase : '';
+  const active = stage === 'vote1' || stage === 'vote2';
+  curStage = active ? stage : '';
+  $('voteOverlay').style.display = active ? 'flex' : 'none';
+  $('startBtn').style.display = (isTeacher && !gameStarted && !active) ? 'block' : 'none';
+  if (!active) return;
+  $('profilePickerUI').style.display = 'none';
+  $('defaultUserListUI').style.display = 'flex';
+  $('voteStage1').style.display = stage === 'vote1' ? 'flex' : 'none';
+  $('voteStage2').style.display = stage === 'vote2' ? 'flex' : 'none';
+  $('voteTimer').innerText = Math.max(0, Math.ceil((t.voteEnd - Date.now()) / 1000));
+  const cnt = k => users.filter(u => u.vote === stage + ':' + k).length + '표';
+  const mark = (id, k) => $(id).classList.toggle('voted', myVote === stage + ':' + k);
+  if (stage === 'vote1') { $('showdownCount').innerText = cnt('showdown'); mark('showdownBtn', 'showdown'); }
+  else { $('soloCount').innerText = cnt('solo'); $('duoCount').innerText = cnt('duo'); mark('soloBtn', 'solo'); mark('duoBtn', 'duo'); }
+}
+
+function finishVote(users) {
+  if (!isTeacher || phase !== 'vote2') return;
+  const c = k => users.filter(u => u.vote === 'vote2:' + k).length;
+  gameMode = c('duo') > c('solo') ? 'duo' : 'solo';   // 동점/무투표는 솔로
+  teams = {};
+  if (gameMode === 'duo') {                           // 랜덤으로 섞어 반반 (홀수면 남는 1명은 랜덤 팀)
+    const off = Math.random() < 0.5 ? 0 : 1;
+    users.map(u => u.id).sort(() => Math.random() - 0.5).forEach((id, i) => { teams[id] = (i + off) % 2; });
+  }
+  const session = Date.now();
   startLocal(session);
   updatePresence();
-  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session } }); } catch (e) {}
+  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams } }); } catch (e) {}
 }
 
 async function connect() {
@@ -327,7 +368,7 @@ async function connect() {
   const old = room;
   room = null; isSubscribed = false;
   if (old) { try { await supabase.removeChannel(old); } catch (e) {} }
-  const ch = room = supabase.channel('blocks-class-room-v3', { config: { broadcast: { self: false } } });
+  const ch = room = supabase.channel('blocks-class-room-v4', { config: { broadcast: { self: false } } });
 
   ch.on('broadcast', { event: 'state' }, ({ payload }) => receiveState(payload));
   ch.on('broadcast', { event: 'hello' }, ({ payload }) => {
@@ -339,11 +380,12 @@ async function connect() {
   ch.on('broadcast', { event: 'game_control' }, ({ payload }) => {
     if (isTeacher) return;
     if (payload.action === 'end') endGameLocal();
-    else if (payload.action === 'start' && payload.session !== currentSession) startLocal(payload.session);
+    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; startLocal(payload.session); }
   });
 
   ch.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
     if (payload.targetId !== myId) return;
+    if (gameMode === 'duo' && teams[payload.fromId] === teams[myId]) return;   // 같은 팀은 공격 불가
     if (payload.type === 'glitch') triggerGlitchEffect();
     else if (payload.type === 'taunt') triggerTauntEffect();
     else if (payload.type === 'freeze') triggerFreezeEffect();
@@ -397,7 +439,7 @@ function applyUIState(started) {
   $('defaultUserListUI').style.display = started ? 'none' : 'flex';
   $('profilePickerUI').style.display = 'none';
   $('gameRankingUI').style.display = started ? 'flex' : 'none';
-  $('startBtn').style.display = (isTeacher && !started && phase !== 'vote') ? 'block' : 'none';
+  $('startBtn').style.display = (isTeacher && !started && !phase.startsWith('vote')) ? 'block' : 'none';
   $('teacherControls').style.display = (isTeacher && started) ? 'flex' : 'none';
   if (started) initThreeOnce();
 }
@@ -417,21 +459,36 @@ function renderUserList(users) {
 
 function renderRankingList(users) {
   let html;
+  const duo = gameMode === 'duo';
+  const av = u => `<img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필">`;
   if (isTargetSelectMode) {
     $('rankingTitle').innerHTML = `<span style="color:#ef4444;">🎯 공격할 상대방을 클릭하세요!</span>`;
-    html = users.map(u => {
+    const pool = duo ? users.filter(u => teams[u.id] !== teams[myId]) : users;   // 듀오: 상대 팀만
+    html = pool.map(u => {
       const me = u.id === myId;
       return `<div class="${me ? 'rank-item' : 'rank-item selectable'}" data-userid="${esc(u.id)}">
-        <div class="user-info"><img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필"><span>${esc(u.nickname || '익명')}</span></div>
+        <div class="user-info">${av(u)}<span>${esc(u.nickname || '익명')}</span></div>
         ${me ? '<span style="color:#94a3b8;font-size:11px;">(나)</span>' : '<span style="color:#ef4444;font-size:11px;font-weight:bold;">[지목하기]</span>'}
       </div>`;
     }).join('');
+  } else if (duo) {
+    $('rankingTitle').innerHTML = `🏆 팀 랭킹`;
+    html = [0, 1].map(k => {
+      const m = users.filter(u => teams[u.id] === k);
+      return { k, m, score: m.reduce((s, u) => s + (u.score || 0), 0) };
+    }).sort((a, b) => b.score - a.score).map((t, i) => `
+      <div class="rank-item" style="border:2px solid ${TEAM_COLORS[t.k]};">
+        <div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2'][i]}">${i + 1}등</span>
+          <span>${TEAM_NAMES[t.k]}${teams[myId] === t.k ? ' (내 팀)' : ''}</span>
+          <span style="color:#94a3b8;font-size:11px;">${t.m.length}명</span></div>
+        <span style="color:#334155;font-size:14px;">${t.score}점</span>
+      </div>`).join('');
   } else {
     $('rankingTitle').innerHTML = `🏆 실시간 랭킹`;
     html = [...users].sort((a, b) => (b.score || 0) - (a.score || 0)).map((u, i) => {
       const cls = ['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc';
       return `<div class="rank-item">
-        <div class="user-info"><span class="rank-badge ${cls}">${i + 1}등</span><img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필"><span>${esc(u.nickname || '익명')}</span></div>
+        <div class="user-info"><span class="rank-badge ${cls}">${i + 1}등</span>${av(u)}<span>${esc(u.nickname || '익명')}</span></div>
         <span style="color:#64748b;font-size:12px;">${u.score || 0}점</span>
       </div>`;
     }).join('');
@@ -477,7 +534,7 @@ function setupChoices(correct) {
     btn.className = 'choice-btn' + (activeShiningEyesRound && num === correct ? ' glowing-choice' : '');
     btn.innerText = `${num}개`;
     btn.addEventListener('click', () => {
-      if (hasGuessed || isTeacher) return;
+      if (hasGuessed) return;
       hasGuessed = true; toggleOutline(true);
       const sess = currentSession;
       if (num === correct) {
@@ -647,7 +704,7 @@ function initUI() {
     if (!el || !isTargetSelectMode) return;
     const targetId = el.dataset.userid;
     if (targetId && pendingAttackType) {
-      try { await room.send({ type: 'broadcast', event: 'attack_event', payload: { targetId, type: pendingAttackType } }); } catch (err) {}
+      try { await room.send({ type: 'broadcast', event: 'attack_event', payload: { targetId, fromId: myId, type: pendingAttackType } }); } catch (err) {}
     }
     isTargetSelectMode = false; pendingAttackType = null;
     renderRankingList(activeUsers);
@@ -659,18 +716,17 @@ function initUI() {
     isTeacher = ok; syncNickname(); applyUIState(gameStarted);
   });
 
-  // 솔로 쇼다운 투표
-  $('soloBtn').addEventListener('click', () => {
-    if (isTeacher) return;
-    myVote = 'solo'; updatePresence();
-  });
+  // 투표 버튼 (현재 단계 + 선택지로 기록)
+  const vote = k => { if (!curStage) return; myVote = curStage + ':' + k; updatePresence(); };
+  $('showdownBtn').addEventListener('click', () => vote('showdown'));
+  $('soloBtn').addEventListener('click', () => vote('solo'));
+  $('duoBtn').addEventListener('click', () => vote('duo'));
 
-  // 선생님: 시작 → 10초 투표 → 게임 시작
+  // 선생님: 시작 → 1차(10초) → 2차(5초) 투표. 진행은 renderAll의 워커 타이머가 처리
   $('startBtn').addEventListener('click', () => {
-    if (!isTeacher || phase === 'vote') return;
-    phase = 'vote'; voteEnd = Date.now() + 10000;
+    if (!isTeacher || phase.startsWith('vote')) return;
+    phase = 'vote1'; voteEnd = Date.now() + 10000; myVote = '';
     updatePresence();
-    clearTimeout(voteTimer); voteTimer = setTimeout(finishVote, 10000);
   });
   $('endBtn').addEventListener('click', async () => {
     if (!isTeacher) return;
