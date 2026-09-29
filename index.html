@@ -87,13 +87,13 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 @keyframes resFade{from{opacity:0}to{opacity:1}}
 #fxCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
 .res-title{color:#1e293b;font-size:4.5vh;font-weight:bold;margin-top:2vh;height:6vh;text-shadow:0 2px 0 #fde68a}
-.podium{position:relative;width:min(1200px,98vw);height:58vh;display:flex;gap:1.5vh;justify-content:center;align-items:flex-end}
+.podium{position:relative;width:min(1200px,98vw);height:64vh;margin-top:3vh;display:flex;gap:1.5vh;justify-content:center;align-items:flex-end}
 .pod-col{position:relative;flex:1 1 0;max-width:380px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
 .beam{position:absolute;left:50%;top:0;bottom:0;width:170%;transform:translateX(-50%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);background:linear-gradient(to bottom,rgba(250,204,21,.55),rgba(250,204,21,0) 92%);opacity:0;transition:opacity .7s;pointer-events:none}
 .r2 .beam{background:linear-gradient(to bottom,rgba(96,165,250,.5),rgba(96,165,250,0) 92%)}
 .r3 .beam{background:linear-gradient(to bottom,rgba(251,146,60,.5),rgba(251,146,60,0) 92%)}
 .pod-col.on .beam{opacity:1}
-.pod-avatar{position:relative;z-index:2;width:17vh;height:17vh;min-width:80px;min-height:80px;object-fit:contain;background:#fff;border-radius:50%;border:.7vh solid #facc15;opacity:0;transform:translateY(-8vh) scale(.5);transition:all .7s cubic-bezier(.2,1.5,.4,1)}
+.pod-avatar{position:relative;z-index:2;width:18vh;height:18vh;min-width:80px;min-height:80px;object-fit:contain;background:#fff;border-radius:50%;border:.7vh solid #facc15;opacity:0;transform:translateY(-8vh) scale(.5);transition:all .7s cubic-bezier(.2,1.5,.4,1)}
 .r2 .pod-avatar{border-color:#cbd5e1}.r3 .pod-avatar{border-color:#fb923c}
 .pod-name,.pod-score{position:relative;z-index:2;color:#1e293b;font-weight:bold;text-align:center;opacity:0;transition:opacity .6s .3s;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pod-name{font-size:3vh;margin-top:1vh}.pod-score{font-size:2.6vh;color:#b45309;margin-bottom:.8vh}
@@ -101,7 +101,8 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .pod-col.on .pod-name,.pod-col.on .pod-score{opacity:1}
 .pod-block{position:relative;z-index:2;width:100%;height:0;border-radius:1.2vh 1.2vh 0 0;display:flex;align-items:center;justify-content:center;font-size:8vh;font-weight:900;color:rgba(255,255,255,.95);text-shadow:0 2px 6px rgba(0,0,0,.25);transition:height .9s cubic-bezier(.2,1,.3,1)}
 .r1 .pod-block{background:linear-gradient(#facc15,#a16207)}.r2 .pod-block{background:linear-gradient(#e2e8f0,#64748b)}.r3 .pod-block{background:linear-gradient(#fdba74,#9a3412)}
-.pod-col.on.r1 .pod-block{height:30vh}.pod-col.on.r2 .pod-block{height:22vh}.pod-col.on.r3 .pod-block{height:16vh}
+.pod-col.on.r1 .pod-block{height:32vh}.pod-col.on.r2 .pod-block{height:24vh}.pod-col.on.r3 .pod-block{height:17vh}
+.r1 .beam{bottom:32vh}.r2 .beam{bottom:24vh}.r3 .beam{bottom:17vh}
 .res-panel{position:relative;z-index:6;width:min(640px,94vw);margin-top:1vh;height:24vh;display:flex;flex-direction:column;gap:1vh;opacity:0;transform:translateY(5vh);transition:all .7s;pointer-events:none}
 .res-panel.on{opacity:1;transform:none;pointer-events:auto}
 .res-list{flex:1;min-height:0;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;box-shadow:0 8px 20px rgba(0,0,0,.1);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px}
@@ -176,7 +177,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 
     <div id="gameRankingUI" class="game-right-layout" style="display:none;">
       <div class="card tall-card">
-        <div class="board-title" id="rankingTitle">플레이어 랭킹</div>
+        <div class="board-title" id="rankingTitle">🏆 실시간 랭킹</div>
         <div class="rank-list" id="rankingList"></div>
       </div>
       <div class="card short-card">
@@ -191,7 +192,6 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 <div class="modal-overlay" id="cardModalOverlay"><div class="card-container" id="cardContainer"></div></div>
 <div id="resultOverlay">
   <canvas id="fxCanvas"></canvas>
-  <div class="res-title"> </div>
   <div class="podium" id="podium"></div>
   <div class="res-panel" id="resPanel"><div class="res-list" id="resList"></div><button class="res-lobby" id="lobbyBtn">로비로</button></div>
 </div>
@@ -321,7 +321,7 @@ function renderAll() {
 /* 게임 시작(각자 자기 문제로 진행) */
 function startLocal(session) {
   currentSession = session;
-  gameStarted = true; myVote = ''; phase = isTeacher ? 'play' : phase; myScore = 0; resultData = null; isTargetSelectMode = false;
+  gameStarted = true; myVote = ''; phase = isTeacher ? 'play' : phase; myScore = 0; resultData = null; isTargetSelectMode = false; SFX.start();
   applyUIState(true);
   nextProblem();
 }
@@ -374,7 +374,9 @@ function renderVote(users) {
   $('defaultUserListUI').style.display = 'flex';
   $('voteStage1').style.display = stage === 'vote1' ? 'flex' : 'none';
   $('voteStage2').style.display = stage === 'vote2' ? 'flex' : 'none';
-  $('voteTimer').innerText = Math.max(0, Math.ceil((t.voteEnd - Date.now()) / 1000));
+  const left = Math.max(0, Math.ceil((t.voteEnd - Date.now()) / 1000));
+  if (String(left) !== $('voteTimer').innerText && left > 0) SFX.tick();
+  $('voteTimer').innerText = left;
   const cnt = k => users.filter(u => u.vote === stage + ':' + k).length + '표';
   const mark = (id, k) => $(id).classList.toggle('voted', myVote === stage + ':' + k);
   if (stage === 'vote1') { $('showdownCount').innerText = cnt('showdown'); mark('showdownBtn', 'showdown'); }
@@ -418,6 +420,7 @@ async function connect() {
 
   ch.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
     if (payload.targetId !== myId) return;
+    SFX.hit();
     if (gameMode === 'duo' && teams[payload.fromId] === teams[myId]) return;   // 같은 팀은 공격 불가
     if (payload.type === 'glitch') triggerGlitchEffect();
     else if (payload.type === 'taunt') triggerTauntEffect();
@@ -571,7 +574,7 @@ function setupChoices(correct) {
       hasGuessed = true; toggleOutline(true);
       const sess = currentSession;
       if (num === correct) {
-        btn.classList.add('correct');
+        btn.classList.add('correct'); SFX.correct();
         let gain = 10;
         if (hasTripleScoreMultiplier) { gain = 30; hasTripleScoreMultiplier = false; fb.innerText = '정답입니다! ⚡벼락치기 발동 (+30점)!'; }
         else fb.innerText = '정답입니다! 카드 보상을 선택하세요.';
@@ -579,7 +582,7 @@ function setupChoices(correct) {
         myScore += gain; updatePresence();
         setTimeout(openCardModal, 500);   // 카드를 고르면 다음 문제로 넘어감
       } else {
-        btn.classList.add('wrong');
+        btn.classList.add('wrong'); SFX.wrong();
         fb.innerText = `틀렸습니다! (정답: ${correct}개)`; fb.style.color = '#ef4444';
         setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, 2000);
       }
@@ -708,6 +711,51 @@ function toggleOutline(visible) {
   if (outlineGroup) outlineGroup.children.forEach(c => { c.visible = visible; });
 }
 
+/* ---------- 효과음 (WebAudio로 직접 합성 → 파일/인터넷 필요 없음) ---------- */
+let actx = null;
+function ac() {
+  if (!actx) { try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+  if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+  return actx;
+}
+['pointerdown', 'keydown'].forEach(ev => window.addEventListener(ev, ac, { passive: true }));   // 브라우저 정책: 첫 클릭 뒤부터 소리 가능
+function tone(f, t0, d, type = 'sine', v = .2, f2) {
+  const c = ac(); if (!c) return;
+  const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + t0;
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(v, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + .05);
+}
+function noise(t0, d, v = .2, freq = 1500, type = 'bandpass', f2) {
+  const c = ac(); if (!c) return;
+  const n = Math.floor(c.sampleRate * d), buf = c.createBuffer(1, n, c.sampleRate), a = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) a[i] = Math.random() * 2 - 1;
+  const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(), t = c.currentTime + t0;
+  src.buffer = buf; f.type = type; f.frequency.setValueAtTime(freq, t);
+  if (f2) f.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  src.connect(f); f.connect(g); g.connect(c.destination); src.start(t);
+}
+const SFX = {
+  tick() { tone(880, 0, .08, 'square', .06); },
+  start() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .08, .18, 'triangle', .18)); },
+  correct() { tone(660, 0, .15, 'triangle', .22); tone(880, .12, .3, 'triangle', .22); },
+  wrong() { tone(220, 0, .35, 'sawtooth', .13, 110); },
+  hit() { noise(0, .25, .3, 800, 'lowpass'); tone(150, 0, .25, 'square', .15, 60); },
+  place(r) {                                   // 단상 등장: 휘익 + 북 + 딩
+    noise(0, .5, .12, 400, 'bandpass', 3000);
+    tone(120, .35, .3, 'sine', .5, 50); noise(.35, .12, .3, 200, 'lowpass');
+    tone(r === 1 ? 784 : r === 2 ? 659 : 523, .4, .5, 'triangle', .22);
+  },
+  roll() { for (let i = 0; i < 16; i++) noise(i * .06, .06, .1 + i * .012, 300, 'lowpass'); },   // 드럼롤
+  fanfare() {
+    [[523, 0], [659, .14], [784, .28], [1047, .5]].forEach(([f, t]) => { tone(f, t, .45, 'sawtooth', .1); tone(f * 2, t, .45, 'triangle', .08); });
+    noise(.5, 1.2, .18, 6000, 'highpass');     // 심벌
+  },
+  applause(d) { for (let i = 0; i < d * 25; i++) noise(Math.random() * d, .05 + Math.random() * .05, .05, 1500 + Math.random() * 2500, 'bandpass'); }
+};
+
 /* ---------- 게임 종료: 시상식 ---------- */
 let shownSession = 0, fxTimers = [], fxOn = false, fxConfetti = false, parts = [];
 const later = (ms, fn) => fxTimers.push(setTimeout(fn, ms));
@@ -739,13 +787,14 @@ function showResult(res) {
   ov.classList.add('active');
   fxOn = true; fxLoop();
   const order = [3, 2, 1].filter(r => res.podium[r - 1]);
-  order.forEach((r, i) => later(1200 + i * 1700, () => revealPlace(r)));   // 3등 → 2등 → 1등
+  order.forEach((r, i) => { later(1200 + i * 1700, () => revealPlace(r)); if (r === 1) later(1200 + i * 1700 - 1000, SFX.roll); });   // 3등 → 2등 → 1등
   later(1200 + Math.max(order.length - 1, 0) * 1700 + 1000, () => $('resPanel').classList.add('on'));   // 1등 1초 뒤 전체 랭킹
 }
 
 function revealPlace(r) {
   const col = document.querySelector(`#podium .r${r}`); if (!col) return;
-  col.classList.add('on');
+  col.classList.add('on'); SFX.place(r);
+  if (r === 1) { SFX.fanfare(); SFX.applause(5); } else SFX.applause(1.5);
   const rc = col.getBoundingClientRect();
   burst(rc.left + rc.width / 2, rc.bottom - rc.height * 0.45, r);
   later(500, () => burst(rc.left + rc.width * 0.3, rc.bottom - rc.height * 0.55, r));
