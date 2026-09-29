@@ -96,7 +96,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .res-title{color:#1e293b;font-size:4.5vh;font-weight:bold;margin-top:2vh;height:6vh;text-shadow:0 2px 0 #fde68a}
 .podium{position:relative;width:var(--pw);height:60vh;margin-top:3vh;display:flex;gap:1.5vh;justify-content:center;align-items:flex-end}
 .pod-col{position:relative;flex:1 1 0;max-width:calc((var(--pw) - 3vh) / 3);height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
-.beam{position:absolute;left:50%;top:0;bottom:0;width:170%;transform:translateX(-50%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);background:linear-gradient(to bottom,rgba(250,204,21,.55),rgba(250,204,21,0) 92%);opacity:0;transition:opacity .7s;pointer-events:none}
+.beam{position:absolute;left:50%;top:0;bottom:0;width:130%;transform:translateX(-50%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);background:linear-gradient(to bottom,rgba(250,204,21,.55),rgba(250,204,21,0) 92%);opacity:0;transition:opacity .7s;pointer-events:none}
 .r2 .beam{background:linear-gradient(to bottom,rgba(96,165,250,.5),rgba(96,165,250,0) 92%)}
 .r3 .beam{background:linear-gradient(to bottom,rgba(251,146,60,.5),rgba(251,146,60,0) 92%)}
 .pod-col.on .beam{opacity:1}
@@ -109,7 +109,10 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .pod-block{position:relative;z-index:2;width:100%;height:0;border-radius:1.2vh 1.2vh 0 0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:8vh;font-weight:900;color:rgba(255,255,255,.95);text-shadow:0 2px 6px rgba(0,0,0,.25);transition:height .9s cubic-bezier(.2,1,.3,1)}
 .r1 .pod-block{background:linear-gradient(#facc15,#a16207)}.r2 .pod-block{background:linear-gradient(#e2e8f0,#64748b)}.r3 .pod-block{background:linear-gradient(#fdba74,#9a3412)}
 .pod-col.on.r1 .pod-block{height:32vh}.pod-col.on.r2 .pod-block{height:24vh}.pod-col.on.r3 .pod-block{height:17vh}
-.r1 .beam{bottom:32vh}.r2 .beam{bottom:24vh}.r3 .beam{bottom:17vh}
+/* 조명: 단상 높이에 따라 시작/끝 위치를 다르게 (1등 가장 위, 3등 가장 아래) */
+.r1 .beam{top:0;bottom:32vh}
+.r2 .beam{top:8vh;bottom:24vh}
+.r3 .beam{top:15vh;bottom:17vh}
 .res-panel{position:relative;z-index:6;width:var(--pw);margin-top:1vh;height:28vh;display:flex;flex-direction:column;gap:1vh;opacity:0;transform:translateY(5vh);transition:all .7s;pointer-events:none}
 .res-panel.on{opacity:1;transform:none;pointer-events:auto}
 .res-list{flex:1;min-height:0;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;box-shadow:0 8px 20px rgba(0,0,0,.1);border-radius:12px;padding:10px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;align-content:start}
@@ -797,8 +800,7 @@ function die() {
   renderSpectate(collectUsers());
 }
 function spectateList(users) {
-  const others = users.filter(u => u.id !== myId), alive = others.filter(u => !u.dead);
-  return alive.length ? alive : others;
+  return users.filter(u => u.id !== myId && !u.dead);   // 탈락한 플레이어는 관전 목록에서 제외
 }
 function specMove(d) {
   const list = spectateList(activeUsers); if (!list.length) return;
@@ -810,15 +812,19 @@ function renderSpectate(users) {
   if (!isDead || !gameStarted) return;
   const list = spectateList(users);
   let t = list.find(u => u.id === specId);
-  if (!t) { t = list[0]; specId = t ? t.id : ''; }
+  if (!t) { t = list[0]; specId = t ? t.id : ''; }   // 관전 중이던 사람이 탈락하면 다음 생존자로 자동 이동
   ['specPrev', 'specNext'].forEach(id => { $(id).style.display = list.length ? 'flex' : 'none'; });
   $('quizTitle').innerText = '💀 탈락! 관전 중';
-  if (!t) { $('cameraStatusBadge').innerText = '관전할 플레이어가 없어요'; return; }
+  if (!t) {
+    $('cameraStatusBadge').innerText = '관전할 플레이어가 없어요';
+    if (specKey !== '[]') { specKey = '[]'; rebuildBlocks([]); }
+    return;
+  }
   if ($('cardImage').getAttribute('src') !== (t.avatarUrl || '')) $('cardImage').src = t.avatarUrl || characterImages[0];
   if (!isCameraFrozen) $('cameraStatusBadge').innerText = `👀 ${t.nickname || '익명'} 관전 중`;
   const key = JSON.stringify(t.blocks || []);
   if (key !== specKey) { specKey = key; activeShiningEyesRound = false; rebuildBlocks(t.blocks || []); }
-  const hearts = t.dead ? '💀 탈락' : '❤️'.repeat(Math.max(0, t.lives ?? 3));
+  const hearts = '❤️'.repeat(Math.max(0, t.lives ?? 3));
   const html = `<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:10px;">${'<img src="' + esc(t.avatarUrl || characterImages[0]) + '" class="user-avatar-mini" style="width:40px;height:40px;" alt="">'}<div style="text-align:left;"><div style="font-weight:bold;font-size:14px;">${esc(t.nickname || '익명')}</div><div style="font-size:12px;color:#64748b;">${hearts} · ${t.score || 0}점</div></div></div>`;
   if (html !== specPanelKey) { specPanelKey = html; const box = $('choiceButtons'); box.style.gridTemplateColumns = '1fr'; box.innerHTML = html; }
 }
@@ -993,11 +999,21 @@ function initUI() {
   $('knockoutBtn').addEventListener('click', () => vote('knockout'));
   $('specPrev').addEventListener('click', () => specMove(-1));
   $('specNext').addEventListener('click', () => specMove(1));
-  window.addEventListener('keydown', e => {           // 선생님 전용 무적 토글 (Ctrl+F4). 화면 표시는 없음
-    if (e.ctrlKey && e.key === 'F4') { e.preventDefault(); if (!e.repeat && isTeacher) invincible = !invincible; }
-  });
 
-  // 선생님: 시작 → 1차(10초) → 2차(5초) 투표. 진행은 renderAll의 워커 타이머가 처리
+  // 선생님 전용 무적 토글 (Alt+Tab). 화면 표시는 없음
+  // Alt+Tab은 OS가 창 전환에 쓰기 때문에, Alt를 누른 직후 창이 포커스를 잃는 경우도 함께 감지함
+  let altAt = 0, lastInv = 0;
+  const toggleInv = () => {
+    const n = Date.now(); if (n - lastInv < 800) return;   // 중복 방지
+    lastInv = n; if (isTeacher) invincible = !invincible;
+  };
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Alt') { altAt = Date.now(); e.preventDefault(); }
+    else if (e.altKey && e.key === 'Tab') { e.preventDefault(); toggleInv(); }
+  });
+  window.addEventListener('blur', () => { if (Date.now() - altAt < 700) toggleInv(); });
+
+  // 선생님: 시작 → 1차 → 2차 투표. 진행은 renderAll의 워커 타이머가 처리
   $('startBtn').addEventListener('click', () => {
     if (!isTeacher || phase.startsWith('vote')) return;
     phase = 'vote1'; voteEnd = Date.now() + 3000; myVote = '';
