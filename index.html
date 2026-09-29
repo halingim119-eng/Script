@@ -65,6 +65,13 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 /* 모드 투표 오버레이 (접속자 카드를 하얗게 덮음) */
 .vote-overlay{position:absolute;inset:0;background:#fff;border-radius:16px;z-index:5;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
 .vote-title{font-size:18px;font-weight:bold;color:#1e293b}
+.left-card,.short-card{position:relative}
+.spec-btn{position:absolute;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;border:none;background:#2563eb;color:#fff;font-size:18px;font-weight:bold;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:6;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.spec-btn:hover{background:#1d4ed8}
+.ko-hud{width:100%;margin-bottom:6px;flex:none}
+.ko-lives{font-size:16px;text-align:center;margin-bottom:3px}
+.ko-bar{height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden}
+#koBarFill{height:100%;width:100%;background:linear-gradient(90deg,#ef4444,#f59e0b);transition:width .1s linear}
 .vote-stage{display:none;flex-direction:column;gap:14px;align-items:center}
 .vote-row{display:flex;gap:16px;justify-content:center}
 .mode-btn{width:200px;height:150px;border-radius:14px;border:3px solid #cbd5e1;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:bold;color:#334155;cursor:pointer;transition:all .2s;font-family:inherit}
@@ -117,6 +124,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 <body>
 <div class="main-container" id="mainContainer">
   <div class="card left-card">
+    <button class="spec-btn" id="specPrev" style="left:6px;top:66%;">←</button>
     <div class="card-image-container"><img id="cardImage" alt="캐릭터" class="card-image"></div>
 
     <div id="normalUI" class="card-section">
@@ -129,6 +137,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 
     <div id="gameUI" class="card-section" style="display:none;">
       <div class="game-title-badge" id="cameraStatusBadge">3D 관찰 카메라 회전 중</div>
+      <div id="koHud" class="ko-hud" style="display:none;"><div class="ko-lives" id="koLives">❤️❤️❤️</div><div class="ko-bar"><div id="koBarFill"></div></div></div>
       <div id="threeContainer"></div>
     </div>
 
@@ -155,7 +164,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
         <div class="vote-stage" id="voteStage1">
           <div class="vote-row">
             <button class="mode-btn" id="showdownBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="쇼다운"><span>쇼다운</span><span class="vote-count" id="showdownCount">0표</span></button>
-            <button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button>
+            <button class="mode-btn" id="knockoutBtn"><img src="https://media.ffycdn.net/eu/supercell/g9QYVzuSVxq372RUXLte.png?width=2400" alt="녹아웃"><span>녹아웃</span><span class="vote-count" id="knockoutCount">0표</span></button>
           </div>
           <div class="vote-row"><button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button></div>
         </div>
@@ -182,9 +191,10 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
         <div class="rank-list" id="rankingList"></div>
       </div>
       <div class="card short-card">
-        <div class="quiz-title">쌓기나무는 모두 몇 개일까요?</div>
+        <div class="quiz-title" id="quizTitle">쌓기나무는 모두 몇 개일까요?</div>
         <div class="choice-grid" id="choiceButtons"></div>
         <div id="feedbackMessage" class="feedback-msg"></div>
+        <button class="spec-btn" id="specNext" style="right:8px;top:50%;">→</button>
       </div>
     </div>
   </div>
@@ -234,6 +244,7 @@ let pendingAttackType = null, isTargetSelectMode = false;
 let isCameraFrozen = false, hasTripleScoreMultiplier = false, hasShiningEyesBuff = false, activeShiningEyesRound = false;
 // 모드 투표 상태
 let phase = '', voteEnd = 0, myVote = '', curStage = '', gameMode = 'solo', teams = {}, resultData = null;
+let myLives = 3, isDead = false, diedAt = 0, koDeadline = 0, specId = '', specKey = '', specPanelKey = '', invincible = false, koEndAt = 0;
 const TEAM_NAMES = ['🔴 레드팀', '🔵 블루팀'], TEAM_COLORS = ['#ef4444', '#2563eb'];
 let uiScale = 1;
 
@@ -260,6 +271,7 @@ function getMyPayload() {
     isTeacher, gameStarted: isTeacher && gameStarted,
     phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
     mode: isTeacher ? gameMode : '', teams: isTeacher ? teams : null, result: isTeacher ? resultData : null,
+    lives: myLives, dead: isDead, diedAt, blocks: (gameStarted && gameMode === 'knockout') ? currentBlocks : null,
     vote: myVote,
     joinedAt, hb: Date.now()
   };
@@ -318,7 +330,8 @@ function renderAll() {
     }
   }
   teacherTick(users);
-  if (gameStarted && $('gameUI').style.display === 'none') applyUIState(true);   // 게임 중인데 게임 화면이 아니면 이동
+  if (gameStarted && $('gameUI').style.display === 'none') applyUIState(true);
+  koTick(); renderSpectate(users);   // 게임 중인데 게임 화면이 아니면 이동
   renderVote(users);
   renderUserList(users);
   renderRankingList(users);
@@ -329,24 +342,30 @@ function startLocal(session) {
   const fresh = session !== currentSession;
   currentSession = session;
   gameStarted = true; myVote = ''; phase = isTeacher ? 'play' : phase; resultData = null; isTargetSelectMode = false;
-  if (fresh) { myScore = 0; SFX.start(); }
+  if (fresh) { myScore = 0; myLives = 3; isDead = false; diedAt = 0; specId = ''; specKey = ''; specPanelKey = ''; SFX.start(); }
   closeResult();   // 시상식/투표 화면이 떠 있으면 닫고 게임 화면으로
   applyUIState(true);
+  $('koHud').style.display = (gameMode === 'knockout' && !isDead) ? 'block' : 'none';
+  renderHud();
   nextProblem();
 }
 
 /* 나만의 다음 문제 */
 function nextProblem() {
-  if (!gameStarted) return;
+  if (!gameStarted || isDead) return;
   currentBlocks = generateValidBlocks();
   activeShiningEyesRound = hasShiningEyesBuff;
   hasShiningEyesBuff = false;
   rebuildBlocks(currentBlocks);
   setupChoices(currentBlocks.length);
+  koDeadline = gameMode === 'knockout' ? Date.now() + 4000 : 0;   // 녹아웃: 문제당 4초
+  if (gameMode === 'knockout') { renderHud(); sendSoon(); }
 }
 
 function endGameLocal() {
   gameStarted = false; currentBlocks = []; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
+  koDeadline = 0; isDead = false; myLives = 3; diedAt = 0; specId = ''; specKey = ''; specPanelKey = '';
+  ['koHud', 'specPrev', 'specNext'].forEach(id => { $(id).style.display = 'none'; });
   $('cardModalOverlay').classList.remove('active'); isTargetSelectMode = false; pendingAttackType = null;
   activeShiningEyesRound = false; hasShiningEyesBuff = false;
   applyUIState(false);
@@ -358,8 +377,16 @@ function sendSoon() { clearTimeout(presenceTimer); presenceTimer = setTimeout(se
 function teacherTick(users) {
   if (!isTeacher) return;
   const now = Date.now();
-  if (phase === 'vote1' && now >= voteEnd) { phase = 'vote2'; voteEnd = now + 3000; sendSoon(); }
+  if (phase === 'vote1' && now >= voteEnd) {
+    const c = k => users.filter(u => u.vote === 'vote1:' + k).length;
+    if (c('knockout') > c('showdown')) startMode('knockout', users);     // 녹아웃이 이기면 바로 시작
+    else { phase = 'vote2'; voteEnd = now + 3000; sendSoon(); }
+  }
   else if (phase === 'vote2' && now >= voteEnd) finishVote(users);
+  else if (gameStarted && gameMode === 'knockout' && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
+    if (users.filter(u => !u.dead).length <= 1) { koEndAt = koEndAt || now + 2500; if (now >= koEndAt) { koEndAt = 0; teacherEndGame(); } }
+    else koEndAt = 0;
+  }
   else if (gameStarted && gameMode === 'duo') {      // 중간에 들어온 사람은 인원이 적은 팀에 배정
     let changed = false;
     users.forEach(u => {
@@ -388,16 +415,21 @@ function renderVote(users) {
   $('voteTimer').innerText = left;
   const cnt = k => users.filter(u => u.vote === stage + ':' + k).length + '표';
   const mark = (id, k) => $(id).classList.toggle('voted', myVote === stage + ':' + k);
-  if (stage === 'vote1') { $('showdownCount').innerText = cnt('showdown'); mark('showdownBtn', 'showdown'); }
+  if (stage === 'vote1') { $('showdownCount').innerText = cnt('showdown'); $('knockoutCount').innerText = cnt('knockout'); mark('showdownBtn', 'showdown'); mark('knockoutBtn', 'knockout'); }
   else { $('soloCount').innerText = cnt('solo'); $('duoCount').innerText = cnt('duo'); mark('soloBtn', 'solo'); mark('duoBtn', 'duo'); }
 }
 
 function finishVote(users) {
   if (!isTeacher || phase !== 'vote2') return;
   const c = k => users.filter(u => u.vote === 'vote2:' + k).length;
-  gameMode = c('duo') > c('solo') ? 'duo' : 'solo';   // 동점/무투표는 솔로
+  startMode(c('duo') > c('solo') ? 'duo' : 'solo', users);   // 동점/무투표는 솔로
+}
+
+function startMode(mode, users) {
+  if (!isTeacher) return;
+  gameMode = mode;
   teams = {};
-  if (gameMode === 'duo') {                           // 랜덤으로 섞어 반반 (홀수면 남는 1명은 랜덤 팀)
+  if (mode === 'duo') {                               // 랜덤으로 섞어 반반 (홀수면 남는 1명은 랜덤 팀)
     const off = Math.random() < 0.5 ? 0 : 1;
     users.map(u => u.id).sort(() => Math.random() - 0.5).forEach((id, i) => { teams[id] = (i + off) % 2; });
   }
@@ -405,6 +437,13 @@ function finishVote(users) {
   startLocal(session);
   updatePresence();
   try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams } }); } catch (e) {}
+}
+
+async function teacherEndGame() {
+  if (!isTeacher || !gameStarted) return;
+  resultData = buildResult(); const res = resultData;
+  endGameLocal(); showResult(res); updatePresence();
+  try { await room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'end', result: res } }); } catch (err) {}
 }
 
 async function connect() {
@@ -509,11 +548,11 @@ function renderUserList(users) {
 
 function renderRankingList(users) {
   let html;
-  const duo = gameMode === 'duo';
+  const duo = gameMode === 'duo', ko = gameMode === 'knockout';
   const av = u => `<img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필">`;
   if (isTargetSelectMode) {
     $('rankingTitle').innerHTML = `<span style="color:#ef4444;">🎯 공격할 상대방을 클릭하세요!</span>`;
-    const pool = duo ? users.filter(u => teams[u.id] !== teams[myId]) : users;   // 듀오: 상대 팀만
+    const pool = (duo ? users.filter(u => teams[u.id] !== teams[myId]) : users).filter(u => !(ko && u.dead));   // 듀오: 상대 팀만
     html = pool.map(u => {
       const me = u.id === myId;
       return `<div class="${me ? 'rank-item' : 'rank-item selectable'}" data-userid="${esc(u.id)}">
@@ -535,11 +574,11 @@ function renderRankingList(users) {
       </div>`).join('');
   } else {
     $('rankingTitle').innerHTML = `🏆 실시간 랭킹`;
-    html = [...users].sort((a, b) => (b.score || 0) - (a.score || 0)).map((u, i) => {
+    html = [...users].sort((a, b) => (ko ? (a.dead ? 1 : 0) - (b.dead ? 1 : 0) : 0) || (b.score || 0) - (a.score || 0)).map((u, i) => {
       const cls = ['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc';
       return `<div class="rank-item">
         <div class="user-info"><span class="rank-badge ${cls}">${i + 1}등</span>${av(u)}<span>${esc(u.nickname || '익명')}</span></div>
-        <span style="color:#64748b;font-size:12px;">${u.score || 0}점</span>
+        <span style="color:#64748b;font-size:12px;">${ko ? (u.dead ? '💀 ' : '❤️'.repeat(Math.max(0, u.lives ?? 3)) + ' ') : ''}${u.score || 0}점</span>
       </div>`;
     }).join('');
   }
@@ -573,6 +612,7 @@ function generateValidBlocks() {
 function setupChoices(correct) {
   const box = $('choiceButtons'), fb = $('feedbackMessage');
   box.innerHTML = ''; fb.innerText = ''; hasGuessed = false;
+  box.style.gridTemplateColumns = ''; $('quizTitle').innerText = '쌓기나무는 모두 몇 개일까요?'; specPanelKey = '';
   toggleOutline(activeShiningEyesRound);
   const set = new Set([correct]);
   while (set.size < 4) {
@@ -585,7 +625,7 @@ function setupChoices(correct) {
     btn.innerText = `${num}개`;
     btn.addEventListener('click', () => {
       if (hasGuessed) return;
-      hasGuessed = true; toggleOutline(true);
+      hasGuessed = true; toggleOutline(true); koDeadline = 0;
       const sess = currentSession;
       if (num === correct) {
         btn.classList.add('correct'); SFX.correct();
@@ -725,6 +765,64 @@ function toggleOutline(visible) {
   if (outlineGroup) outlineGroup.children.forEach(c => { c.visible = visible; });
 }
 
+/* ---------- 녹아웃: 제한시간 / 목숨 / 관전 ---------- */
+function renderHud() {
+  const n = Math.max(0, Math.min(3, myLives));
+  $('koLives').innerText = '❤️'.repeat(n) + '🖤'.repeat(3 - n);
+}
+function koTick() {
+  if (!gameStarted || gameMode !== 'knockout' || isDead || !koDeadline) return;
+  const left = koDeadline - Date.now();
+  $('koBarFill').style.width = Math.max(0, left / 4000 * 100) + '%';
+  if (left <= 0) koTimeout();
+}
+setInterval(koTick, 100);
+function koTimeout() {
+  koDeadline = 0; hasGuessed = true;
+  document.querySelectorAll('#choiceButtons .choice-btn').forEach(b => { b.disabled = true; });
+  const fb = $('feedbackMessage'); fb.innerText = '⏰ 시간 초과!'; fb.style.color = '#ef4444';
+  SFX.wrong();
+  if (!(isTeacher && invincible)) myLives--;      // 무적(선생님 전용)이면 목숨이 깎이지 않음
+  renderHud();
+  if (myLives <= 0) { die(); updatePresence(); return; }
+  updatePresence();
+  const sess = currentSession;
+  setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, 1200);
+}
+function die() {
+  isDead = true; diedAt = Date.now(); SFX.hit();
+  $('koHud').style.display = 'none';
+  $('quizTitle').innerText = '💀 탈락! 관전 중'; $('feedbackMessage').innerText = '';
+  specKey = ''; specPanelKey = '';
+  renderSpectate(collectUsers());
+}
+function spectateList(users) {
+  const others = users.filter(u => u.id !== myId), alive = others.filter(u => !u.dead);
+  return alive.length ? alive : others;
+}
+function specMove(d) {
+  const list = spectateList(activeUsers); if (!list.length) return;
+  let i = list.findIndex(u => u.id === specId);
+  i = i < 0 ? (d > 0 ? 0 : list.length - 1) : (i + d + list.length) % list.length;
+  specId = list[i].id; renderSpectate(activeUsers);
+}
+function renderSpectate(users) {
+  if (!isDead || !gameStarted) return;
+  const list = spectateList(users);
+  let t = list.find(u => u.id === specId);
+  if (!t) { t = list[0]; specId = t ? t.id : ''; }
+  ['specPrev', 'specNext'].forEach(id => { $(id).style.display = list.length ? 'flex' : 'none'; });
+  $('quizTitle').innerText = '💀 탈락! 관전 중';
+  if (!t) { $('cameraStatusBadge').innerText = '관전할 플레이어가 없어요'; return; }
+  if ($('cardImage').getAttribute('src') !== (t.avatarUrl || '')) $('cardImage').src = t.avatarUrl || characterImages[0];
+  if (!isCameraFrozen) $('cameraStatusBadge').innerText = `👀 ${t.nickname || '익명'} 관전 중`;
+  const key = JSON.stringify(t.blocks || []);
+  if (key !== specKey) { specKey = key; activeShiningEyesRound = false; rebuildBlocks(t.blocks || []); }
+  const hearts = t.dead ? '💀 탈락' : '❤️'.repeat(Math.max(0, t.lives ?? 3));
+  const html = `<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:10px;">${'<img src="' + esc(t.avatarUrl || characterImages[0]) + '" class="user-avatar-mini" style="width:40px;height:40px;" alt="">'}<div style="text-align:left;"><div style="font-weight:bold;font-size:14px;">${esc(t.nickname || '익명')}</div><div style="font-size:12px;color:#64748b;">${hearts} · ${t.score || 0}점</div></div></div>`;
+  if (html !== specPanelKey) { specPanelKey = html; const box = $('choiceButtons'); box.style.gridTemplateColumns = '1fr'; box.innerHTML = html; }
+}
+
 /* ---------- 효과음 (WebAudio로 직접 합성 → 파일/인터넷 필요 없음) ---------- */
 let actx = null;
 function ac() {
@@ -775,7 +873,9 @@ let shownSession = 0, fxTimers = [], fxOn = false, fxConfetti = false, parts = [
 const later = (ms, fn) => fxTimers.push(setTimeout(fn, ms));
 
 function buildResult() {
-  const us = collectUsers().map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: u.score || 0, t: teams[u.id] })).sort((a, b) => b.s - a.s);
+  const ko = gameMode === 'knockout', surv = u => u.dead ? (u.diedAt || 0) : 9e15;   // 녹아웃: 오래 살아남은 순
+  const us = collectUsers().sort(ko ? (a, b) => (surv(b) - surv(a)) || ((b.score || 0) - (a.score || 0)) : (a, b) => (b.score || 0) - (a.score || 0))
+    .map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: u.score || 0, t: teams[u.id], x: ko ? (u.dead ? '탈락' : '생존') : undefined }));
   const res = { session: currentSession, mode: gameMode, podium: us.slice(0, 3) };   // 듀오도 개인 기여 점수 순
   if (gameMode === 'duo') res.teams = [0, 1].map(k => { const m = us.filter(u => u.t === k); return { k, s: m.reduce((x, u) => x + u.s, 0), m }; }).sort((a, b) => b.s - a.s);
   else res.full = us;
@@ -791,9 +891,9 @@ function showResult(res) {
   $('podium').innerHTML = [2, 1, 3].filter(r => res.podium[r - 1]).map(r => {
     const p = res.podium[r - 1];
     const tag = duo && p.t !== undefined ? `<div class="pod-name" style="font-size:2.2vh;color:${['#dc2626', '#2563eb'][p.t]}">${TEAM_NAMES[p.t]}</div>` : '';
-    return `<div class="pod-col r${r}" data-rank="${r}"><div class="beam"></div><img class="pod-avatar" src="${esc(p.a || characterImages[0])}" alt=""><div class="pod-name">${esc(p.n)}</div>${tag}<div class="pod-score">${p.s}점</div><div class="pod-block"><span>${r}</span></div></div>`;
+    return `<div class="pod-col r${r}" data-rank="${r}"><div class="beam"></div><img class="pod-avatar" src="${esc(p.a || characterImages[0])}" alt=""><div class="pod-name">${esc(p.n)}</div>${tag}<div class="pod-score">${p.x ? p.x + ' · ' : ''}${p.s}점</div><div class="pod-block"><span>${r}</span></div></div>`;
   }).join('');
-  const row = (u, i, badge) => `<div class="rank-item"><div class="user-info">${badge ? `<span class="rank-badge ${['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc'}">${i + 1}등</span>` : ''}${av(u, 24)}<span>${esc(u.n)}</span></div><span style="color:#64748b;font-size:12px;">${u.s}점</span></div>`;
+  const row = (u, i, badge) => `<div class="rank-item"><div class="user-info">${badge ? `<span class="rank-badge ${['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc'}">${i + 1}등</span>` : ''}${av(u, 24)}<span>${esc(u.n)}</span></div><span style="color:#64748b;font-size:12px;">${u.x ? u.x + ' · ' : ''}${u.s}점</span></div>`;
   $('resList').innerHTML = duo
     ? res.teams.map((t, i) => `<div class="res-team"><div class="rank-item" style="border:2px solid ${TEAM_COLORS[t.k]};background:#f8fafc;"><div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2'][i]}">${i + 1}등</span><span>${TEAM_NAMES[t.k]}</span></div><span style="font-size:14px;">${t.s}점</span></div>` + t.m.map(u => row(u, 0, false)).join('') + `</div>`).join('')
     : res.full.map((u, i) => row(u, i, true)).join('');
@@ -890,6 +990,12 @@ function initUI() {
   $('showdownBtn').addEventListener('click', () => vote('showdown'));
   $('soloBtn').addEventListener('click', () => vote('solo'));
   $('duoBtn').addEventListener('click', () => vote('duo'));
+  $('knockoutBtn').addEventListener('click', () => vote('knockout'));
+  $('specPrev').addEventListener('click', () => specMove(-1));
+  $('specNext').addEventListener('click', () => specMove(1));
+  window.addEventListener('keydown', e => {           // 선생님 전용 무적 토글 (Ctrl+F4). 화면 표시는 없음
+    if (e.ctrlKey && e.key === 'F4') { e.preventDefault(); if (!e.repeat && isTeacher) invincible = !invincible; }
+  });
 
   // 선생님: 시작 → 1차(10초) → 2차(5초) 투표. 진행은 renderAll의 워커 타이머가 처리
   $('startBtn').addEventListener('click', () => {
@@ -897,12 +1003,7 @@ function initUI() {
     phase = 'vote1'; voteEnd = Date.now() + 3000; myVote = '';
     updatePresence();
   });
-  $('endBtn').addEventListener('click', async () => {
-    if (!isTeacher) return;
-    resultData = buildResult(); const res = resultData;
-    endGameLocal(); showResult(res); updatePresence();
-    try { await room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'end', result: res } }); } catch (err) {}
-  });
+  $('endBtn').addEventListener('click', teacherEndGame);
 
   syncNickname();
 }
