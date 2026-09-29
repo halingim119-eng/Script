@@ -82,13 +82,13 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .reward-card-title{font-size:16px;font-weight:bold;color:#0f172a;text-align:center}
 .reward-card-img{width:100px;height:100px;object-fit:contain}
 .reward-card-desc{font-size:12px;color:#64748b;text-align:center;word-break:keep-all}
-#resultOverlay{position:fixed;inset:0;z-index:3000;display:none;flex-direction:column;align-items:center;justify-content:flex-start;background:radial-gradient(ellipse at 50% 25%,#ffffff 0%,#eef2ff 100%);overflow:hidden;font-family:'Malgun Gothic',sans-serif}
+#resultOverlay{--pw:min(1140px,98vw);position:fixed;inset:0;z-index:3000;display:none;flex-direction:column;align-items:center;justify-content:flex-start;background:radial-gradient(ellipse at 50% 25%,#ffffff 0%,#eef2ff 100%);overflow:hidden;font-family:'Malgun Gothic',sans-serif}
 #resultOverlay.active{display:flex;animation:resFade 1s ease}
 @keyframes resFade{from{opacity:0}to{opacity:1}}
 #fxCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
 .res-title{color:#1e293b;font-size:4.5vh;font-weight:bold;margin-top:2vh;height:6vh;text-shadow:0 2px 0 #fde68a}
-.podium{position:relative;width:min(1200px,98vw);height:64vh;margin-top:3vh;display:flex;gap:1.5vh;justify-content:center;align-items:flex-end}
-.pod-col{position:relative;flex:1 1 0;max-width:380px;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+.podium{position:relative;width:var(--pw);height:60vh;margin-top:3vh;display:flex;gap:1.5vh;justify-content:center;align-items:flex-end}
+.pod-col{position:relative;flex:1 1 0;max-width:calc((var(--pw) - 3vh) / 3);height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
 .beam{position:absolute;left:50%;top:0;bottom:0;width:170%;transform:translateX(-50%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);background:linear-gradient(to bottom,rgba(250,204,21,.55),rgba(250,204,21,0) 92%);opacity:0;transition:opacity .7s;pointer-events:none}
 .r2 .beam{background:linear-gradient(to bottom,rgba(96,165,250,.5),rgba(96,165,250,0) 92%)}
 .r3 .beam{background:linear-gradient(to bottom,rgba(251,146,60,.5),rgba(251,146,60,0) 92%)}
@@ -103,9 +103,10 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .r1 .pod-block{background:linear-gradient(#facc15,#a16207)}.r2 .pod-block{background:linear-gradient(#e2e8f0,#64748b)}.r3 .pod-block{background:linear-gradient(#fdba74,#9a3412)}
 .pod-col.on.r1 .pod-block{height:32vh}.pod-col.on.r2 .pod-block{height:24vh}.pod-col.on.r3 .pod-block{height:17vh}
 .r1 .beam{bottom:32vh}.r2 .beam{bottom:24vh}.r3 .beam{bottom:17vh}
-.res-panel{position:relative;z-index:6;width:min(640px,94vw);margin-top:1vh;height:24vh;display:flex;flex-direction:column;gap:1vh;opacity:0;transform:translateY(5vh);transition:all .7s;pointer-events:none}
+.res-panel{position:relative;z-index:6;width:var(--pw);margin-top:1vh;height:28vh;display:flex;flex-direction:column;gap:1vh;opacity:0;transform:translateY(5vh);transition:all .7s;pointer-events:none}
 .res-panel.on{opacity:1;transform:none;pointer-events:auto}
-.res-list{flex:1;min-height:0;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;box-shadow:0 8px 20px rgba(0,0,0,.1);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.res-list{flex:1;min-height:0;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;box-shadow:0 8px 20px rgba(0,0,0,.1);border-radius:12px;padding:10px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px;align-content:start}
+.res-team{display:flex;flex-direction:column;gap:6px;min-width:0}
 .res-list .rank-item{flex-shrink:0}
 .res-lobby{width:100%;padding:1.2vh;font-size:2vh;font-weight:bold;color:#fff;background:#2563eb;border:none;border-radius:10px;cursor:pointer}
 .res-lobby:hover{background:#1d4ed8}
@@ -204,7 +205,11 @@ const supabase = createClient("https://knjblcpgxcixfbzcrrqg.supabase.co", "sb_pu
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const myId = 'user_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const newId = () => 'user_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const myId = (() => {            // 새로고침해도 같은 ID를 써서 다른 사람 화면에 옛 프로필이 남지 않게 함
+  try { let v = sessionStorage.getItem('blocksMyId'); if (!v) { v = newId(); sessionStorage.setItem('blocksMyId', v); } return v; }
+  catch (e) { return newId(); }
+})();
 
 const GAME_CARD_IMAGE = "https://media.ffycdn.net/eu/supercell/w6fRpxtAdEXsWLjHEzHD.png?width=2400";
 const characterImages = [
@@ -305,7 +310,7 @@ function renderAll() {
     const t = users.find(u => u.isTeacher);
     if (t) {
       noTeacherSince = 0;
-      if (t.gameStarted) { gameMode = t.mode || 'solo'; teams = t.teams || {}; if (t.session && t.session !== currentSession) startLocal(t.session); }
+      if (t.gameStarted) { gameMode = t.mode || 'solo'; teams = t.teams || {}; if (t.session && (t.session !== currentSession || !gameStarted)) startLocal(t.session); }
       else { if (gameStarted) endGameLocal(); if (t.result && t.result.session === currentSession) showResult(t.result); }
     } else if (gameStarted) {
       noTeacherSince = noTeacherSince || Date.now();
@@ -313,6 +318,7 @@ function renderAll() {
     }
   }
   teacherTick(users);
+  if (gameStarted && $('gameUI').style.display === 'none') applyUIState(true);   // 게임 중인데 게임 화면이 아니면 이동
   renderVote(users);
   renderUserList(users);
   renderRankingList(users);
@@ -320,8 +326,11 @@ function renderAll() {
 
 /* 게임 시작(각자 자기 문제로 진행) */
 function startLocal(session) {
+  const fresh = session !== currentSession;
   currentSession = session;
-  gameStarted = true; myVote = ''; phase = isTeacher ? 'play' : phase; myScore = 0; resultData = null; isTargetSelectMode = false; SFX.start();
+  gameStarted = true; myVote = ''; phase = isTeacher ? 'play' : phase; resultData = null; isTargetSelectMode = false;
+  if (fresh) { myScore = 0; SFX.start(); }
+  closeResult();   // 시상식/투표 화면이 떠 있으면 닫고 게임 화면으로
   applyUIState(true);
   nextProblem();
 }
@@ -410,7 +419,12 @@ async function connect() {
     if (!payload || payload.id === myId || helloTimer) return;
     helloTimer = setTimeout(() => { helloTimer = null; sendState(); }, Math.random() * 2500);
   });
-  ch.on('broadcast', { event: 'bye' }, ({ payload }) => { if (payload && roster.delete(payload.id)) renderAll(); });
+  ch.on('broadcast', { event: 'bye' }, ({ payload }) => {
+    if (!payload) return;
+    const r = roster.get(payload.id);
+    if (r && payload.t && (r.user.hb || 0) > payload.t) return;   // 새로고침 후 이미 다시 들어온 사람은 지우지 않음
+    if (roster.delete(payload.id)) renderAll();
+  });
 
   ch.on('broadcast', { event: 'game_control' }, ({ payload }) => {
     if (isTeacher) return;
@@ -464,7 +478,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) hidde
 window.addEventListener('online', () => connect());
 window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
 window.addEventListener('pagehide', () => {
-  try { room.send({ type: 'broadcast', event: 'bye', payload: { id: myId } }); } catch (e) {}
+  try { room.send({ type: 'broadcast', event: 'bye', payload: { id: myId, t: Date.now() } }); } catch (e) {}
 });
 
 /* ---------- UI ---------- */
@@ -781,7 +795,7 @@ function showResult(res) {
   }).join('');
   const row = (u, i, badge) => `<div class="rank-item"><div class="user-info">${badge ? `<span class="rank-badge ${['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc'}">${i + 1}등</span>` : ''}${av(u, 24)}<span>${esc(u.n)}</span></div><span style="color:#64748b;font-size:12px;">${u.s}점</span></div>`;
   $('resList').innerHTML = duo
-    ? res.teams.map((t, i) => `<div class="rank-item" style="border:2px solid ${TEAM_COLORS[t.k]};background:#f8fafc;"><div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2'][i]}">${i + 1}등</span><span>${TEAM_NAMES[t.k]}</span></div><span style="font-size:14px;">${t.s}점</span></div>` + t.m.map(u => row(u, 0, false)).join('')).join('')
+    ? res.teams.map((t, i) => `<div class="res-team"><div class="rank-item" style="border:2px solid ${TEAM_COLORS[t.k]};background:#f8fafc;"><div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2'][i]}">${i + 1}등</span><span>${TEAM_NAMES[t.k]}</span></div><span style="font-size:14px;">${t.s}점</span></div>` + t.m.map(u => row(u, 0, false)).join('') + `</div>`).join('')
     : res.full.map((u, i) => row(u, i, true)).join('');
   $('resPanel').classList.remove('on');
   ov.classList.add('active');
