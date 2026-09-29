@@ -8,10 +8,10 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Malgun Gothic',sans-serif;overflow:hidden}
-.main-container{display:flex;align-items:center;justify-content:center;gap:20px;padding:20px;max-width:900px;width:100%}
+/* 940x530 기준 레이아웃을 JS가 화면 크기에 맞춰 확대/축소함 */
+.main-container{display:flex;align-items:center;justify-content:center;gap:20px;padding:20px;width:940px;height:530px;flex-shrink:0;transform-origin:center center}
 .card{background:#fff;border-radius:16px;box-shadow:0 10px 25px -5px rgba(0,0,0,.08);border:1px solid #e2e8f0;padding:20px;display:flex;flex-direction:column}
 .left-card{width:320px;height:490px;flex-shrink:0;gap:8px}
-/* 이미지 카드: 게임 전/중 항상 같은 크기·위치 */
 .card-image-container{width:100%;height:170px;flex:none;display:flex;align-items:center;justify-content:center}
 .card-image{width:85%;height:100%;object-fit:contain}
 .card-section{width:100%;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
@@ -25,11 +25,10 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .game-title-badge{flex:none;font-size:13px;font-weight:bold;color:#1e293b;background:#e2e8f0;padding:4px 12px;border-radius:12px;margin-bottom:6px}
 .btn{width:100%;padding:11px;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;transition:all .2s;margin-top:6px;flex:none}
 .btn-red{background:#ef4444}.btn-red:hover{background:#dc2626}
-.btn-blue{background:#2563eb}.btn-blue:hover{background:#1d4ed8}
 .btn-outline{background:#f8fafc;color:#475569;border:1px solid #cbd5e1}.btn-outline:hover{background:#f1f5f9;color:#1e293b}
 .teacher-btn-group{width:100%;display:flex;gap:8px;flex:none}
 .right-card-container{flex:1;height:490px;display:flex;flex-direction:column}
-.right-card{width:100%;height:100%}
+.right-card{width:100%;height:100%;position:relative}
 .board-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f1f5f9}
 .board-title{font-size:16px;font-weight:bold;color:#1e293b}
 .online-count-badge{background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;display:flex;align-items:center;gap:6px}
@@ -63,6 +62,17 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .choice-btn.wrong{background:#ef4444!important;color:#fff!important;border-color:#dc2626!important;animation:none!important}
 .feedback-msg{font-size:13px;font-weight:bold;height:18px}
 .empty-state{margin:auto;color:#94a3b8;font-size:13px}
+/* 모드 투표 오버레이 (접속자 카드를 하얗게 덮음) */
+.vote-overlay{position:absolute;inset:0;background:#fff;border-radius:16px;z-index:5;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.vote-title{font-size:18px;font-weight:bold;color:#1e293b}
+.vote-row{display:flex;gap:16px;justify-content:center}
+.mode-btn{width:200px;height:150px;border-radius:14px;border:3px solid #cbd5e1;background:#f8fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:bold;color:#334155;cursor:pointer;transition:all .2s;font-family:inherit}
+.mode-btn img{width:90px;height:90px;object-fit:contain}
+.mode-btn:not(.locked):hover{border-color:#2563eb;background:#eff6ff}
+.mode-btn.voted{border-color:#2563eb;background:#dbeafe}
+.mode-btn.locked{opacity:.45;cursor:not-allowed}
+.mode-lock{font-size:36px}
+.vote-count{font-size:12px;color:#2563eb}
 .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
 .modal-overlay.active{opacity:1;pointer-events:auto}
 .card-container{display:flex;gap:20px}
@@ -76,7 +86,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 </style>
 </head>
 <body>
-<div class="main-container">
+<div class="main-container" id="mainContainer">
   <div class="card left-card">
     <div class="card-image-container"><img id="cardImage" alt="캐릭터" class="card-image"></div>
 
@@ -94,7 +104,6 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
     </div>
 
     <div id="teacherControls" class="teacher-btn-group" style="display:none;">
-      <button id="nextBtn" class="btn btn-blue">다음 문제</button>
       <button id="endBtn" class="btn btn-red">종료</button>
     </div>
     <button id="startBtn" class="btn btn-red" style="display:none;">시작</button>
@@ -111,6 +120,17 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
         </div>
       </div>
       <div class="user-list-container" id="userListContainer"><div class="empty-state">접속자를 감지하는 중...</div></div>
+
+      <div class="vote-overlay" id="voteOverlay">
+        <div class="vote-title">게임 모드 투표 ⏱ <span id="voteTimer">10</span>초</div>
+        <div class="vote-row">
+          <button class="mode-btn" id="soloBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="솔로 쇼다운"><span>솔로 쇼다운</span><span class="vote-count" id="soloCount">0표</span></button>
+          <button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button>
+        </div>
+        <div class="vote-row">
+          <button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button>
+        </div>
+      </div>
     </div>
 
     <div id="profilePickerUI" class="card right-card" style="display:none;">
@@ -145,7 +165,6 @@ const supabase = createClient("https://knjblcpgxcixfbzcrrqg.supabase.co", "sb_pu
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-// 접속(페이지 로드)할 때마다 고유 ID
 const myId = 'user_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 const GAME_CARD_IMAGE = "https://media.ffycdn.net/eu/supercell/w6fRpxtAdEXsWLjHEzHD.png?width=2400";
@@ -166,23 +185,36 @@ let selectedImage = characterImages[Math.floor(Math.random() * characterImages.l
 $('cardImage').src = selectedImage;
 
 let isTeacher = false, myNickname = '익명', gameStarted = false, myScore = 0;
-let currentBlocks = [], currentRoundId = 0, hasGuessed = false, activeUsers = [];
+let currentBlocks = [], currentSession = 0, hasGuessed = false, activeUsers = [];
 let pendingAttackType = null, isTargetSelectMode = false;
 let isCameraFrozen = false, hasTripleScoreMultiplier = false, hasShiningEyesBuff = false, activeShiningEyesRound = false;
+// 모드 투표 상태
+let phase = '', voteEnd = 0, myVote = '', voteTimer = null;
+let uiScale = 1;
 
 const joinedAt = Date.now();
-const HEARTBEAT_MS = 10000, STALE_MS = 25000;   // 상태 방송 주기 / 신호 끊김 판정
+const HEARTBEAT_MS = 10000, STALE_MS = 25000;
 let isSubscribed = false, room = null, presenceTimer = null, reconnectTimer = null, helloTimer = null;
 let lastCollectAt = 0, graceUntil = 0, lastConnectAt = 0, hiddenAt = 0, noTeacherSince = 0;
 let lastListHtml = '', lastRankHtml = '';
-const roster = new Map();   // 다른 접속자들: id -> { user, at(마지막으로 받은 시각) }
+const roster = new Map();
 
-/* ---------- 접속자 동기화 (Presence 대신 직접 방송) ---------- */
+/* ---------- 화면 크기에 맞춰 UI 확대/축소 ---------- */
+function fitScreen() {
+  uiScale = Math.min(window.innerWidth / 960, window.innerHeight / 550);
+  uiScale = Math.max(0.4, Math.min(uiScale, 3));
+  $('mainContainer').style.transform = `scale(${uiScale})`;
+  if (renderer) { renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * uiScale, 3)); if (resizeThree) resizeThree(); }
+}
+window.addEventListener('resize', fitScreen);
+
+/* ---------- 접속자 동기화 ---------- */
 function getMyPayload() {
   return {
     id: myId, nickname: myNickname, avatarUrl: selectedImage, score: myScore,
     isTeacher, gameStarted: isTeacher && gameStarted,
-    round: isTeacher ? currentRoundId : 0, blocks: isTeacher ? currentBlocks : [],
+    phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
+    vote: isTeacher ? '' : myVote,
     joinedAt, hb: Date.now()
   };
 }
@@ -195,9 +227,9 @@ function syncNickname() {
 }
 
 function updatePresence() {
-  renderAll();                                   // 내 화면엔 즉시 반영
+  renderAll();
   clearTimeout(presenceTimer);
-  presenceTimer = setTimeout(sendState, 200);    // 다른 사람에겐 살짝 모아서 방송
+  presenceTimer = setTimeout(sendState, 200);
 }
 
 async function sendState() {
@@ -210,14 +242,13 @@ async function sendState() {
 function receiveState(u) {
   if (!u || !u.id || u.id === myId) return;
   const prev = roster.get(u.id);
-  if (prev && (prev.user.hb || 0) > (u.hb || 0)) return;   // 늦게 도착한 옛 정보 무시
+  if (prev && (prev.user.hb || 0) > (u.hb || 0)) return;
   roster.set(u.id, { user: u, at: Date.now() });
   renderAll();
 }
 
 function collectUsers() {
   const now = Date.now();
-  // 타이머가 멈췄다 돌아왔거나 재접속 직후엔 '끊김 판정' 시계를 리셋
   if (now - lastCollectAt > 4000 || now < graceUntil) roster.forEach(r => { r.at = now; });
   lastCollectAt = now;
   roster.forEach((r, id) => { if (now - r.at > STALE_MS) roster.delete(id); });
@@ -233,44 +264,73 @@ function renderAll() {
     const t = users.find(u => u.isTeacher);
     if (t) {
       noTeacherSince = 0;
-      if (t.gameStarted) { if (t.blocks && t.blocks.length && t.round > currentRoundId) applyRound(t.blocks, t.round); }
-      else if (gameStarted && t.round >= currentRoundId) endGameLocal();
+      if (t.gameStarted) { if (t.session && t.session !== currentSession) startLocal(t.session); }
+      else if (gameStarted) endGameLocal();
     } else if (gameStarted) {
       noTeacherSince = noTeacherSince || Date.now();
       if (Date.now() - noTeacherSince > 30000) endGameLocal();
     }
   }
+  renderVote(users);
   renderUserList(users);
   renderRankingList(users);
 }
 
-function applyRound(blocks, roundId) {
-  if (!roundId || roundId <= currentRoundId) return;   // 이미 받은/더 옛날 문제는 무시
-  currentRoundId = roundId;
-  gameStarted = true;
-  currentBlocks = blocks;
+/* 게임 시작(각자 자기 문제로 진행) */
+function startLocal(session) {
+  currentSession = session;
+  gameStarted = true; myVote = ''; phase = isTeacher ? 'play' : phase;
+  applyUIState(true);
+  nextProblem();
+}
+
+/* 나만의 다음 문제 */
+function nextProblem() {
+  if (!gameStarted) return;
+  currentBlocks = generateValidBlocks();
   activeShiningEyesRound = hasShiningEyesBuff;
   hasShiningEyesBuff = false;
-  applyUIState(true);
-  rebuildBlocks(blocks);
-  setupChoices(blocks.length);
+  rebuildBlocks(currentBlocks);
+  setupChoices(currentBlocks.length);
 }
 
 function endGameLocal() {
-  gameStarted = false; currentBlocks = [];
+  gameStarted = false; currentBlocks = []; phase = ''; myVote = '';
   activeShiningEyesRound = false; hasShiningEyesBuff = false;
   applyUIState(false);
+}
+
+/* ---------- 모드 투표 ---------- */
+function renderVote(users) {
+  const t = users.find(u => u.isTeacher);
+  const active = !!t && t.phase === 'vote' && !gameStarted;
+  $('voteOverlay').style.display = active ? 'flex' : 'none';
+  $('startBtn').style.display = (isTeacher && !gameStarted && !active) ? 'block' : 'none';
+  if (!active) { if (!isTeacher) myVote = ''; return; }
+  $('profilePickerUI').style.display = 'none';
+  $('defaultUserListUI').style.display = 'flex';
+  $('voteTimer').innerText = Math.max(0, Math.ceil((t.voteEnd - Date.now()) / 1000));
+  $('soloCount').innerText = users.filter(u => !u.isTeacher && u.vote === 'solo').length + '표';
+  $('soloBtn').classList.toggle('voted', myVote === 'solo');
+}
+
+function finishVote() {
+  if (!isTeacher || phase !== 'vote') return;
+  const session = Date.now();   // 현재는 솔로 쇼다운만 있으므로 항상 솔로 쇼다운으로 시작
+  startLocal(session);
+  updatePresence();
+  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session } }); } catch (e) {}
 }
 
 async function connect() {
   lastConnectAt = Date.now(); graceUntil = lastConnectAt + 6000;
   const old = room;
-  room = null; isSubscribed = false;             // 옛 채널의 콜백은 무시
+  room = null; isSubscribed = false;
   if (old) { try { await supabase.removeChannel(old); } catch (e) {} }
-  const ch = room = supabase.channel('blocks-class-room-v2', { config: { broadcast: { self: false } } });
+  const ch = room = supabase.channel('blocks-class-room-v3', { config: { broadcast: { self: false } } });
 
   ch.on('broadcast', { event: 'state' }, ({ payload }) => receiveState(payload));
-  ch.on('broadcast', { event: 'hello' }, ({ payload }) => {      // 새로 들어온 사람에게 내 상태 알려주기
+  ch.on('broadcast', { event: 'hello' }, ({ payload }) => {
     if (!payload || payload.id === myId || helloTimer) return;
     helloTimer = setTimeout(() => { helloTimer = null; sendState(); }, Math.random() * 2500);
   });
@@ -279,7 +339,7 @@ async function connect() {
   ch.on('broadcast', { event: 'game_control' }, ({ payload }) => {
     if (isTeacher) return;
     if (payload.action === 'end') endGameLocal();
-    else applyRound(payload.blocks, payload.round);
+    else if (payload.action === 'start' && payload.session !== currentSession) startLocal(payload.session);
   });
 
   ch.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
@@ -291,18 +351,17 @@ async function connect() {
 
   ch.subscribe(status => {
     if (ch !== room) return;
-    if (status === 'SUBSCRIBED') {               // 접속 즉시: 인사 + 내 상태 방송
+    if (status === 'SUBSCRIBED') {
       clearTimeout(reconnectTimer); isSubscribed = true;
       Promise.resolve(ch.send({ type: 'broadcast', event: 'hello', payload: { id: myId } })).catch(() => {});
       sendState(); renderAll();
     } else if (['CLOSED', 'CHANNEL_ERROR', 'TIMED_OUT'].includes(status)) {
-      isSubscribed = false;                      // 자동 복구가 안 되면 4초 뒤 채널을 새로 만들어 재접속
+      isSubscribed = false;
       clearTimeout(reconnectTimer); reconnectTimer = setTimeout(connect, 4000);
     }
   });
 }
 
-// 백그라운드 탭에서도 멈추지 않도록 Web Worker 타이머 사용 (h: 10초 상태 방송, r: 1초 화면 갱신)
 function onTick(t) {
   if (t === 'h') { if (!isSubscribed && Date.now() - lastConnectAt > 8000) connect(); else sendState(); }
   else renderAll();
@@ -319,7 +378,6 @@ function startTicker() {
 }
 startTicker();
 
-// 다른 창/탭에 갔다가 돌아오면 재접속
 function revive() {
   const away = hiddenAt ? Date.now() - hiddenAt : 0; hiddenAt = 0;
   if (!isSubscribed || away > 5000) connect(); else { sendState(); renderAll(); }
@@ -327,7 +385,7 @@ function revive() {
 document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else revive(); });
 window.addEventListener('online', () => connect());
 window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
-window.addEventListener('pagehide', () => {      // 나갈 때 "나감" 방송
+window.addEventListener('pagehide', () => {
   try { room.send({ type: 'broadcast', event: 'bye', payload: { id: myId } }); } catch (e) {}
 });
 
@@ -339,7 +397,7 @@ function applyUIState(started) {
   $('defaultUserListUI').style.display = started ? 'none' : 'flex';
   $('profilePickerUI').style.display = 'none';
   $('gameRankingUI').style.display = started ? 'flex' : 'none';
-  $('startBtn').style.display = (isTeacher && !started) ? 'block' : 'none';
+  $('startBtn').style.display = (isTeacher && !started && phase !== 'vote') ? 'block' : 'none';
   $('teacherControls').style.display = (isTeacher && started) ? 'flex' : 'none';
   if (started) initThreeOnce();
 }
@@ -421,6 +479,7 @@ function setupChoices(correct) {
     btn.addEventListener('click', () => {
       if (hasGuessed || isTeacher) return;
       hasGuessed = true; toggleOutline(true);
+      const sess = currentSession;
       if (num === correct) {
         btn.classList.add('correct');
         let gain = 10;
@@ -428,10 +487,11 @@ function setupChoices(correct) {
         else fb.innerText = '정답입니다! 카드 보상을 선택하세요.';
         fb.style.color = '#22c55e';
         myScore += gain; updatePresence();
-        setTimeout(openCardModal, 500);
+        setTimeout(openCardModal, 500);   // 카드를 고르면 다음 문제로 넘어감
       } else {
         btn.classList.add('wrong');
         fb.innerText = `틀렸습니다! (정답: ${correct}개)`; fb.style.color = '#ef4444';
+        setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, 2000);
       }
     });
     box.appendChild(btn);
@@ -441,14 +501,13 @@ function setupChoices(correct) {
 function generateCardOptions() {
   const coin = [5, 7, 10][Math.floor(Math.random() * 3)];
   const coinImg = { 5: 'XMEic2GRdS2qq7GJaEiB', 7: 'TGQBtafzmsdeiJwZSmpo', 10: 'ET4DYhvXCLzJPiw96NtX' }[coin];
-  const S = id => `https://media.ffycdn.net/eu/supercell/${id}.png?width=2400`;
   const pool = [
-    { type: 'coin', title: `코인 ${coin}개`, img: S(coinImg), desc: `점수 +${coin}점을 즉시 획득합니다.`, val: coin },
+    { type: 'coin', title: `코인 ${coin}개`, img: SC(coinImg), desc: `점수 +${coin}점을 즉시 획득합니다.`, val: coin },
     { type: 'confusion', title: '혼란 카드', img: 'https://media1.tenor.com/m/ZINlqqwHYQ4AAAAC/brawl-stars-brawl-stars-emoji.gif', desc: '상대방을 지목하여 4초간 화면에 글리치 블록을 잔뜩 생성합니다.' },
     { type: 'taunt', title: '괴롭히기 카드', img: 'https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif', desc: '상대방 화면을 2.5초 동안 거대한 이미지로 가립니다.' },
-    { type: 'freeze', title: '얼음 카드', img: S('6UFbyzBNqp1V5z9EASqM'), desc: '상대방을 지목하여 3초간 쌓기나무 회전을 멈춥니다.' },
-    { type: 'lightning', title: '벼락 치기 카드', img: S('Cz9rD81f7Qrva9kzgZvA'), desc: '다음 문제를 맞히면 얻는 점수가 3배(30점)로 폭증합니다.' },
-    { type: 'shining_eyes', title: '빛나는 눈 카드', img: S('Y7xeUH3uBvNkQBzSXkA6'), desc: '다음 라운드에 쌓기나무가 반투명해지고 윤곽선이 빛나고 정답 버튼 하나가 빛납니다.' }
+    { type: 'freeze', title: '얼음 카드', img: SC('6UFbyzBNqp1V5z9EASqM'), desc: '상대방을 지목하여 3초간 쌓기나무 회전을 멈춥니다.' },
+    { type: 'lightning', title: '벼락 치기 카드', img: SC('Cz9rD81f7Qrva9kzgZvA'), desc: '다음 문제를 맞히면 얻는 점수가 3배(30점)로 폭증합니다.' },
+    { type: 'shining_eyes', title: '빛나는 눈 카드', img: SC('Y7xeUH3uBvNkQBzSXkA6'), desc: '다음 라운드에 쌓기나무가 반투명해지고 윤곽선이 빛나고 정답 버튼 하나가 빛납니다.' }
   ];
   return pool.sort(() => Math.random() - 0.5).slice(0, 3);
 }
@@ -460,7 +519,7 @@ function openCardModal() {
     const el = document.createElement('div');
     el.className = 'reward-card';
     el.innerHTML = `<div class="reward-card-title">${card.title}</div><img class="reward-card-img" src="${card.img}" alt="${card.title}"><div class="reward-card-desc">${card.desc}</div>`;
-    el.addEventListener('click', () => { modal.classList.remove('active'); handleCardSelect(card); });
+    el.addEventListener('click', () => { modal.classList.remove('active'); handleCardSelect(card); nextProblem(); });
     box.appendChild(el);
   });
   modal.classList.add('active');
@@ -501,7 +560,7 @@ function triggerFreezeEffect() {
 }
 
 /* ---------- 3D ---------- */
-let scene, camera, renderer, blockGroup, outlineGroup, glitchGroup, glitchMeshes = [], cameraAngle = 0, isThreeInitialized = false;
+let scene, camera, renderer, blockGroup, outlineGroup, glitchGroup, glitchMeshes = [], cameraAngle = 0, isThreeInitialized = false, resizeThree = null;
 
 function initThreeOnce() {
   if (isThreeInitialized) return;
@@ -511,16 +570,16 @@ function initThreeOnce() {
   scene.background = new THREE.Color(0xf8fafc);
   camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
   renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * uiScale, 3));
   container.appendChild(renderer.domElement);
-  const resize = () => {
+  resizeThree = () => {
     const w = container.clientWidth, h = container.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
   };
-  resize();
-  new ResizeObserver(resize).observe(container);
+  resizeThree();
+  new ResizeObserver(resizeThree).observe(container);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.8));
   const dir = new THREE.DirectionalLight(0xffffff, 0.5);
@@ -533,7 +592,7 @@ function initThreeOnce() {
   (function animate() {
     requestAnimationFrame(animate);
     if (!isCameraFrozen) cameraAngle += 0.012;
-    const r = 9.5;                                   // 카메라를 멀리 → 쌓기나무가 작게 보임
+    const r = 9.5;
     camera.position.set(1 + r * Math.cos(cameraAngle), 6.5, 1 + r * Math.sin(cameraAngle));
     camera.lookAt(1, 0.9, 1);
     glitchMeshes.forEach(m => m.material.color.setHex(Math.random() * 0xffffff));
@@ -546,8 +605,8 @@ function rebuildBlocks(blocks) {
   [blockGroup, outlineGroup].forEach(g => { while (g.children.length) g.remove(g.children[0]); });
   const geo = new THREE.BoxGeometry(1, 1, 1), edges = new THREE.EdgesGeometry(geo), t = activeShiningEyesRound;
   const boxMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: .3, metalness: .1, transparent: t, opacity: t ? .6 : 1, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
-  const edgeMat = new THREE.LineBasicMaterial({ color: 0x0f172a });                    // 기본 윤곽선(항상 표시)
-  const glowMat = new THREE.LineBasicMaterial({ color: 0x00ffff, depthTest: false });  // 투시 윤곽선
+  const edgeMat = new THREE.LineBasicMaterial({ color: 0x0f172a });
+  const glowMat = new THREE.LineBasicMaterial({ color: 0x00ffff, depthTest: false });
   blocks.forEach(b => {
     const mesh = new THREE.Mesh(geo, boxMat); mesh.position.set(b.x, b.z, b.y); blockGroup.add(mesh);
     const edge = new THREE.LineSegments(edges, edgeMat); edge.position.copy(mesh.position); blockGroup.add(edge);
@@ -561,6 +620,7 @@ function toggleOutline(visible) {
 
 /* ---------- 이벤트 ---------- */
 function initUI() {
+  fitScreen();
   $('nickname').addEventListener('input', syncNickname);
   $('nickname').addEventListener('change', syncNickname);
   $('nickname').addEventListener('blur', syncNickname);
@@ -599,15 +659,19 @@ function initUI() {
     isTeacher = ok; syncNickname(); applyUIState(gameStarted);
   });
 
-  const newRound = async action => {
-    if (!isTeacher) return;
-    const blocks = generateValidBlocks(), round = Date.now();
-    applyRound(blocks, round);
+  // 솔로 쇼다운 투표
+  $('soloBtn').addEventListener('click', () => {
+    if (isTeacher) return;
+    myVote = 'solo'; updatePresence();
+  });
+
+  // 선생님: 시작 → 10초 투표 → 게임 시작
+  $('startBtn').addEventListener('click', () => {
+    if (!isTeacher || phase === 'vote') return;
+    phase = 'vote'; voteEnd = Date.now() + 10000;
     updatePresence();
-    try { await room.send({ type: 'broadcast', event: 'game_control', payload: { action, blocks, round } }); } catch (err) {}
-  };
-  $('startBtn').addEventListener('click', () => newRound('start'));
-  $('nextBtn').addEventListener('click', () => newRound('next'));
+    clearTimeout(voteTimer); voteTimer = setTimeout(finishVote, 10000);
+  });
   $('endBtn').addEventListener('click', async () => {
     if (!isTeacher) return;
     endGameLocal(); updatePresence();
