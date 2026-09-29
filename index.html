@@ -96,7 +96,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .res-title{color:#1e293b;font-size:4.5vh;font-weight:bold;margin-top:2vh;height:6vh;text-shadow:0 2px 0 #fde68a}
 .podium{position:relative;width:var(--pw);height:60vh;margin-top:3vh;display:flex;gap:1.5vh;justify-content:center;align-items:flex-end}
 .pod-col{position:relative;flex:1 1 0;max-width:calc((var(--pw) - 3vh) / 3);height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
-.beam{position:absolute;left:50%;top:0;bottom:0;width:130%;transform:translateX(-50%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);background:linear-gradient(to bottom,rgba(250,204,21,.55),rgba(250,204,21,0) 92%);opacity:0;transition:opacity .7s;pointer-events:none}
+.beam{position:absolute;left:50%;top:0;bottom:0;width:170%;transform:translateX(-50%);clip-path:polygon(40% 0,60% 0,100% 100%,0 100%);background:linear-gradient(to bottom,rgba(250,204,21,.55),rgba(250,204,21,0) 92%);opacity:0;transition:opacity .7s;pointer-events:none}
 .r2 .beam{background:linear-gradient(to bottom,rgba(96,165,250,.5),rgba(96,165,250,0) 92%)}
 .r3 .beam{background:linear-gradient(to bottom,rgba(251,146,60,.5),rgba(251,146,60,0) 92%)}
 .pod-col.on .beam{opacity:1}
@@ -122,6 +122,15 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .res-lobby:hover{background:#1d4ed8}
 #tauntOverlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
 #tauntOverlay img{width:95vw;height:95vh;max-width:1400px;max-height:1400px;object-fit:contain;transform:scale(1.8)}
+#toastBox{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:8000;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;background:rgba(15,23,42,.92);color:#fff;padding:6px 16px 6px 8px;border-radius:12px;font-size:13px;box-shadow:0 6px 16px rgba(0,0,0,.25);border-left:4px solid var(--tc,#3b82f6);animation:toastIn .25s ease;white-space:nowrap}
+.toast img{width:30px;height:30px;border-radius:50%;background:#fff;object-fit:contain;flex:none}
+.toast b{font-size:13px}.toast span{font-size:12px;color:#cbd5e1}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.pw-box{background:#fff;border-radius:16px;padding:22px 26px;box-shadow:0 20px 25px -5px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:10px;align-items:center;min-width:300px}
+.pw-title{font-size:16px;font-weight:bold;color:#0f172a;text-align:center;line-height:1.5}
+.pw-btn{width:100%;padding:13px;font-family:Consolas,monospace;font-size:18px;font-weight:bold;letter-spacing:2px;background:#0f172a;color:#4ade80;border:none;border-radius:10px;cursor:pointer;transition:all .15s}
+.pw-btn:hover{background:#1e293b;transform:scale(1.03)}
 </style>
 </head>
 <body>
@@ -169,7 +178,10 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
             <button class="mode-btn" id="showdownBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="쇼다운"><span>쇼다운</span><span class="vote-count" id="showdownCount">0표</span></button>
             <button class="mode-btn" id="knockoutBtn"><img src="https://media.ffycdn.net/eu/supercell/g9QYVzuSVxq372RUXLte.png?width=2400" alt="녹아웃"><span>녹아웃</span><span class="vote-count" id="knockoutCount">0표</span></button>
           </div>
-          <div class="vote-row"><button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button></div>
+          <div class="vote-row">
+            <button class="mode-btn" id="hackingBtn"><img src="https://media.ffycdn.net/eu/supercell/bNzk8N5HjWxHjCeXftpa.png?width=2400" alt="해킹"><span>해킹</span><span class="vote-count" id="hackingCount">0표</span></button>
+            <button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button>
+          </div>
         </div>
         <div class="vote-stage" id="voteStage2">
           <div class="vote-row">
@@ -209,6 +221,8 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
   <div class="podium" id="podium"></div>
   <div class="res-panel" id="resPanel"><div class="res-list" id="resList"></div><button class="res-lobby" id="lobbyBtn">로비로</button></div>
 </div>
+<div class="modal-overlay" id="pwModalOverlay"><div class="pw-box"><div class="pw-title" id="pwTitle"></div><div id="pwChoices" style="width:100%;display:flex;flex-direction:column;gap:8px;"></div></div></div>
+<div id="toastBox"></div>
 <div id="tauntOverlay"><img src="https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif" alt="야유"></div>
 
 <script type="module">
@@ -369,7 +383,7 @@ function endGameLocal() {
   gameStarted = false; currentBlocks = []; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
   koDeadline = 0; isDead = false; myLives = 3; diedAt = 0; specId = ''; specKey = ''; specPanelKey = '';
   ['koHud', 'specPrev', 'specNext'].forEach(id => { $(id).style.display = 'none'; });
-  $('cardModalOverlay').classList.remove('active'); isTargetSelectMode = false; pendingAttackType = null;
+  $('cardModalOverlay').classList.remove('active'); $('pwModalOverlay').classList.remove('active'); isTargetSelectMode = false; pendingAttackType = null;
   activeShiningEyesRound = false; hasShiningEyesBuff = false;
   applyUIState(false);
 }
@@ -382,7 +396,8 @@ function teacherTick(users) {
   const now = Date.now();
   if (phase === 'vote1' && now >= voteEnd) {
     const c = k => users.filter(u => u.vote === 'vote1:' + k).length;
-    if (c('knockout') > c('showdown')) startMode('knockout', users);     // 녹아웃이 이기면 바로 시작
+    const kn = c('knockout'), hk = c('hacking');
+    if (Math.max(kn, hk) > c('showdown')) startMode(hk > kn ? 'hacking' : 'knockout', users);     // 녹아웃/해킹이 쇼다운을 이기면 바로 시작
     else { phase = 'vote2'; voteEnd = now + 3000; sendSoon(); }
   }
   else if (phase === 'vote2' && now >= voteEnd) finishVote(users);
@@ -418,7 +433,7 @@ function renderVote(users) {
   $('voteTimer').innerText = left;
   const cnt = k => users.filter(u => u.vote === stage + ':' + k).length + '표';
   const mark = (id, k) => $(id).classList.toggle('voted', myVote === stage + ':' + k);
-  if (stage === 'vote1') { $('showdownCount').innerText = cnt('showdown'); $('knockoutCount').innerText = cnt('knockout'); mark('showdownBtn', 'showdown'); mark('knockoutBtn', 'knockout'); }
+  if (stage === 'vote1') { $('showdownCount').innerText = cnt('showdown'); $('knockoutCount').innerText = cnt('knockout'); $('hackingCount').innerText = cnt('hacking'); mark('showdownBtn', 'showdown'); mark('knockoutBtn', 'knockout'); mark('hackingBtn', 'hacking'); }
   else { $('soloCount').innerText = cnt('solo'); $('duoCount').innerText = cnt('duo'); mark('soloBtn', 'solo'); mark('duoBtn', 'duo'); }
 }
 
@@ -478,6 +493,7 @@ async function connect() {
     if (payload.targetId !== myId) return;
     SFX.hit();
     if (gameMode === 'duo' && teams[payload.fromId] === teams[myId]) return;   // 같은 팀은 공격 불가
+    notifyAttack(payload);
     if (payload.type === 'glitch') triggerGlitchEffect();
     else if (payload.type === 'taunt') triggerTauntEffect();
     else if (payload.type === 'freeze') triggerFreezeEffect();
@@ -649,6 +665,7 @@ function setupChoices(correct) {
 }
 
 function generateCardOptions() {
+  if (gameMode === 'hacking') return generateHackCards();
   const coin = [5, 7, 10][Math.floor(Math.random() * 3)];
   const coinImg = { 5: 'XMEic2GRdS2qq7GJaEiB', 7: 'TGQBtafzmsdeiJwZSmpo', 10: 'ET4DYhvXCLzJPiw96NtX' }[coin];
   const pool = [
@@ -681,8 +698,70 @@ function handleCardSelect(card) {
     pendingAttackType = card.type === 'confusion' ? 'glitch' : card.type;
     isTargetSelectMode = true; renderRankingList(activeUsers);
   }
+  else if (card.type === 'hack') { pendingAttackType = 'hack'; isTargetSelectMode = true; renderRankingList(activeUsers); }
   else if (card.type === 'lightning') hasTripleScoreMultiplier = true;
   else if (card.type === 'shining_eyes') hasShiningEyesBuff = true;
+}
+
+/* ---------- 해킹 모드 / 알림 ---------- */
+const PASSWORDS = ['panda77', 'star2580', 'brawl042', 'nova9911', 'k1ng0f', 'zeta_314'];   // 6개 중 판마다 1개가 정답
+const HACK_IMG = SC('bNzk8N5HjWxHjCeXftpa');
+const secretPw = () => PASSWORDS[Math.abs(currentSession) % PASSWORDS.length];   // 세션값으로 모두가 같은 정답을 계산 (전송 불필요)
+
+function showToast(img, title, sub, color) {
+  const box = $('toastBox');
+  while (box.children.length >= 3) box.removeChild(box.firstChild);
+  const el = document.createElement('div');
+  el.className = 'toast'; el.style.setProperty('--tc', color || '#3b82f6');
+  el.innerHTML = `<img src="${esc(img || characterImages[0])}" alt=""><div><b>${esc(title)}</b><br><span>${esc(sub)}</span></div>`;
+  box.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 3800);
+}
+
+function notifyAttack(p) {   // 모든 모드 공통: 누가 방해했는지 작은 알림
+  const a = activeUsers.find(u => u.id === p.fromId);
+  const img = a ? a.avatarUrl : null, name = a ? (a.nickname || '익명') : '누군가';
+  if (p.type === 'hack') {
+    const amt = Math.min(myScore, Math.max(0, p.amount || 0));
+    myScore -= amt; updatePresence();
+    showToast(img, name, `🔓 해킹당했어요! 코인 -${amt} (${p.pct || '?'}%)`, '#ef4444');
+    return;
+  }
+  const msg = { glitch: '😵 혼란 카드로 방해했어요!', taunt: '😝 괴롭히기 카드로 놀렸어요!', freeze: '❄️ 얼음 카드로 얼렸어요!' }[p.type];
+  if (msg) showToast(img, name, msg, '#f59e0b');
+}
+
+function generateHackCards() {   // 해킹 모드: 코인 카드만(양 2배), 30% 확률로 한 장은 해킹 카드
+  const imgs = { 5: 'XMEic2GRdS2qq7GJaEiB', 7: 'TGQBtafzmsdeiJwZSmpo', 10: 'ET4DYhvXCLzJPiw96NtX' };
+  const cards = [5, 7, 10].map(b => ({ type: 'coin', title: `코인 ${b * 2}개`, img: SC(imgs[b]), desc: `점수 +${b * 2}점을 즉시 획득합니다.`, val: b * 2 }));
+  if (Math.random() < 0.3) cards[Math.floor(Math.random() * 3)] = { type: 'hack', title: '해킹 카드', img: HACK_IMG, desc: '상대를 지목하고 비밀번호를 맞히면 상대 코인의 10~60%를 뺏습니다.' };
+  return cards;
+}
+
+function openHackModal(targetId) {   // 비밀번호 3개 중 1개 선택 (정답은 항상 포함)
+  const t = activeUsers.find(u => u.id === targetId); if (!t) return;
+  const secret = secretPw();
+  const opts = [secret, ...PASSWORDS.filter(x => x !== secret).sort(() => Math.random() - 0.5).slice(0, 2)].sort(() => Math.random() - 0.5);
+  $('pwTitle').innerHTML = `🔐 ${esc(t.nickname || '익명')} 해킹 중…<br><span style="font-size:12px;color:#64748b;font-weight:normal;">올바른 비밀번호를 고르세요</span>`;
+  const box = $('pwChoices'); box.innerHTML = '';
+  opts.forEach(pw => {
+    const b = document.createElement('button'); b.className = 'pw-btn'; b.innerText = pw;
+    b.addEventListener('click', () => { $('pwModalOverlay').classList.remove('active'); finishHack(targetId, pw === secret); });
+    box.appendChild(b);
+  });
+  $('pwModalOverlay').classList.add('active');
+}
+
+async function finishHack(targetId, ok) {
+  const t = activeUsers.find(u => u.id === targetId);
+  const img = t ? t.avatarUrl : null, name = t ? (t.nickname || '익명') : '상대';
+  if (!ok) { SFX.wrong(); showToast(img, '해킹 실패', `${name}: 비밀번호가 틀렸어요 ❌`, '#94a3b8'); return; }
+  const pct = 10 + Math.floor(Math.random() * 51);
+  const amt = Math.floor(((t && t.score) || 0) * pct / 100);
+  if (amt <= 0) { showToast(img, '해킹 성공', `${name}에게 뺏을 코인이 없어요`, '#94a3b8'); return; }
+  SFX.correct(); myScore += amt; updatePresence();
+  showToast(img, '해킹 성공! 🔓', `${name}의 코인 ${pct}% 획득 (+${amt})`, '#22c55e');
+  try { await room.send({ type: 'broadcast', event: 'attack_event', payload: { targetId, fromId: myId, type: 'hack', amount: amt, pct } }); } catch (e) {}
 }
 
 /* ---------- 공격 효과 ---------- */
@@ -978,6 +1057,7 @@ function initUI() {
     const el = e.target.closest('.selectable');
     if (!el || !isTargetSelectMode) return;
     const targetId = el.dataset.userid;
+    if (targetId && pendingAttackType === 'hack') { isTargetSelectMode = false; pendingAttackType = null; renderRankingList(activeUsers); openHackModal(targetId); return; }
     if (targetId && pendingAttackType) {
       try { await room.send({ type: 'broadcast', event: 'attack_event', payload: { targetId, fromId: myId, type: pendingAttackType } }); } catch (err) {}
     }
@@ -997,6 +1077,7 @@ function initUI() {
   $('soloBtn').addEventListener('click', () => vote('solo'));
   $('duoBtn').addEventListener('click', () => vote('duo'));
   $('knockoutBtn').addEventListener('click', () => vote('knockout'));
+  $('hackingBtn').addEventListener('click', () => vote('hacking'));
   $('specPrev').addEventListener('click', () => specMove(-1));
   $('specNext').addEventListener('click', () => specMove(1));
 
