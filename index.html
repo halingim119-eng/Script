@@ -122,11 +122,17 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .res-lobby:hover{background:#1d4ed8}
 #tauntOverlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
 #tauntOverlay img{width:95vw;height:95vh;max-width:1400px;max-height:1400px;object-fit:contain;transform:scale(1.8)}
-#toastBox{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:8000;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
-.toast{display:flex;align-items:center;gap:10px;background:rgba(15,23,42,.92);color:#fff;padding:6px 16px 6px 8px;border-radius:12px;font-size:13px;box-shadow:0 6px 16px rgba(0,0,0,.25);border-left:4px solid var(--tc,#3b82f6);animation:toastIn .25s ease;white-space:nowrap}
+/* 알림: 오른쪽 아래, 흰색 반투명, 클릭은 뒤로 통과 */
+#toastBox{position:fixed;bottom:12px;right:12px;z-index:8000;display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none}
+.toast{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.75);color:#1e293b;padding:6px 16px 6px 8px;border-radius:12px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.12);border:1px solid rgba(203,213,225,.7);border-left:4px solid var(--tc,#3b82f6);animation:toastIn .25s ease;white-space:nowrap;pointer-events:none}
 .toast img{width:30px;height:30px;border-radius:50%;background:#fff;object-fit:contain;flex:none}
-.toast b{font-size:13px}.toast span{font-size:12px;color:#cbd5e1}
-@keyframes toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.toast b{font-size:13px}.toast span{font-size:12px;color:#475569}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+/* 선택지 알림 (버튼만 클릭 가능) */
+.toast.ask{white-space:normal;flex-direction:column;align-items:stretch;gap:8px;padding:10px 14px;background:rgba(255,255,255,.88)}
+.toast.ask .ask-btns{display:flex;gap:6px}
+.toast.ask button{pointer-events:auto;flex:1;padding:6px 10px;border:none;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;color:#fff;background:#2563eb;font-family:inherit}
+.toast.ask button.no{background:#94a3b8}
 .pw-box{background:#fff;border-radius:16px;padding:22px 26px;box-shadow:0 20px 25px -5px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:10px;align-items:center;min-width:300px}
 .pw-title{font-size:16px;font-weight:bold;color:#0f172a;text-align:center;line-height:1.5}
 .pw-btn{width:100%;padding:13px;font-family:Consolas,monospace;font-size:18px;font-weight:bold;letter-spacing:2px;background:#0f172a;color:#4ade80;border:none;border-radius:10px;cursor:pointer;transition:all .15s}
@@ -134,6 +140,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:90px;height:90px}
 .mode-btn .mini-grid img{width:43px;height:43px}
 .mini-grid span{display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;color:#64748b;background:#e2e8f0;border-radius:8px}
+.mini-grid span.em{background:#fff;border:1px solid #cbd5e1;font-size:22px}
 .mode-emoji{font-size:56px;height:90px;line-height:90px}
 #stackView{display:none;flex:1;min-height:0;width:100%;position:relative;border-radius:10px;overflow:hidden;background:#f8fafc}
 #stackView #threeContainer{position:absolute;inset:0;width:auto;height:auto;border-radius:0}
@@ -143,12 +150,14 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .tv-grid{display:grid;grid-template-columns:repeat(3,22px);gap:2px}
 .tv-cell{height:22px;background:#e2e8f0;border-radius:3px;font-size:12px;font-weight:bold;color:#1e293b;display:flex;align-items:center;justify-content:center;border:2px solid transparent}
 .tv-cell.ok{background:#bbf7d0}.tv-cell.cur{border-color:#f59e0b}
-#stackPad{display:none;flex:1;min-height:0;width:100%;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-.pad-row{display:flex;gap:8px}
-.pad-btn{width:58px;height:58px;font-size:20px;font-weight:bold;border-radius:12px;border:2px solid #cbd5e1;background:#f8fafc;color:#334155;cursor:pointer;transition:all .1s}
+/* 쌓기 모드 조작 패드: 왼쪽 카드 안에 딱 맞게 */
+.left-card.stack-left .card-image-container{height:100px}
+#stackPad{display:none;flex:1;min-height:0;width:100%;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden}
+.pad-row{display:flex;gap:6px}
+.pad-btn{width:50px;height:50px;font-size:18px;font-weight:bold;border-radius:12px;border:2px solid #cbd5e1;background:#f8fafc;color:#334155;cursor:pointer;transition:all .1s;flex:none;user-select:none}
 .pad-btn:hover{background:#eff6ff;border-color:#2563eb}.pad-btn:active{transform:scale(.92);background:#dbeafe}
-.pad-act .pad-btn{width:104px;height:40px;font-size:14px}
-.pad-hint{font-size:10px;color:#94a3b8;text-align:center;line-height:1.5}
+.pad-act .pad-btn{width:96px;height:38px;font-size:13px}
+.pad-hint{font-size:10px;color:#94a3b8;text-align:center;line-height:1.4}
 #bpView{display:none;flex:1;min-height:0;width:100%;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#f8fafc;border-radius:12px}
 </style>
 </head>
@@ -206,7 +215,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
           </div>
           <div class="vote-row">
             <button class="mode-btn" id="hackingBtn"><img src="https://media.ffycdn.net/eu/supercell/bNzk8N5HjWxHjCeXftpa.png?width=2400" alt="해킹"><span>해킹</span><span class="vote-count" id="hackingCount">0표</span></button>
-            <button class="mode-btn" id="etcBtn"><div class="mini-grid"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt=""><img src="https://media.ffycdn.net/eu/supercell/g9QYVzuSVxq372RUXLte.png?width=2400" alt=""><img src="https://media.ffycdn.net/eu/supercell/bNzk8N5HjWxHjCeXftpa.png?width=2400" alt=""><span>…</span></div><span>기타 모드</span><span class="vote-count" id="etcCount">0표</span></button>
+            <button class="mode-btn" id="etcBtn"><div class="mini-grid"><span class="em">⚡</span><span class="em">💀</span><span class="em">🧱</span><span>…</span></div><span>기타 모드</span><span class="vote-count" id="etcCount">0표</span></button>
           </div>
         </div>
         <div class="vote-stage" id="voteStage3">
@@ -770,6 +779,7 @@ const modalOpen = () => $('cardModalOverlay').classList.contains('active') || $(
 
 function setModeUI() {
   const st = gameStarted && gameMode === 'stack', bp = gameStarted && gameMode === 'blueprint', tc = $('threeContainer');
+  document.querySelector('.left-card').classList.toggle('stack-left', st);          // 쌓기 모드: 왼쪽 캐릭터 그림을 줄여 버튼 공간 확보
   if (st) $('stackView').appendChild(tc);                                           // 3D 화면을 오른쪽 아래 카드로 이동
   else if (tc.parentNode !== $('gameUI')) $('gameUI').insertBefore(tc, $('bpView'));  // 원래 자리로 복귀
   $('stackView').style.display = st ? 'block' : 'none';
@@ -893,7 +903,7 @@ const secretPw = () => PASSWORDS[Math.abs(currentSession) % PASSWORDS.length];  
 
 function showToast(img, title, sub, color) {
   const box = $('toastBox');
-  while (box.children.length >= 3) box.removeChild(box.firstChild);
+  while (box.querySelectorAll('.toast:not(.ask)').length >= 3) box.querySelector('.toast:not(.ask)').remove();   // 선택지 알림은 남겨둠
   const el = document.createElement('div');
   el.className = 'toast'; el.style.setProperty('--tc', color || '#3b82f6');
   el.innerHTML = `<img src="${esc(img || characterImages[0])}" alt=""><div><b>${esc(title)}</b><br><span>${esc(sub)}</span></div>`;
@@ -1227,6 +1237,25 @@ function closeResult(keepShown) {
   $('resultOverlay').classList.remove('active'); $('resPanel').classList.remove('on');
 }
 
+/* ---------- 선생님 모드 (새로고침 시 다시 들어갈지 묻기) ---------- */
+const TKEY = 'blocksWasTeacher';
+function setTeacher(ok) {
+  if (ok === isTeacher) return;
+  isTeacher = ok;
+  if (ok) { try { localStorage.setItem(TKEY, '1'); } catch (e) {} }   // 한 번이라도 선생님이었으면 기록
+  syncNickname(); applyUIState(gameStarted);
+}
+function askTeacherMode() {
+  let was = false; try { was = localStorage.getItem(TKEY) === '1'; } catch (e) {}
+  if (!was) return;
+  const el = document.createElement('div');
+  el.className = 'toast ask'; el.style.setProperty('--tc', '#2563eb');
+  el.innerHTML = '<div><b>👩‍🏫 선생님 모드로 들어갈까요?</b><br><span>이전에 선생님으로 접속했어요</span></div><div class="ask-btns"><button class="yes">선생님 모드</button><button class="no">학생으로</button></div>';
+  $('toastBox').appendChild(el);
+  el.querySelector('.yes').addEventListener('click', () => { $('teacherCode').value = 'PANdA'; setTeacher(true); el.remove(); });
+  el.querySelector('.no').addEventListener('click', () => { try { localStorage.removeItem(TKEY); } catch (e) {} el.remove(); });
+}
+
 /* ---------- 이벤트 ---------- */
 function initUI() {
   fitScreen();
@@ -1264,11 +1293,7 @@ function initUI() {
     renderRankingList(activeUsers);
   });
 
-  $('teacherCode').addEventListener('input', e => {
-    const ok = e.target.value.trim() === 'PANdA';
-    if (ok === isTeacher) return;
-    isTeacher = ok; syncNickname(); applyUIState(gameStarted);
-  });
+  $('teacherCode').addEventListener('input', e => setTeacher(e.target.value.trim() === 'PANdA'));
 
   // 투표 버튼 (현재 단계 + 선택지로 기록)
   const vote = k => { if (!curStage) return; myVote = curStage + ':' + k; updatePresence(); };
@@ -1287,6 +1312,7 @@ function initUI() {
     if (gameMode !== 'stack' || !gameStarted || isDead || modalOpen()) return;
     const tag = document.activeElement && document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (tag === 'BUTTON') document.activeElement.blur();   // 포커스된 버튼이 Space로 한 번 더 눌리는 것 방지
     const k = e.key.toLowerCase();
     if (k.length === 1 && 'wasd'.includes(k)) { e.preventDefault(); stackAct(k); }
     else if (k === ' ' || k === 'e') { e.preventDefault(); stackAct('add'); }
@@ -1319,6 +1345,7 @@ function initUI() {
   $('endBtn').addEventListener('click', teacherEndGame);
 
   syncNickname();
+  askTeacherMode();   // 이전에 선생님이었다면 오른쪽 아래 알림으로 선택지 표시
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUI); else initUI();
