@@ -131,6 +131,25 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .pw-title{font-size:16px;font-weight:bold;color:#0f172a;text-align:center;line-height:1.5}
 .pw-btn{width:100%;padding:13px;font-family:Consolas,monospace;font-size:18px;font-weight:bold;letter-spacing:2px;background:#0f172a;color:#4ade80;border:none;border-radius:10px;cursor:pointer;transition:all .15s}
 .pw-btn:hover{background:#1e293b;transform:scale(1.03)}
+.mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;width:90px;height:90px}
+.mode-btn .mini-grid img{width:43px;height:43px}
+.mini-grid span{display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;color:#64748b;background:#e2e8f0;border-radius:8px}
+.mode-emoji{font-size:56px;height:90px;line-height:90px}
+#stackView{display:none;flex:1;min-height:0;width:100%;position:relative;border-radius:10px;overflow:hidden;background:#f8fafc}
+#stackView #threeContainer{position:absolute;inset:0;width:auto;height:auto;border-radius:0}
+.stack-mode .tall-card{height:150px}.stack-mode .short-card{height:326px}
+#topView{position:absolute;top:6px;right:6px;z-index:3;background:rgba(255,255,255,.93);border:1px solid #cbd5e1;border-radius:8px;padding:5px 6px;pointer-events:none}
+.tv-title{font-size:10px;font-weight:bold;color:#475569;text-align:center;margin-bottom:3px}
+.tv-grid{display:grid;grid-template-columns:repeat(3,22px);gap:2px}
+.tv-cell{height:22px;background:#e2e8f0;border-radius:3px;font-size:12px;font-weight:bold;color:#1e293b;display:flex;align-items:center;justify-content:center;border:2px solid transparent}
+.tv-cell.ok{background:#bbf7d0}.tv-cell.cur{border-color:#f59e0b}
+#stackPad{display:none;flex:1;min-height:0;width:100%;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.pad-row{display:flex;gap:8px}
+.pad-btn{width:58px;height:58px;font-size:20px;font-weight:bold;border-radius:12px;border:2px solid #cbd5e1;background:#f8fafc;color:#334155;cursor:pointer;transition:all .1s}
+.pad-btn:hover{background:#eff6ff;border-color:#2563eb}.pad-btn:active{transform:scale(.92);background:#dbeafe}
+.pad-act .pad-btn{width:104px;height:40px;font-size:14px}
+.pad-hint{font-size:10px;color:#94a3b8;text-align:center;line-height:1.5}
+#bpView{display:none;flex:1;min-height:0;width:100%;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#f8fafc;border-radius:12px}
 </style>
 </head>
 <body>
@@ -149,8 +168,15 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 
     <div id="gameUI" class="card-section" style="display:none;">
       <div class="game-title-badge" id="cameraStatusBadge">3D 관찰 카메라 회전 중</div>
-      <div id="koHud" class="ko-hud" style="display:none;"><div class="ko-lives" id="koLives">❤️❤️❤️</div><div class="ko-bar"><div id="koBarFill"></div></div></div>
+      <div id="koHud" class="ko-hud" style="display:none;"><div class="ko-lives" id="koLives">❤️❤️❤️</div><div class="ko-bar" id="koBar"><div id="koBarFill"></div></div></div>
       <div id="threeContainer"></div>
+      <div id="bpView"></div>
+      <div id="stackPad">
+        <div class="pad-row"><button class="pad-btn" data-k="w">W</button></div>
+        <div class="pad-row"><button class="pad-btn" data-k="a">A</button><button class="pad-btn" data-k="s">S</button><button class="pad-btn" data-k="d">D</button></div>
+        <div class="pad-row pad-act"><button class="pad-btn" data-k="add">＋ 쌓기</button><button class="pad-btn" data-k="del">－ 빼기</button></div>
+        <div class="pad-hint">키보드 W A S D 이동 · Space 쌓기 · Q 빼기<br>오른쪽 3D 화면은 좌우 드래그(또는 ← →)로 회전</div>
+      </div>
     </div>
 
     <div id="teacherControls" class="teacher-btn-group" style="display:none;">
@@ -180,7 +206,17 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
           </div>
           <div class="vote-row">
             <button class="mode-btn" id="hackingBtn"><img src="https://media.ffycdn.net/eu/supercell/bNzk8N5HjWxHjCeXftpa.png?width=2400" alt="해킹"><span>해킹</span><span class="vote-count" id="hackingCount">0표</span></button>
-            <button class="mode-btn locked" disabled><span class="mode-lock">🔒</span><span>준비중</span></button>
+            <button class="mode-btn" id="etcBtn"><div class="mini-grid"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt=""><img src="https://media.ffycdn.net/eu/supercell/g9QYVzuSVxq372RUXLte.png?width=2400" alt=""><img src="https://media.ffycdn.net/eu/supercell/bNzk8N5HjWxHjCeXftpa.png?width=2400" alt=""><span>…</span></div><span>기타 모드</span><span class="vote-count" id="etcCount">0표</span></button>
+          </div>
+        </div>
+        <div class="vote-stage" id="voteStage3">
+          <div class="vote-row">
+            <button class="mode-btn" id="speedBtn"><span class="mode-emoji">⚡</span><span>스피드런</span><span class="vote-count" id="speedCount">0표</span></button>
+            <button class="mode-btn" id="onehitBtn"><span class="mode-emoji">💀</span><span>한방</span><span class="vote-count" id="onehitCount">0표</span></button>
+          </div>
+          <div class="vote-row">
+            <button class="mode-btn" id="stackBtn"><span class="mode-emoji">🧱</span><span>쌓기 모드</span><span class="vote-count" id="stackCount">0표</span></button>
+            <button class="mode-btn" id="blueprintBtn"><span class="mode-emoji">📐</span><span>도면보고 맞추기</span><span class="vote-count" id="blueprintCount">0표</span></button>
           </div>
         </div>
         <div class="vote-stage" id="voteStage2">
@@ -208,6 +244,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
       <div class="card short-card">
         <div class="quiz-title" id="quizTitle">쌓기나무는 모두 몇 개일까요?</div>
         <div class="choice-grid" id="choiceButtons"></div>
+        <div id="stackView"><div id="topView"></div></div>
         <div id="feedbackMessage" class="feedback-msg"></div>
         <button class="spec-btn" id="specNext" style="right:8px;top:50%;">→</button>
       </div>
@@ -263,7 +300,10 @@ let isCameraFrozen = false, hasTripleScoreMultiplier = false, hasShiningEyesBuff
 let phase = '', voteEnd = 0, myVote = '', curStage = '', gameMode = 'solo', teams = {}, resultData = null;
 let myLives = 3, isDead = false, diedAt = 0, koDeadline = 0, specId = '', specKey = '', specPanelKey = '', invincible = false, koEndAt = 0;
 const TEAM_NAMES = ['🔴 레드팀', '🔵 블루팀'], TEAM_COLORS = ['#ef4444', '#2563eb'];
-let uiScale = 1;
+let uiScale = 1, runEnd = 0, hackMiss = 0;
+const SPEED_MS = 90000;                                   // 스피드런 제한시간(90초)
+const maxLives = () => gameMode === 'onehit' ? 1 : 3;     // 한방 모드는 목숨 1개
+let stackH = [], stackT = [], stackCur = { x: 1, y: 1 };
 
 const joinedAt = Date.now();
 const HEARTBEAT_MS = 10000, STALE_MS = 25000;
@@ -288,7 +328,8 @@ function getMyPayload() {
     isTeacher, gameStarted: isTeacher && gameStarted,
     phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
     mode: isTeacher ? gameMode : '', teams: isTeacher ? teams : null, result: isTeacher ? resultData : null,
-    lives: myLives, dead: isDead, diedAt, blocks: (gameStarted && gameMode === 'knockout') ? currentBlocks : null,
+    lives: myLives, dead: isDead, diedAt, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
+    runEnd: isTeacher ? runEnd : 0,
     vote: myVote,
     joinedAt, hb: Date.now()
   };
@@ -339,7 +380,7 @@ function renderAll() {
     const t = users.find(u => u.isTeacher);
     if (t) {
       noTeacherSince = 0;
-      if (t.gameStarted) { gameMode = t.mode || 'solo'; teams = t.teams || {}; if (t.session && (t.session !== currentSession || !gameStarted)) startLocal(t.session); }
+      if (t.gameStarted) { gameMode = t.mode || 'solo'; teams = t.teams || {}; runEnd = t.runEnd || 0; if (t.session && (t.session !== currentSession || !gameStarted)) startLocal(t.session); }
       else { if (gameStarted) endGameLocal(); if (t.result && t.result.session === currentSession) showResult(t.result); }
     } else if (gameStarted) {
       noTeacherSince = noTeacherSince || Date.now();
@@ -359,10 +400,10 @@ function startLocal(session) {
   const fresh = session !== currentSession;
   currentSession = session;
   gameStarted = true; myVote = ''; phase = isTeacher ? 'play' : phase; resultData = null; isTargetSelectMode = false;
-  if (fresh) { myScore = 0; myLives = 3; isDead = false; diedAt = 0; specId = ''; specKey = ''; specPanelKey = ''; SFX.start(); }
+  if (fresh) { myScore = 0; myLives = maxLives(); hackMiss = 0; cameraAngle = Math.PI / 2; isDead = false; diedAt = 0; specId = ''; specKey = ''; specPanelKey = ''; SFX.start(); }
   closeResult();   // 시상식/투표 화면이 떠 있으면 닫고 게임 화면으로
   applyUIState(true);
-  $('koHud').style.display = (gameMode === 'knockout' && !isDead) ? 'block' : 'none';
+  $('koHud').style.display = (['knockout', 'onehit', 'speedrun'].includes(gameMode) && !isDead) ? 'block' : 'none';
   renderHud();
   nextProblem();
 }
@@ -370,18 +411,20 @@ function startLocal(session) {
 /* 나만의 다음 문제 */
 function nextProblem() {
   if (!gameStarted || isDead) return;
-  currentBlocks = generateValidBlocks();
+  if (gameMode === 'stack') return nextStackProblem();
+  if (gameMode === 'blueprint') return nextBlueprintProblem();
+  currentBlocks = gameMode === 'speedrun' ? generateValidBlocks(11, 17) : generateValidBlocks();   // 스피드런: 블록이 훨씬 많음
   activeShiningEyesRound = hasShiningEyesBuff;
   hasShiningEyesBuff = false;
   rebuildBlocks(currentBlocks);
   setupChoices(currentBlocks.length);
   koDeadline = gameMode === 'knockout' ? Date.now() + 4000 : 0;   // 녹아웃: 문제당 4초
-  if (gameMode === 'knockout') { renderHud(); sendSoon(); }
+  if (gameMode === 'knockout' || gameMode === 'onehit') { renderHud(); sendSoon(); }
 }
 
 function endGameLocal() {
   gameStarted = false; currentBlocks = []; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
-  koDeadline = 0; isDead = false; myLives = 3; diedAt = 0; specId = ''; specKey = ''; specPanelKey = '';
+  koDeadline = 0; runEnd = 0; isDead = false; myLives = 3; diedAt = 0; specId = ''; specKey = ''; specPanelKey = '';
   ['koHud', 'specPrev', 'specNext'].forEach(id => { $(id).style.display = 'none'; });
   $('cardModalOverlay').classList.remove('active'); $('pwModalOverlay').classList.remove('active'); isTargetSelectMode = false; pendingAttackType = null;
   activeShiningEyesRound = false; hasShiningEyesBuff = false;
@@ -396,12 +439,16 @@ function teacherTick(users) {
   const now = Date.now();
   if (phase === 'vote1' && now >= voteEnd) {
     const c = k => users.filter(u => u.vote === 'vote1:' + k).length;
-    const kn = c('knockout'), hk = c('hacking');
-    if (Math.max(kn, hk) > c('showdown')) startMode(hk > kn ? 'hacking' : 'knockout', users);     // 녹아웃/해킹이 쇼다운을 이기면 바로 시작
-    else { phase = 'vote2'; voteEnd = now + 3000; sendSoon(); }
+    let best = 'showdown', bc = c('showdown');            // 표가 가장 많은 모드 (동점이면 쇼다운 → 녹아웃 → 해킹 → 기타 순)
+    for (const k of ['knockout', 'hacking', 'etc']) if (c(k) > bc) { best = k; bc = c(k); }
+    if (best === 'showdown') { phase = 'vote2'; voteEnd = now + 3000; sendSoon(); }
+    else if (best === 'etc') { phase = 'vote3'; voteEnd = now + 3000; sendSoon(); }
+    else startMode(best, users);
   }
   else if (phase === 'vote2' && now >= voteEnd) finishVote(users);
-  else if (gameStarted && gameMode === 'knockout' && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
+  else if (phase === 'vote3' && now >= voteEnd) finishVote3(users);
+  else if (gameStarted && gameMode === 'speedrun') { if (runEnd && now >= runEnd) teacherEndGame(); }
+  else if (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit') && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
     if (users.filter(u => !u.dead).length <= 1) { koEndAt = koEndAt || now + 2500; if (now >= koEndAt) { koEndAt = 0; teacherEndGame(); } }
     else koEndAt = 0;
   }
@@ -419,7 +466,7 @@ function teacherTick(users) {
 function renderVote(users) {
   const t = users.find(u => u.isTeacher);
   const stage = (t && !gameStarted) ? t.phase : '';
-  const active = stage === 'vote1' || stage === 'vote2';
+  const active = stage === 'vote1' || stage === 'vote2' || stage === 'vote3';
   curStage = active ? stage : '';
   $('voteOverlay').style.display = active ? 'flex' : 'none';
   $('startBtn').style.display = (isTeacher && !gameStarted && !active) ? 'block' : 'none';
@@ -428,12 +475,14 @@ function renderVote(users) {
   $('defaultUserListUI').style.display = 'flex';
   $('voteStage1').style.display = stage === 'vote1' ? 'flex' : 'none';
   $('voteStage2').style.display = stage === 'vote2' ? 'flex' : 'none';
+  $('voteStage3').style.display = stage === 'vote3' ? 'flex' : 'none';
   const left = Math.max(0, Math.ceil((t.voteEnd - Date.now()) / 1000));
   if (String(left) !== $('voteTimer').innerText && left > 0) SFX.tick();
   $('voteTimer').innerText = left;
   const cnt = k => users.filter(u => u.vote === stage + ':' + k).length + '표';
   const mark = (id, k) => $(id).classList.toggle('voted', myVote === stage + ':' + k);
-  if (stage === 'vote1') { $('showdownCount').innerText = cnt('showdown'); $('knockoutCount').innerText = cnt('knockout'); $('hackingCount').innerText = cnt('hacking'); mark('showdownBtn', 'showdown'); mark('knockoutBtn', 'knockout'); mark('hackingBtn', 'hacking'); }
+  if (stage === 'vote1') { $('showdownCount').innerText = cnt('showdown'); $('knockoutCount').innerText = cnt('knockout'); $('hackingCount').innerText = cnt('hacking'); mark('showdownBtn', 'showdown'); mark('knockoutBtn', 'knockout'); mark('hackingBtn', 'hacking'); $('etcCount').innerText = cnt('etc'); mark('etcBtn', 'etc'); }
+  else if (stage === 'vote3') { [['speedrun', 'speed'], ['onehit', 'onehit'], ['stack', 'stack'], ['blueprint', 'blueprint']].forEach(([k, id]) => { $(id + 'Count').innerText = cnt(k); mark(id + 'Btn', k); }); }
   else { $('soloCount').innerText = cnt('solo'); $('duoCount').innerText = cnt('duo'); mark('soloBtn', 'solo'); mark('duoBtn', 'duo'); }
 }
 
@@ -441,6 +490,13 @@ function finishVote(users) {
   if (!isTeacher || phase !== 'vote2') return;
   const c = k => users.filter(u => u.vote === 'vote2:' + k).length;
   startMode(c('duo') > c('solo') ? 'duo' : 'solo', users);   // 동점/무투표는 솔로
+}
+
+function finishVote3(users) {
+  if (!isTeacher || phase !== 'vote3') return;
+  const ks = ['speedrun', 'onehit', 'stack', 'blueprint'], n = k => users.filter(u => u.vote === 'vote3:' + k).length;
+  const mx = Math.max(...ks.map(n)), top = ks.filter(k => n(k) === mx);
+  startMode(top[Math.floor(Math.random() * top.length)], users);   // 동점/무투표는 랜덤
 }
 
 function startMode(mode, users) {
@@ -451,10 +507,11 @@ function startMode(mode, users) {
     const off = Math.random() < 0.5 ? 0 : 1;
     users.map(u => u.id).sort(() => Math.random() - 0.5).forEach((id, i) => { teams[id] = (i + off) % 2; });
   }
+  runEnd = mode === 'speedrun' ? Date.now() + SPEED_MS : 0;
   const session = Date.now();
   startLocal(session);
   updatePresence();
-  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams } }); } catch (e) {}
+  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd } }); } catch (e) {}
 }
 
 async function teacherEndGame() {
@@ -486,7 +543,7 @@ async function connect() {
   ch.on('broadcast', { event: 'game_control' }, ({ payload }) => {
     if (isTeacher) return;
     if (payload.action === 'end') { endGameLocal(); if (payload.result && payload.result.session === currentSession) showResult(payload.result); }
-    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; startLocal(payload.session); }
+    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; startLocal(payload.session); }
   });
 
   ch.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
@@ -549,6 +606,7 @@ function applyUIState(started) {
   $('gameRankingUI').style.display = started ? 'flex' : 'none';
   $('startBtn').style.display = (isTeacher && !started && !phase.startsWith('vote')) ? 'block' : 'none';
   $('teacherControls').style.display = (isTeacher && started) ? 'flex' : 'none';
+  setModeUI();
   if (started) initThreeOnce();
 }
 
@@ -567,7 +625,7 @@ function renderUserList(users) {
 
 function renderRankingList(users) {
   let html;
-  const duo = gameMode === 'duo', ko = gameMode === 'knockout';
+  const duo = gameMode === 'duo', ko = gameMode === 'knockout' || gameMode === 'onehit';
   const av = u => `<img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필">`;
   if (isTargetSelectMode) {
     $('rankingTitle').innerHTML = `<span style="color:#ef4444;">🎯 공격할 상대방을 클릭하세요!</span>`;
@@ -606,9 +664,9 @@ function renderRankingList(users) {
 }
 
 /* ---------- 문제 / 카드 ---------- */
-function generateValidBlocks() {
+function generateValidBlocks(lo = 5, hi = 9) {
   const blocks = [], grid = {};
-  const target = Math.floor(Math.random() * 5) + 5;
+  const target = lo + Math.floor(Math.random() * (hi - lo + 1));
   const sx = Math.floor(Math.random() * 2), sy = Math.floor(Math.random() * 2);
   blocks.push({ x: sx, y: sy, z: 0 }); grid[`${sx},${sy},0`] = true;
   while (blocks.length < target) {
@@ -650,14 +708,17 @@ function setupChoices(correct) {
         btn.classList.add('correct'); SFX.correct();
         let gain = 10;
         if (hasTripleScoreMultiplier) { gain = 30; hasTripleScoreMultiplier = false; fb.innerText = '정답입니다! ⚡벼락치기 발동 (+30점)!'; }
-        else fb.innerText = '정답입니다! 카드 보상을 선택하세요.';
+        else fb.innerText = gameMode === 'speedrun' ? '정답! ⚡' : '정답입니다! 카드 보상을 선택하세요.';
         fb.style.color = '#22c55e';
         myScore += gain; updatePresence();
-        setTimeout(openCardModal, 500);   // 카드를 고르면 다음 문제로 넘어감
+        if (gameMode === 'speedrun') setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, 350);   // 스피드런: 카드 없이 바로 다음 문제
+        else setTimeout(openCardModal, 500);   // 카드를 고르면 다음 문제로 넘어감
       } else {
         btn.classList.add('wrong'); SFX.wrong();
         fb.innerText = `틀렸습니다! (정답: ${correct}개)`; fb.style.color = '#ef4444';
-        setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, 2000);
+        if (gameMode === 'onehit') { myLives = 0; renderHud(); die(); updatePresence(); return; }   // 한방: 틀리면 즉시 탈락
+        if (gameMode === 'blueprint') revealBlueprint(correct);                                  // 도면: 틀리면 3D로 정답 공개
+        setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, gameMode === 'blueprint' ? 3800 : gameMode === 'speedrun' ? 700 : 2000);
       }
     });
     box.appendChild(btn);
@@ -676,7 +737,7 @@ function generateCardOptions() {
     { type: 'lightning', title: '벼락 치기 카드', img: SC('Cz9rD81f7Qrva9kzgZvA'), desc: '다음 문제를 맞히면 얻는 점수가 3배(30점)로 폭증합니다.' },
     { type: 'shining_eyes', title: '빛나는 눈 카드', img: SC('Y7xeUH3uBvNkQBzSXkA6'), desc: '다음 라운드에 쌓기나무가 반투명해지고 윤곽선이 빛나고 정답 버튼 하나가 빛납니다.' }
   ];
-  return pool.sort(() => Math.random() - 0.5).slice(0, 3);
+  return pool.filter(c => !(gameMode === 'stack' && c.type === 'shining_eyes')).sort(() => Math.random() - 0.5).slice(0, 3);
 }
 
 function openCardModal() {
@@ -701,6 +762,128 @@ function handleCardSelect(card) {
   else if (card.type === 'hack') { pendingAttackType = 'hack'; isTargetSelectMode = true; renderRankingList(activeUsers); }
   else if (card.type === 'lightning') hasTripleScoreMultiplier = true;
   else if (card.type === 'shining_eyes') hasShiningEyesBuff = true;
+}
+
+/* ---------- 모드별 화면 구성 ---------- */
+const defaultBadge = () => !gameStarted ? '3D 관찰 카메라 회전 중' : gameMode === 'stack' ? '🧱 쌓기 모드' : gameMode === 'blueprint' ? '📐 도면 보고 맞추기' : '3D 관찰 카메라 회전 중';
+const modalOpen = () => $('cardModalOverlay').classList.contains('active') || $('pwModalOverlay').classList.contains('active');
+
+function setModeUI() {
+  const st = gameStarted && gameMode === 'stack', bp = gameStarted && gameMode === 'blueprint', tc = $('threeContainer');
+  if (st) $('stackView').appendChild(tc);                                           // 3D 화면을 오른쪽 아래 카드로 이동
+  else if (tc.parentNode !== $('gameUI')) $('gameUI').insertBefore(tc, $('bpView'));  // 원래 자리로 복귀
+  $('stackView').style.display = st ? 'block' : 'none';
+  $('stackPad').style.display = st ? 'flex' : 'none';
+  $('choiceButtons').style.display = st ? 'none' : '';
+  $('gameRankingUI').classList.toggle('stack-mode', st);
+  $('bpView').style.display = bp ? 'flex' : 'none';
+  tc.style.display = bp ? 'none' : '';
+  if (stackGroup && !st) while (stackGroup.children.length) stackGroup.remove(stackGroup.children[0]);
+  if (!isDead) $('cameraStatusBadge').innerText = defaultBadge();
+  if (typeof resizeThree === 'function' && resizeThree) resizeThree();
+}
+
+/* ---------- 쌓기 모드 ---------- */
+const emptyH = () => [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+function nextStackProblem() {
+  stackT = emptyH(); generateValidBlocks().forEach(b => { stackT[b.x][b.y]++; });
+  stackH = emptyH(); stackCur = { x: 1, y: 1 }; hasGuessed = false; currentBlocks = [];
+  activeShiningEyesRound = false; hasShiningEyesBuff = false;
+  $('quizTitle').innerText = '위에서 본 모양과 똑같이 쌓아보세요!';
+  $('feedbackMessage').innerText = ''; koDeadline = 0;
+  renderStack();
+}
+function renderStack() {
+  if (!blockGroup || !stackGroup) return;
+  const bl = [];
+  for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) for (let z = 0; z < stackH[x][y]; z++) bl.push({ x, y, z });
+  rebuildBlocks(bl);
+  while (stackGroup.children.length) stackGroup.remove(stackGroup.children[0]);
+  const tile = new THREE.PlaneGeometry(0.94, 0.94);
+  for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) {
+    const m = new THREE.Mesh(tile, new THREE.MeshBasicMaterial({ color: (x === stackCur.x && y === stackCur.y) ? 0xfbbf24 : 0xcbd5e1, side: THREE.DoubleSide }));
+    m.rotation.x = -Math.PI / 2; m.position.set(x, -0.49, y); stackGroup.add(m);
+  }
+  const h = stackH[stackCur.x][stackCur.y];
+  if (h < 3) {                                          // 다음에 쌓일 위치 미리보기
+    const g = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.4 }));
+    g.position.set(stackCur.x, h, stackCur.y); stackGroup.add(g);
+  }
+  let html = '<div class="tv-title">위에서 본 모양</div><div class="tv-grid">';
+  for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) {
+    const t = stackT[x][y], ok = t > 0 && stackH[x][y] === t, cur = x === stackCur.x && y === stackCur.y;
+    html += `<div class="tv-cell${ok ? ' ok' : ''}${cur ? ' cur' : ''}">${t || ''}</div>`;
+  }
+  $('topView').innerHTML = html + '</div>';
+}
+function stackAct(k) {
+  if (gameMode !== 'stack' || !gameStarted || isDead || hasGuessed || modalOpen()) return;
+  if (['w', 'a', 's', 'd'].includes(k)) {               // 화면(카메라) 기준 방향으로 커서 이동
+    const fx = -Math.cos(cameraAngle), fz = -Math.sin(cameraAngle);
+    const f = Math.abs(fx) > Math.abs(fz) ? [Math.sign(fx), 0] : [0, Math.sign(fz)], r = [-f[1], f[0]];
+    const d = { w: f, s: [-f[0], -f[1]], d: r, a: [-r[0], -r[1]] }[k];
+    stackCur.x = Math.max(0, Math.min(2, stackCur.x + d[0])); stackCur.y = Math.max(0, Math.min(2, stackCur.y + d[1]));
+  } else if (k === 'add') { if (stackH[stackCur.x][stackCur.y] < 3) stackH[stackCur.x][stackCur.y]++; }
+  else if (k === 'del') { if (stackH[stackCur.x][stackCur.y] > 0) stackH[stackCur.x][stackCur.y]--; }
+  renderStack();
+  for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) if (stackH[x][y] !== stackT[x][y]) return;
+  hasGuessed = true; SFX.correct(); myScore += 10; updatePresence();
+  const fb = $('feedbackMessage'); fb.innerText = '완성! 카드 보상을 선택하세요.'; fb.style.color = '#22c55e';
+  setTimeout(openCardModal, 500);
+}
+
+/* ---------- 도면보고 맞추기 ---------- */
+function bpCountSet(bl) {   // 위·앞·옆 도면만으로 가능한 블록 개수들 (1개뿐이어야 공정한 문제)
+  const H = emptyH(); bl.forEach(b => { H[b.x][b.y]++; });
+  const F = [0, 1, 2].map(x => Math.max(...H[x])), S = [0, 1, 2].map(y => Math.max(H[0][y], H[1][y], H[2][y]));
+  const cells = []; for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) if (H[x][y] > 0) cells.push([x, y, Math.min(F[x], S[y])]);
+  const counts = new Set(), cur = emptyH();
+  (function rec(i, sum) {
+    if (counts.size > 1) return;
+    if (i === cells.length) {
+      for (let x = 0; x < 3; x++) if (Math.max(...cur[x]) !== F[x]) return;
+      for (let y = 0; y < 3; y++) if (Math.max(cur[0][y], cur[1][y], cur[2][y]) !== S[y]) return;
+      counts.add(sum); return;
+    }
+    const [x, y, u] = cells[i];
+    for (let h = 1; h <= u; h++) { cur[x][y] = h; rec(i + 1, sum + h); }
+    cur[x][y] = 0;
+  })(0, 0);
+  return counts;
+}
+function generateBlueprintBlocks() {
+  let bl;
+  for (let i = 0; i < 300; i++) { bl = generateValidBlocks(5, 9); if (bpCountSet(bl).size === 1) return bl; }
+  return bl;
+}
+function drawBlueprint(bl) {
+  const H = emptyH(); bl.forEach(b => { H[b.x][b.y]++; });
+  const F = [0, 1, 2].map(x => Math.max(...H[x])), S = [0, 1, 2].map(y => Math.max(H[0][y], H[1][y], H[2][y]));
+  const C = 26, sq = (c, r, on) => `<rect x="${c * C}" y="${r * C}" width="${C}" height="${C}" fill="${on ? '#60a5fa' : '#fff'}" stroke="${on ? '#1e3a8a' : '#cbd5e1'}" stroke-width="${on ? 2 : 1}"/>`;
+  let top = '', front = '', side = '';
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+    top += sq(c, r, H[c][2 - r] > 0);      // 위: 가로 x, 세로 y(위쪽이 뒤쪽)
+    front += sq(c, r, F[c] >= 3 - r);      // 앞: 가로 x, 세로는 높이
+    side += sq(c, r, S[c] >= 3 - r);       // 옆(오른쪽): 가로 y, 세로는 높이
+  }
+  const panel = (t, cells) => `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;"><div style="font-size:12px;font-weight:bold;color:#475569;">${t}</div><svg width="${3 * C}" height="${3 * C}">${cells}</svg></div>`;
+  $('bpView').innerHTML = `<div style="display:flex;gap:10px;">${panel('위', top)}${panel('앞', front)}${panel('옆', side)}</div><div style="font-size:11px;color:#64748b;">위 · 앞 · 옆(오른쪽)에서 본 모양</div>`;
+}
+function showBlueprint(on) {
+  $('bpView').style.display = on ? 'flex' : 'none';
+  $('threeContainer').style.display = on ? 'none' : '';
+  $('cameraStatusBadge').innerText = on ? '📐 도면을 보고 맞혀보세요' : defaultBadge();
+}
+function nextBlueprintProblem() {
+  currentBlocks = generateBlueprintBlocks();
+  activeShiningEyesRound = hasShiningEyesBuff; hasShiningEyesBuff = false;
+  rebuildBlocks(currentBlocks); drawBlueprint(currentBlocks); showBlueprint(true);
+  setupChoices(currentBlocks.length);
+}
+function revealBlueprint(n) {   // 틀리면 3D 블록을 돌려서 정답 공개
+  showBlueprint(false);
+  $('cameraStatusBadge').innerText = `🔎 정답 3D 모양 · ${n}개`;
+  if (typeof resizeThree === 'function' && resizeThree) resizeThree();
 }
 
 /* ---------- 해킹 모드 / 알림 ---------- */
@@ -734,7 +917,9 @@ function notifyAttack(p) {   // 모든 모드 공통: 누가 방해했는지 작
 function generateHackCards() {   // 해킹 모드: 코인 카드만(양 2배), 30% 확률로 한 장은 해킹 카드
   const imgs = { 5: 'XMEic2GRdS2qq7GJaEiB', 7: 'TGQBtafzmsdeiJwZSmpo', 10: 'ET4DYhvXCLzJPiw96NtX' };
   const cards = [5, 7, 10].map(b => ({ type: 'coin', title: `코인 ${b * 2}개`, img: SC(imgs[b]), desc: `점수 +${b * 2}점을 즉시 획득합니다.`, val: b * 2 }));
-  if (Math.random() < 0.3) cards[Math.floor(Math.random() * 3)] = { type: 'hack', title: '해킹 카드', img: HACK_IMG, desc: '상대를 지목하고 비밀번호를 맞히면 상대 코인의 10~60%를 뺏습니다.' };
+  const roll = hackMiss >= 2 || Math.random() < 0.3;   // 해킹 카드 없이 2번 뜨면 3번째는 무조건 등장
+  hackMiss = roll ? 0 : hackMiss + 1;
+  if (roll) cards[Math.floor(Math.random() * 3)] = { type: 'hack', title: '해킹 카드', img: HACK_IMG, desc: '상대를 지목하고 비밀번호를 맞히면 상대 코인의 10~60%를 뺏습니다.' };
   return cards;
 }
 
@@ -785,11 +970,11 @@ function triggerTauntEffect() {
 }
 function triggerFreezeEffect() {
   isCameraFrozen = true; $('cameraStatusBadge').innerText = '❄️ 카메라가 3초간 얼어붙었습니다!';
-  setTimeout(() => { isCameraFrozen = false; $('cameraStatusBadge').innerText = '3D 관찰 카메라 회전 중'; }, 3000);
+  setTimeout(() => { isCameraFrozen = false; $('cameraStatusBadge').innerText = defaultBadge(); }, 3000);
 }
 
 /* ---------- 3D ---------- */
-let scene, camera, renderer, blockGroup, outlineGroup, glitchGroup, glitchMeshes = [], cameraAngle = 0, isThreeInitialized = false, resizeThree = null;
+let scene, camera, renderer, blockGroup, outlineGroup, glitchGroup, stackGroup, glitchMeshes = [], cameraAngle = 0, isThreeInitialized = false, resizeThree = null;
 
 function initThreeOnce() {
   if (isThreeInitialized) return;
@@ -801,6 +986,11 @@ function initThreeOnce() {
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * uiScale, 3));
   container.appendChild(renderer.domElement);
+  const cv = renderer.domElement; cv.style.touchAction = 'none';
+  let dragX = null;                                   // 쌓기 모드: 3D 화면은 좌우(수평)로만 회전
+  cv.addEventListener('pointerdown', e => { if (gameMode === 'stack') { dragX = e.clientX; try { cv.setPointerCapture(e.pointerId); } catch (_) {} } });
+  cv.addEventListener('pointermove', e => { if (dragX === null) return; if (!isCameraFrozen) cameraAngle += (e.clientX - dragX) * 0.012 / uiScale; dragX = e.clientX; });
+  ['pointerup', 'pointercancel'].forEach(ev => cv.addEventListener(ev, () => { dragX = null; }));
   resizeThree = () => {
     const w = container.clientWidth, h = container.clientHeight;
     if (!w || !h) return;
@@ -814,13 +1004,13 @@ function initThreeOnce() {
   const dir = new THREE.DirectionalLight(0xffffff, 0.5);
   dir.position.set(10, 20, 15); scene.add(dir);
 
-  blockGroup = new THREE.Group(); outlineGroup = new THREE.Group(); glitchGroup = new THREE.Group();
-  scene.add(blockGroup, outlineGroup, glitchGroup);
+  blockGroup = new THREE.Group(); outlineGroup = new THREE.Group(); glitchGroup = new THREE.Group(); stackGroup = new THREE.Group();
+  scene.add(blockGroup, outlineGroup, glitchGroup, stackGroup);
   if (currentBlocks.length) rebuildBlocks(currentBlocks);
 
   (function animate() {
     requestAnimationFrame(animate);
-    if (!isCameraFrozen) cameraAngle += 0.012;
+    if (!isCameraFrozen && gameMode !== 'stack') cameraAngle += gameMode === 'speedrun' ? 0.02 : 0.012;
     const r = 9.5;
     camera.position.set(1 + r * Math.cos(cameraAngle), 6.5, 1 + r * Math.sin(cameraAngle));
     camera.lookAt(1, 0.9, 1);
@@ -849,11 +1039,20 @@ function toggleOutline(visible) {
 
 /* ---------- 녹아웃: 제한시간 / 목숨 / 관전 ---------- */
 function renderHud() {
-  const n = Math.max(0, Math.min(3, myLives));
-  $('koLives').innerText = '❤️'.repeat(n) + '🖤'.repeat(3 - n);
+  if (gameMode === 'speedrun') { $('koBar').style.display = 'block'; return; }
+  const mx = maxLives(), n = Math.max(0, Math.min(mx, myLives));
+  $('koLives').innerText = '❤️'.repeat(n) + '🖤'.repeat(mx - n);
+  $('koBar').style.display = gameMode === 'onehit' ? 'none' : 'block';
 }
 function koTick() {
-  if (!gameStarted || gameMode !== 'knockout' || isDead || !koDeadline) return;
+  if (!gameStarted || isDead) return;
+  if (gameMode === 'speedrun') {                       // 스피드런: 전체 제한시간 표시
+    const l = Math.max(0, runEnd - Date.now());
+    $('koBarFill').style.width = (runEnd ? l / SPEED_MS * 100 : 100) + '%';
+    $('koLives').innerText = runEnd ? `⚡ 남은 시간 ${Math.ceil(l / 1000)}초` : '⚡ 스피드런';
+    return;
+  }
+  if (gameMode !== 'knockout' || !koDeadline) return;
   const left = koDeadline - Date.now();
   $('koBarFill').style.width = Math.max(0, left / 4000 * 100) + '%';
   if (left <= 0) koTimeout();
@@ -958,7 +1157,7 @@ let shownSession = 0, fxTimers = [], fxOn = false, fxConfetti = false, parts = [
 const later = (ms, fn) => fxTimers.push(setTimeout(fn, ms));
 
 function buildResult() {
-  const ko = gameMode === 'knockout', surv = u => u.dead ? (u.diedAt || 0) : 9e15;   // 녹아웃: 오래 살아남은 순
+  const ko = gameMode === 'knockout' || gameMode === 'onehit', surv = u => u.dead ? (u.diedAt || 0) : 9e15;   // 녹아웃: 오래 살아남은 순
   const us = collectUsers().sort(ko ? (a, b) => (surv(b) - surv(a)) || ((b.score || 0) - (a.score || 0)) : (a, b) => (b.score || 0) - (a.score || 0))
     .map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: u.score || 0, t: teams[u.id], x: ko ? (u.dead ? '탈락' : '생존') : undefined }));
   const res = { session: currentSession, mode: gameMode, podium: us.slice(0, 3) };   // 듀오도 개인 기여 점수 순
@@ -1078,6 +1277,23 @@ function initUI() {
   $('duoBtn').addEventListener('click', () => vote('duo'));
   $('knockoutBtn').addEventListener('click', () => vote('knockout'));
   $('hackingBtn').addEventListener('click', () => vote('hacking'));
+  $('etcBtn').addEventListener('click', () => vote('etc'));
+  $('speedBtn').addEventListener('click', () => vote('speedrun'));
+  $('onehitBtn').addEventListener('click', () => vote('onehit'));
+  $('stackBtn').addEventListener('click', () => vote('stack'));
+  $('blueprintBtn').addEventListener('click', () => vote('blueprint'));
+  $('stackPad').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; stackAct(b.dataset.k); b.blur(); });
+  window.addEventListener('keydown', e => {           // 쌓기 모드 키보드: WASD 이동 / Space·E 쌓기 / Q 빼기 / ←→ 회전
+    if (gameMode !== 'stack' || !gameStarted || isDead || modalOpen()) return;
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    const k = e.key.toLowerCase();
+    if (k.length === 1 && 'wasd'.includes(k)) { e.preventDefault(); stackAct(k); }
+    else if (k === ' ' || k === 'e') { e.preventDefault(); stackAct('add'); }
+    else if (k === 'q') { e.preventDefault(); stackAct('del'); }
+    else if (k === 'arrowleft') { e.preventDefault(); if (!isCameraFrozen) cameraAngle -= 0.2; }
+    else if (k === 'arrowright') { e.preventDefault(); if (!isCameraFrozen) cameraAngle += 0.2; }
+  });
   $('specPrev').addEventListener('click', () => specMove(-1));
   $('specNext').addEventListener('click', () => specMove(1));
 
