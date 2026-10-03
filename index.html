@@ -159,6 +159,25 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .pad-act .pad-btn{width:96px;height:38px;font-size:13px}
 .pad-hint{font-size:10px;color:#94a3b8;text-align:center;line-height:1.4}
 #bpView{display:none;flex:1;min-height:0;width:100%;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#f8fafc;border-radius:12px}
+
+#voteStage3{flex-direction:row!important;flex-wrap:wrap;justify-content:center;width:430px;gap:8px 16px}
+#voteStage3 .vote-row{display:contents}
+#voteStage3 .mode-btn{height:96px}
+#voteStage3 .mode-emoji{font-size:38px;height:50px;line-height:50px}
+#chatBox{display:none;flex:1;min-height:0;flex-direction:column;gap:6px;margin-top:6px}
+#chatMsgs{flex:1;min-height:0;overflow-y:auto;background:#b2c7da;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.chat-row{display:flex;gap:6px;align-items:flex-start}
+.chat-row.me{justify-content:flex-end}
+.chat-av{width:28px;height:28px;border-radius:50%;background:#fff;object-fit:contain;flex:none}
+.chat-name{font-size:10px;color:#334155;margin-bottom:1px}
+.chat-bub{background:#fff;color:#1e293b;font-size:12px;padding:5px 9px;border-radius:4px 12px 12px 12px;max-width:190px;word-break:break-all;text-align:left}
+.chat-bub.me{background:#fee500;border-radius:12px 4px 12px 12px}
+.chat-sys{align-self:center;background:rgba(0,0,0,.25);color:#fff;font-size:11px;padding:3px 10px;border-radius:10px}
+.chat-in{display:flex;gap:6px;flex:none}
+.chat-in input{flex:1;min-width:0;padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;outline:none}
+.chat-in button{padding:6px 12px;border:none;border-radius:8px;background:#fee500;font-weight:bold;font-size:12px;cursor:pointer}
+.lv-btn{padding:6px 4px!important;font-size:12px!important}
+.lv-btn small{opacity:.7}
 </style>
 </head>
 <body>
@@ -225,7 +244,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
           </div>
           <div class="vote-row">
             <button class="mode-btn" id="stackBtn"><span class="mode-emoji">🧱</span><span>쌓기 모드</span><span class="vote-count" id="stackCount">0표</span></button>
-            <button class="mode-btn" id="blueprintBtn"><span class="mode-emoji">📐</span><span>도면보고 맞추기</span><span class="vote-count" id="blueprintCount">0표</span></button>
+            <button class="mode-btn" id="blueprintBtn"><span class="mode-emoji">📐</span><span>도면보고 맞추기</span><span class="vote-count" id="blueprintCount">0표</span></button><button class="mode-btn" id="liarBtn"><span class="mode-emoji">🕵️</span><span>라이어 모드</span><span class="vote-count" id="liarCount">0표</span></button>
           </div>
         </div>
         <div class="vote-stage" id="voteStage2">
@@ -248,7 +267,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
     <div id="gameRankingUI" class="game-right-layout" style="display:none;">
       <div class="card tall-card">
         <div class="board-title" id="rankingTitle">🏆 실시간 랭킹</div>
-        <div class="rank-list" id="rankingList"></div>
+        <div class="rank-list" id="rankingList"></div><div id="chatBox"><div id="chatMsgs"></div><div class="chat-in"><input id="chatInput" maxlength="60" placeholder="메시지 입력" autocomplete="off"><button id="chatSend">전송</button></div></div>
       </div>
       <div class="card short-card">
         <div class="quiz-title" id="quizTitle">쌓기나무는 모두 몇 개일까요?</div>
@@ -314,6 +333,92 @@ const SPEED_MS = 90000;                                   // 스피드런 제한
 const maxLives = () => gameMode === 'onehit' ? 1 : 3;     // 한방 모드는 목숨 1개
 let stackH = [], stackT = [], stackCur = { x: 1, y: 1 };
 
+/* ---------- 라이어 모드 ---------- */
+let liarState = null, myLV = '', chat = [];
+const LIAR_MS = 25000;
+function seeded(seed, fn) {
+  const o = Math.random; let s = (seed >>> 0) || 1;
+  Math.random = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  try { return fn(); } finally { Math.random = o; }
+}
+const nameOf = id => { const u = activeUsers.find(x => x.id === id); return u ? (u.nickname || '익명') : '(나간 사람)'; };
+const liarCanAct = () => gameMode === 'liar' && gameStarted && liarState && liarState.players.includes(myId) && !liarState.out.includes(myId);
+function syncLiar(n) {
+  const p = liarState;
+  if (p && p.session === n.session && n.round < p.round) return;
+  liarState = n;
+  if (p && p.session === n.session && p.round !== n.round) { if (n.msg) addChat({ sys: 1, text: n.msg }); specPanelKey = ''; }
+}
+function nextLiarProblem() {
+  const L = liarState; if (!L) return;
+  const gen = () => L.bp ? generateBlueprintBlocks() : generateValidBlocks();
+  const common = seeded(L.session, gen);
+  let blocks = common;
+  if (myId === L.liarId) blocks = seeded(L.session + 7, () => { let b, i = 0; do { b = gen(); } while (b.length === common.length && ++i < 50); return b; });
+  currentBlocks = blocks; activeShiningEyesRound = false; hasShiningEyesBuff = false;
+  rebuildBlocks(blocks);
+  if (L.bp) { drawBlueprint(blocks); showBlueprint(true); } else showBlueprint(false);
+  chat = []; specPanelKey = '';
+  addChat({ sys: 1, text: '서로 본 모양을 설명하며 라이어를 찾으세요!' });
+  $('cameraStatusBadge').innerText = defaultBadge();
+}
+function addChat(m) { chat.push(m); if (chat.length > 60) chat.shift(); renderChat(); }
+function renderChat() {
+  const b = $('chatMsgs'); if (!b) return;
+  b.innerHTML = chat.map(m => m.sys ? `<div class="chat-sys">${esc(m.text)}</div>`
+    : m.id === myId ? `<div class="chat-row me"><div class="chat-bub me">${esc(m.text)}</div></div>`
+    : `<div class="chat-row"><img class="chat-av" src="${esc(m.a || characterImages[0])}" alt=""><div><div class="chat-name">${esc(m.n)}</div><div class="chat-bub">${esc(m.text)}</div></div></div>`).join('');
+  b.scrollTop = b.scrollHeight;
+}
+function sendChat() {
+  const i = $('chatInput'), text = i.value.trim();
+  if (!text || !liarCanAct()) return;
+  i.value = '';
+  const m = { id: myId, n: myNickname, a: selectedImage, text, s: currentSession };
+  addChat(m);
+  try { room.send({ type: 'broadcast', event: 'chat', payload: m }); } catch (e) {}
+}
+function renderLiarVote(users) {
+  if (gameMode !== 'liar' || !gameStarted || !liarState) return;
+  const L = liarState, r = L.round, can = liarCanAct();
+  $('quizTitle').innerText = `🗳 ${r}번째 투표 · 라이어는 누구?`;
+  const cnt = k => users.filter(u => u.lv === r + ':' + k).length;
+  const alive = L.players.filter(i => !L.out.includes(i));
+  const opts = alive.filter(i => i !== myId).map(i => ({ k: i, n: nameOf(i) })).concat([{ k: 'skip', n: '⏭ 건너뛰기' }]);
+  const html = opts.map(o => `<button class="choice-btn lv-btn${myLV === r + ':' + o.k ? ' correct' : ''}" data-t="${esc(o.k)}"${can ? '' : ' disabled'}>${esc(o.n)} <small>${cnt(o.k)}</small></button>`).join('');
+  const box = $('choiceButtons');
+  box.style.gridTemplateColumns = '1fr 1fr 1fr'; box.style.maxHeight = '112px'; box.style.overflowY = 'auto';
+  if (html !== specPanelKey) { specPanelKey = html; box.innerHTML = html; }
+  $('feedbackMessage').innerText = L.players.includes(myId) ? (L.out.includes(myId) ? '탈락했어요 (채팅·투표 불가)' : '') : '관전 중';
+  $('feedbackMessage').style.color = '#64748b';
+}
+function liarTick() {
+  const L = liarState; if (!L) return;
+  const l = Math.max(0, L.roundEnd - Date.now());
+  $('koBarFill').style.width = (l / LIAR_MS * 100) + '%';
+  $('koLives').innerText = `🗳 투표까지 ${Math.ceil(l / 1000)}초`;
+}
+function liarResolve(users) {
+  const L = liarState, r = L.round, alive = L.players.filter(i => !L.out.includes(i));
+  const cnt = {}; let skip = 0;
+  users.forEach(u => {
+    if (!alive.includes(u.id) || !u.lv || !u.lv.startsWith(r + ':')) return;
+    const t = u.lv.slice(String(r).length + 1);
+    if (t === 'skip') skip++; else if (alive.includes(t)) cnt[t] = (cnt[t] || 0) + 1;
+  });
+  const ent = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
+  let msg = '⏭ 건너뛰기/동률! 아무도 지목되지 않았어요', out = L.out, winner = '';
+  if (ent[0] && !(ent[1] && ent[1][1] === ent[0][1]) && ent[0][1] > skip) {
+    const id = ent[0][0], nm = nameOf(id);
+    if (id === L.liarId) { winner = 'crew'; msg = `🎉 ${nm} 님이 라이어였어요! 시민 승리`; }
+    else { out = [...out, id]; msg = `❌ ${nm} 님은 시민이었어요… 탈락!`; if (alive.length - 1 <= 2) { winner = 'liar'; msg += ' 라이어 승리!'; } }
+  }
+  syncLiar({ ...L, round: r + 1, roundEnd: Date.now() + LIAR_MS, out, msg, winner });
+  sendSoon();
+  if (winner) setTimeout(teacherEndGame, 800);
+}
+
+
 const joinedAt = Date.now();
 const HEARTBEAT_MS = 10000, STALE_MS = 25000;
 let isSubscribed = false, room = null, presenceTimer = null, reconnectTimer = null, helloTimer = null;
@@ -338,7 +443,7 @@ function getMyPayload() {
     phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
     mode: isTeacher ? gameMode : '', teams: isTeacher ? teams : null, result: isTeacher ? resultData : null,
     lives: myLives, dead: isDead, diedAt, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
-    runEnd: isTeacher ? runEnd : 0,
+    runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, lv: myLV,
     vote: myVote,
     joinedAt, hb: Date.now()
   };
@@ -389,7 +494,7 @@ function renderAll() {
     const t = users.find(u => u.isTeacher);
     if (t) {
       noTeacherSince = 0;
-      if (t.gameStarted) { gameMode = t.mode || 'solo'; teams = t.teams || {}; runEnd = t.runEnd || 0; if (t.session && (t.session !== currentSession || !gameStarted)) startLocal(t.session); }
+      if (t.gameStarted) { gameMode = t.mode || 'solo'; teams = t.teams || {}; runEnd = t.runEnd || 0; if (t.liar) syncLiar(t.liar); if (t.session && (t.session !== currentSession || !gameStarted)) startLocal(t.session); }
       else { if (gameStarted) endGameLocal(); if (t.result && t.result.session === currentSession) showResult(t.result); }
     } else if (gameStarted) {
       noTeacherSince = noTeacherSince || Date.now();
@@ -399,7 +504,7 @@ function renderAll() {
   teacherTick(users);
   if (gameStarted && $('gameUI').style.display === 'none') applyUIState(true);
   koTick(); renderSpectate(users);   // 게임 중인데 게임 화면이 아니면 이동
-  renderVote(users);
+  renderVote(users); renderLiarVote(users);
   renderUserList(users);
   renderRankingList(users);
 }
@@ -409,10 +514,10 @@ function startLocal(session) {
   const fresh = session !== currentSession;
   currentSession = session;
   gameStarted = true; myVote = ''; phase = isTeacher ? 'play' : phase; resultData = null; isTargetSelectMode = false;
-  if (fresh) { myScore = 0; myLives = maxLives(); hackMiss = 0; cameraAngle = Math.PI / 2; isDead = false; diedAt = 0; specId = ''; specKey = ''; specPanelKey = ''; SFX.start(); }
+  if (fresh) { myLV = ''; myScore = 0; myLives = maxLives(); hackMiss = 0; cameraAngle = Math.PI / 2; isDead = false; diedAt = 0; specId = ''; specKey = ''; specPanelKey = ''; SFX.start(); }
   closeResult();   // 시상식/투표 화면이 떠 있으면 닫고 게임 화면으로
   applyUIState(true);
-  $('koHud').style.display = (['knockout', 'onehit', 'speedrun'].includes(gameMode) && !isDead) ? 'block' : 'none';
+  $('koHud').style.display = (['knockout', 'onehit', 'speedrun', 'liar'].includes(gameMode) && !isDead) ? 'block' : 'none';
   renderHud();
   nextProblem();
 }
@@ -422,6 +527,7 @@ function nextProblem() {
   if (!gameStarted || isDead) return;
   if (gameMode === 'stack') return nextStackProblem();
   if (gameMode === 'blueprint') return nextBlueprintProblem();
+  if (gameMode === 'liar') return nextLiarProblem();
   currentBlocks = gameMode === 'speedrun' ? generateValidBlocks(11, 17) : generateValidBlocks();   // 스피드런: 블록이 훨씬 많음
   activeShiningEyesRound = hasShiningEyesBuff;
   hasShiningEyesBuff = false;
@@ -432,7 +538,7 @@ function nextProblem() {
 }
 
 function endGameLocal() {
-  gameStarted = false; currentBlocks = []; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
+  gameStarted = false; currentBlocks = []; liarState = null; myLV = ''; chat = []; $('choiceButtons').style.maxHeight = ''; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
   koDeadline = 0; runEnd = 0; isDead = false; myLives = 3; diedAt = 0; specId = ''; specKey = ''; specPanelKey = '';
   ['koHud', 'specPrev', 'specNext'].forEach(id => { $(id).style.display = 'none'; });
   $('cardModalOverlay').classList.remove('active'); $('pwModalOverlay').classList.remove('active'); isTargetSelectMode = false; pendingAttackType = null;
@@ -461,6 +567,7 @@ function teacherTick(users) {
     if (users.filter(u => !u.dead).length <= 1) { koEndAt = koEndAt || now + 2500; if (now >= koEndAt) { koEndAt = 0; teacherEndGame(); } }
     else koEndAt = 0;
   }
+  else if (gameStarted && gameMode === 'liar') { if (liarState && !liarState.winner && Date.now() >= liarState.roundEnd) liarResolve(users); }
   else if (gameStarted && gameMode === 'duo') {      // 중간에 들어온 사람은 인원이 적은 팀에 배정
     let changed = false;
     users.forEach(u => {
@@ -491,7 +598,7 @@ function renderVote(users) {
   const cnt = k => users.filter(u => u.vote === stage + ':' + k).length + '표';
   const mark = (id, k) => $(id).classList.toggle('voted', myVote === stage + ':' + k);
   if (stage === 'vote1') { $('showdownCount').innerText = cnt('showdown'); $('knockoutCount').innerText = cnt('knockout'); $('hackingCount').innerText = cnt('hacking'); mark('showdownBtn', 'showdown'); mark('knockoutBtn', 'knockout'); mark('hackingBtn', 'hacking'); $('etcCount').innerText = cnt('etc'); mark('etcBtn', 'etc'); }
-  else if (stage === 'vote3') { [['speedrun', 'speed'], ['onehit', 'onehit'], ['stack', 'stack'], ['blueprint', 'blueprint']].forEach(([k, id]) => { $(id + 'Count').innerText = cnt(k); mark(id + 'Btn', k); }); }
+  else if (stage === 'vote3') { [['speedrun', 'speed'], ['onehit', 'onehit'], ['stack', 'stack'], ['blueprint', 'blueprint'], ['liar', 'liar']].forEach(([k, id]) => { $(id + 'Count').innerText = cnt(k); mark(id + 'Btn', k); }); }
   else { $('soloCount').innerText = cnt('solo'); $('duoCount').innerText = cnt('duo'); mark('soloBtn', 'solo'); mark('duoBtn', 'duo'); }
 }
 
@@ -503,7 +610,7 @@ function finishVote(users) {
 
 function finishVote3(users) {
   if (!isTeacher || phase !== 'vote3') return;
-  const ks = ['speedrun', 'onehit', 'stack', 'blueprint'], n = k => users.filter(u => u.vote === 'vote3:' + k).length;
+  const ks = ['speedrun', 'onehit', 'stack', 'blueprint', 'liar'], n = k => users.filter(u => u.vote === 'vote3:' + k).length;
   const mx = Math.max(...ks.map(n)), top = ks.filter(k => n(k) === mx);
   startMode(top[Math.floor(Math.random() * top.length)], users);   // 동점/무투표는 랜덤
 }
@@ -518,9 +625,15 @@ function startMode(mode, users) {
   }
   runEnd = mode === 'speedrun' ? Date.now() + SPEED_MS : 0;
   const session = Date.now();
+
+  if (mode === 'liar') {
+    const ps = users.slice(0, 8).map(u => u.id);
+    liarState = { session, players: ps, liarId: ps[Math.floor(Math.random() * ps.length)], bp: Math.random() < 0.5, round: 1, roundEnd: Date.now() + LIAR_MS, out: [], msg: '', winner: '' };
+  }
+
   startLocal(session);
   updatePresence();
-  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd } }); } catch (e) {}
+  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState } }); } catch (e) {}
 }
 
 async function teacherEndGame() {
@@ -552,8 +665,10 @@ async function connect() {
   ch.on('broadcast', { event: 'game_control' }, ({ payload }) => {
     if (isTeacher) return;
     if (payload.action === 'end') { endGameLocal(); if (payload.result && payload.result.session === currentSession) showResult(payload.result); }
-    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; startLocal(payload.session); }
+    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; startLocal(payload.session); }
   });
+
+  ch.on('broadcast', { event: 'chat' }, ({ payload }) => { if (gameMode === 'liar' && payload && payload.s === currentSession) addChat(payload); });
 
   ch.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
     if (payload.targetId !== myId) return;
@@ -633,6 +748,7 @@ function renderUserList(users) {
 }
 
 function renderRankingList(users) {
+  if (gameMode === 'liar') { $('rankingTitle').innerText = '💬 라이어를 찾아라'; return; }
   let html;
   const duo = gameMode === 'duo', ko = gameMode === 'knockout' || gameMode === 'onehit';
   const av = u => `<img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필">`;
@@ -697,7 +813,7 @@ function generateValidBlocks(lo = 5, hi = 9) {
 
 function setupChoices(correct) {
   const box = $('choiceButtons'), fb = $('feedbackMessage');
-  box.innerHTML = ''; fb.innerText = ''; hasGuessed = false;
+  box.innerHTML = ''; fb.innerText = ''; hasGuessed = false; box.style.maxHeight = ''; box.style.overflowY = '';
   box.style.gridTemplateColumns = ''; $('quizTitle').innerText = '쌓기나무는 모두 몇 개일까요?'; specPanelKey = '';
   toggleOutline(activeShiningEyesRound);
   const set = new Set([correct]);
@@ -774,11 +890,12 @@ function handleCardSelect(card) {
 }
 
 /* ---------- 모드별 화면 구성 ---------- */
-const defaultBadge = () => !gameStarted ? '3D 관찰 카메라 회전 중' : gameMode === 'stack' ? '🧱 쌓기 모드' : gameMode === 'blueprint' ? '📐 도면 보고 맞추기' : '3D 관찰 카메라 회전 중';
+const defaultBadge = () => !gameStarted ? '3D 관찰 카메라 회전 중' : gameMode === 'liar' ? (liarState && liarState.liarId === myId ? '🕵️ 당신은 라이어!' : '🙂 시민 · 모양을 기억하세요') : gameMode === 'stack' ? '🧱 쌓기 모드' : gameMode === 'blueprint' ? '📐 도면 보고 맞추기' : '3D 관찰 카메라 회전 중';
 const modalOpen = () => $('cardModalOverlay').classList.contains('active') || $('pwModalOverlay').classList.contains('active');
 
 function setModeUI() {
   const st = gameStarted && gameMode === 'stack', bp = gameStarted && gameMode === 'blueprint', tc = $('threeContainer');
+  const lr = gameStarted && gameMode === 'liar'; $('chatBox').style.display = lr ? 'flex' : 'none'; $('rankingList').style.display = lr ? 'none' : '';
   document.querySelector('.left-card').classList.toggle('stack-left', st);          // 쌓기 모드: 왼쪽 캐릭터 그림을 줄여 버튼 공간 확보
   if (st) $('stackView').appendChild(tc);                                           // 3D 화면을 오른쪽 아래 카드로 이동
   else if (tc.parentNode !== $('gameUI')) $('gameUI').insertBefore(tc, $('bpView'));  // 원래 자리로 복귀
@@ -1049,12 +1166,14 @@ function toggleOutline(visible) {
 
 /* ---------- 녹아웃: 제한시간 / 목숨 / 관전 ---------- */
 function renderHud() {
+  if (gameMode === 'liar') { $('koBar').style.display = 'block'; return; }
   if (gameMode === 'speedrun') { $('koBar').style.display = 'block'; return; }
   const mx = maxLives(), n = Math.max(0, Math.min(mx, myLives));
   $('koLives').innerText = '❤️'.repeat(n) + '🖤'.repeat(mx - n);
   $('koBar').style.display = gameMode === 'onehit' ? 'none' : 'block';
 }
 function koTick() {
+  if (gameMode === 'liar' && gameStarted && liarState) return liarTick();
   if (!gameStarted || isDead) return;
   if (gameMode === 'speedrun') {                       // 스피드런: 전체 제한시간 표시
     const l = Math.max(0, runEnd - Date.now());
@@ -1167,6 +1286,14 @@ let shownSession = 0, fxTimers = [], fxOn = false, fxConfetti = false, parts = [
 const later = (ms, fn) => fxTimers.push(setTimeout(fn, ms));
 
 function buildResult() {
+
+  if (gameMode === 'liar' && liarState) {
+    const L = liarState, win = id => L.winner === 'liar' ? id === L.liarId : id !== L.liarId;
+    const us = collectUsers().filter(u => L.players.includes(u.id)).sort((a, b) => win(b.id) - win(a.id))
+      .map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: win(u.id) ? 10 : 0, x: (u.id === L.liarId ? '🕵️라이어' : '시민') + (win(u.id) ? ' 승리' : '') }));
+    return { session: currentSession, mode: 'liar', podium: us.slice(0, 3), full: us };
+  }
+
   const ko = gameMode === 'knockout' || gameMode === 'onehit', surv = u => u.dead ? (u.diedAt || 0) : 9e15;   // 녹아웃: 오래 살아남은 순
   const us = collectUsers().sort(ko ? (a, b) => (surv(b) - surv(a)) || ((b.score || 0) - (a.score || 0)) : (a, b) => (b.score || 0) - (a.score || 0))
     .map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: u.score || 0, t: teams[u.id], x: ko ? (u.dead ? '탈락' : '생존') : undefined }));
@@ -1307,6 +1434,16 @@ function initUI() {
   $('onehitBtn').addEventListener('click', () => vote('onehit'));
   $('stackBtn').addEventListener('click', () => vote('stack'));
   $('blueprintBtn').addEventListener('click', () => vote('blueprint'));
+
+  $('liarBtn').addEventListener('click', () => vote('liar'));
+  $('chatSend').addEventListener('click', sendChat);
+  $('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } });
+  $('choiceButtons').addEventListener('click', e => {
+    const b = e.target.closest('.lv-btn');
+    if (!b || !liarCanAct()) return;
+    myLV = liarState.round + ':' + b.dataset.t; updatePresence();
+  });
+
   $('stackPad').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; stackAct(b.dataset.k); b.blur(); });
   window.addEventListener('keydown', e => {           // 쌓기 모드 키보드: WASD 이동 / Space·E 쌓기 / Q 빼기 / ←→ 회전
     if (gameMode !== 'stack' || !gameStarted || isDead || modalOpen()) return;
