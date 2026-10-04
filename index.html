@@ -196,6 +196,8 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 #voteStage1 .mode-btn img{width:62px;height:62px}
 #voteStage1 .mode-emoji{font-size:40px;height:62px;line-height:62px}
 .vote-overlay{padding:14px 0}
+.beam{display:none!important}
+.chat-bub.sw{background:#fee2e2;border-color:#fca5a5}
 </style>
 </head>
 <body>
@@ -220,7 +222,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
       <div id="stackPad">
         <div class="pad-row"><button class="pad-btn" data-k="w">W</button></div>
         <div class="pad-row"><button class="pad-btn" data-k="a">A</button><button class="pad-btn" data-k="s">S</button><button class="pad-btn" data-k="d">D</button></div>
-        <div class="pad-row pad-act"><button class="pad-btn" data-k="add">＋ 쌓기</button><button class="pad-btn" data-k="del">－ 빼기</button></div>
+        <div class="pad-row pad-act"><button class="pad-btn" data-k="add">＋ 쌓기</button><button class="pad-btn" data-k="del">－ 빼기</button><button class="pad-btn" id="padSubmit" data-k="submit" style="display:none;width:70px;">제출</button></div>
         <div class="pad-hint">키보드 W A S D 이동 · Space 쌓기 · Q 빼기<br>오른쪽 3D 화면은 좌우 드래그(또는 ← →)로 회전</div>
       </div>
     </div>
@@ -251,16 +253,16 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
             <button class="mode-btn" id="knockoutBtn"><img src="https://media.ffycdn.net/eu/supercell/g9QYVzuSVxq372RUXLte.png?width=2400" alt="녹아웃"><span>녹아웃</span><span class="vote-count" id="knockoutCount">0표</span></button>
           </div>
           <div class="vote-row">
-            <button class="mode-btn" id="hackingBtn"><img src="https://media.ffycdn.net/eu/supercell/bNzk8N5HjWxHjCeXftpa.png?width=2400" alt="해킹"><span>해킹</span><span class="vote-count" id="hackingCount">0표</span></button>
             <button class="mode-btn" id="speedBtn"><span class="mode-emoji">⚡</span><span>스피드런</span><span class="vote-count" id="speedCount">0표</span></button>
-          </div>
-          <div class="vote-row">
             <button class="mode-btn" id="onehitBtn"><span class="mode-emoji">💀</span><span>한방</span><span class="vote-count" id="onehitCount">0표</span></button>
-            <button class="mode-btn" id="stackBtn"><span class="mode-emoji">🧱</span><span>쌓기 모드</span><span class="vote-count" id="stackCount">0표</span></button>
           </div>
           <div class="vote-row">
+            <button class="mode-btn" id="stackBtn"><span class="mode-emoji">🧱</span><span>쌓기 모드</span><span class="vote-count" id="stackCount">0표</span></button>
             <button class="mode-btn" id="blueprintBtn"><span class="mode-emoji">📐</span><span>도면보고 맞추기</span><span class="vote-count" id="blueprintCount">0표</span></button>
+          </div>
+          <div class="vote-row">
             <button class="mode-btn" id="liarBtn"><span class="mode-emoji">🕵️</span><span>라이어 모드</span><span class="vote-count" id="liarCount">0표</span></button>
+            <button class="mode-btn" id="coopBtn"><span class="mode-emoji">🤝</span><span>협동 쌓기</span><span class="vote-count" id="coopCount">0표</span></button>
           </div>
         </div>
         
@@ -353,7 +355,7 @@ let phase = '', voteEnd = 0, myVote = '', curStage = '', gameMode = 'solo', team
 let myLives = 3, isDead = false, diedAt = 0, koDeadline = 0, specId = '', specKey = '', specPanelKey = '', invincible = false, koEndAt = 0;
 const TEAM_NAMES = ['🔴 레드팀', '🔵 블루팀'], TEAM_COLORS = ['#ef4444', '#2563eb'];
 let uiScale = 1, runEnd = 0, hackMiss = 0;
-const CFG_DEF = { voteSec: 10, score: 10, blkLo: 5, blkHi: 9, choices: 4, cam: 0.012, wrongMs: 2000, cards: true, koSec: 4, koLives: 3, koAutoEnd: true, hackProb: 30, hackPity: 2, hackMin: 10, hackMax: 60, hackMult: 2, spSec: 90, spBlkLo: 11, spBlkHi: 17, spCam: 0.02, bpRevealMs: 3800, liarSec: 25, liarMax: 8, liarBp: 50, liarLeft: 2, liarChat: true, c_confusion: true, c_taunt: true, c_freeze: true, c_lightning: true, c_shining_eyes: true, glitchSec: 4, tauntSec: 2.5, freezeSec: 3 };
+const CFG_DEF = { voteSec: 10, score: 10, blkLo: 5, blkHi: 9, choices: 4, cam: 0.012, wrongMs: 2000, cards: true, koSec: 4, koLives: 3, koAutoEnd: true, hackProb: 30, hackPity: 2, hackMin: 10, hackMax: 60, hackMult: 2, coopSwap: 60, spSec: 90, spBlkLo: 11, spBlkHi: 17, spCam: 0.02, bpRevealMs: 3800, liarSec: 25, liarMax: 8, liarBp: 50, liarLeft: 2, liarChat: true, c_confusion: true, c_taunt: true, c_freeze: true, c_lightning: true, c_shining_eyes: true, glitchSec: 4, tauntSec: 2.5, freezeSec: 3 };
 let S = { ...CFG_DEF };
 try { Object.assign(S, JSON.parse(localStorage.getItem('blocksCfg') || '{}')); } catch (e) {}
 let iAmHost = false, hostAt = 0, endedSession = 0, endedAt = 0, settingsOpen = false, cfgTab = 0;
@@ -380,6 +382,49 @@ let stackH = [], stackT = [], stackCur = { x: 1, y: 1 };
 
 /* ---------- 라이어 모드 ---------- */
 let liarState = null, myLV = '', chat = [];
+/* ---------- 협동 쌓기 ---------- */
+let coopState = null, coopRound = 0, coopLog = [], coopReveal = false;
+const stackish = () => gameMode === 'stack' || gameMode === 'coop';
+const coopTeam = () => coopState ? coopState.teams.findIndex(t => t.d === myId || t.b.includes(myId)) : -1;
+const coopRole = () => { const t = coopState && coopState.teams[coopTeam()]; return !t ? '' : t.d === myId ? 'd' : 'b'; };   // d: 설명하는 사람, b: 쌓는 사람
+function nextCoopProblem() {
+  if (!coopState) return;
+  const role = coopRole(), bl = seeded((currentSession + coopTeam() * 7919 + coopRound * 104729) >>> 0, () => generateValidBlocks());   // 같은 팀은 같은 문제
+  stackT = emptyH(); bl.forEach(b => { stackT[b.x][b.y]++; });
+  stackH = emptyH(); stackCur = { x: 1, y: 1 }; hasGuessed = false; currentBlocks = [];
+  activeShiningEyesRound = false; hasShiningEyesBuff = false; koDeadline = 0;
+  chat = []; coopReveal = false; specPanelKey = '';
+  $('feedbackMessage').innerText = ''; $('feedbackMessage').style.color = '#64748b';
+  if (role === 'd') {
+    rebuildBlocks(bl);
+    if (stackGroup) while (stackGroup.children.length) stackGroup.remove(stackGroup.children[0]);
+    drawBlueprint(bl);
+    $('topView').innerHTML = '<div class="tv-title">위에서 본 모양</div><div class="tv-grid">' + [0, 1, 2].map(y => [0, 1, 2].map(x => `<div class="tv-cell">${stackT[x][y] || ''}</div>`).join('')).join('') + '</div>';
+    $('quizTitle').innerText = '화면의 모양을 말로 설명해 주세요';
+  } else { renderStack(); $('quizTitle').innerText = '설명을 듣고 똑같이 쌓은 뒤 제출하세요'; }
+  addChat({ sys: 1, text: role === 'd' ? '쌓는 사람은 도면을 못 봐요. 가끔 다른 팀 채팅이 섞여요!' : '가끔 설명이 다른 팀 채팅으로 바뀌어요. 틀리면 알려줄게요!' });
+  $('cameraStatusBadge').innerText = defaultBadge();
+}
+function coopRecv(m) {   // 설명하는 사람의 채팅이 도착: 쌓는 사람 화면에서는 가끔 다른 팀 채팅으로 바뀜
+  coopLog.push(m); if (coopLog.length > 40) coopLog.shift();
+  if (coopRole() !== 'b' || m.team !== coopTeam()) return;
+  const others = coopLog.filter(x => x.team !== m.team).slice(-6);
+  if (others.length && Math.random() * 100 < S.coopSwap) { const p = others[Math.floor(Math.random() * others.length)]; addChat({ id: m.id, n: m.n, a: m.a, text: p.text, sw: true, orig: m.text }); }
+  else addChat(m);
+}
+function coopSubmit(same) {
+  const fb = $('feedbackMessage');
+  if (!same) { coopReveal = true; renderChat(); SFX.wrong(); fb.innerText = '틀렸어요! 바뀐 채팅을 표시했어요'; fb.style.color = '#ef4444'; return; }
+  hasGuessed = true; SFX.correct(); myScore += S.score; coopRound++; fb.innerText = '완성! 다음 문제로 넘어가요'; fb.style.color = '#22c55e'; updatePresence();
+  const sess = currentSession;
+  setTimeout(() => { if (gameStarted && sess === currentSession && gameMode === 'coop') nextCoopProblem(); }, 900);
+}
+function coopSync(users) {   // 팀원이 다음 라운드로 넘어가면 같이 넘어감 (설명하는 사람은 점수도 받음)
+  if (!gameStarted || gameMode !== 'coop' || !coopState) return;
+  const t = coopState.teams[coopTeam()]; if (!t) return;
+  const mx = Math.max(0, ...[t.d, ...t.b].filter(id => id !== myId).map(id => { const u = users.find(x => x.id === id); return u && u.cs === currentSession ? (u.cr || 0) : 0; }));
+  if (mx > coopRound) { if (coopRole() === 'd') myScore += S.score * (mx - coopRound); coopRound = mx; nextCoopProblem(); sendSoon(); }
+}
 const liarMs = () => S.liarSec * 1000;
 function seeded(seed, fn) {
   const o = Math.random; let s = (seed >>> 0) || 1;
@@ -412,14 +457,14 @@ function renderChat() {
   const b = $('chatMsgs'); if (!b) return;
   b.innerHTML = chat.map(m => m.sys ? `<div class="chat-sys">${esc(m.text)}</div>`
     : m.id === myId ? `<div class="chat-row me"><div class="chat-bub me">${esc(m.text)}</div></div>`
-    : `<div class="chat-row"><img class="chat-av" src="${esc(m.a || characterImages[0])}" alt=""><div><div class="chat-name">${esc(m.n)}</div><div class="chat-bub">${esc(m.text)}</div></div></div>`).join('');
+    : `<div class="chat-row"><img class="chat-av" src="${esc(m.a || characterImages[0])}" alt=""><div><div class="chat-name">${esc(m.n)}</div><div class="chat-bub${m.sw && coopReveal ? ' sw' : ''}">${esc(m.text)}</div>${m.sw && coopReveal ? '<div class="chat-name" style="color:#dc2626">다른 팀 채팅이었어요 (원래: ' + esc(m.orig) + ')</div>' : ''}</div></div>`).join('');
   b.scrollTop = b.scrollHeight;
 }
 function sendChat() {
   const i = $('chatInput'), text = i.value.trim();
-  if (!text || !S.liarChat || !liarCanAct()) return;
+  const co = gameMode === 'coop'; if (!text || (co ? coopRole() !== 'd' : (!S.liarChat || !liarCanAct()))) return;
   i.value = '';
-  const m = { id: myId, n: myNickname, a: selectedImage, text, s: currentSession };
+  const m = { id: myId, n: myNickname, a: selectedImage, text, s: currentSession, team: co ? coopTeam() : undefined };
   addChat(m);
   try { room.send({ type: 'broadcast', event: 'chat', payload: m }); } catch (e) {}
 }
@@ -492,7 +537,7 @@ function getMyPayload() {
     lives: myLives, dead: isDead, diedAt, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
     runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, lv: myLV,
     vote: myVote,
-    host: isTeacher && iAmHost, hostAt: isTeacher ? hostAt : 0, cfg: isTeacher ? S : null,
+    host: isTeacher && iAmHost, hostAt: isTeacher ? hostAt : 0, cfg: isTeacher ? S : null, coop: isTeacher ? coopState : null, cr: coopRound, cs: currentSession,
     joinedAt, hb: Date.now()
   };
 }
@@ -543,7 +588,7 @@ function renderAll() {
     if (iAmHost) { iAmHost = false; if (phase.startsWith('vote')) phase = ''; }
     noTeacherSince = 0; Object.assign(S, host.cfg || {});
     if (host.id !== lastHostId) { lastHostId = host.id; clk = []; pingHost(); }
-    if (host.gameStarted) { gameMode = host.mode || 'solo'; teams = host.teams || {}; runEnd = host.runEnd || 0; if (host.liar) syncLiar(host.liar); if (host.session && (host.session !== endedSession || Date.now() - endedAt > 6000) && (host.session !== currentSession || !gameStarted)) startLocal(host.session); }
+    if (host.gameStarted) { gameMode = host.mode || 'solo'; teams = host.teams || {}; runEnd = host.runEnd || 0; if (host.liar) syncLiar(host.liar); if (host.coop) coopState = host.coop; if (host.session && (host.session !== endedSession || Date.now() - endedAt > 6000) && (host.session !== currentSession || !gameStarted)) startLocal(host.session); }
     else if (gameStarted) endGameLocal();
   } else if (!host) {
     if (gameStarted) {
@@ -558,7 +603,7 @@ function renderAll() {
   const lr = users.filter(u => u.isTeacher && u.result).map(u => u.result).sort((a, b) => b.session - a.session)[0];
   if (lr && !gameStarted && lr.session !== resClosed && !$('resultOverlay').classList.contains('active') && (lr.session === currentSession || (lr.at && Math.abs(hostNow() - lr.at) < 20000))) showResult(lr, true);   // 결과 화면이 안 떴으면 강제로 띄움
   ensureView();
-  teacherTick(users);
+  coopSync(users); teacherTick(users);
   if (gameStarted && $('gameUI').style.display === 'none') applyUIState(true);
   koTick(); renderSpectate(users);   // 게임 중인데 게임 화면이 아니면 이동
   renderVote(users); renderLiarVote(users);
@@ -571,7 +616,7 @@ function startLocal(session) {
   const fresh = session !== currentSession;
   currentSession = session;
   gameStarted = true; myVote = ''; phase = isTeacher ? 'play' : phase; resultData = null; isTargetSelectMode = false;
-  if (fresh) { myLV = ''; myScore = 0; myLives = maxLives(); hackMiss = 0; cameraAngle = Math.PI / 2; isDead = false; diedAt = 0; specId = ''; specKey = ''; specPanelKey = ''; playAt(session + 600, () => SFX.start()); }
+  if (fresh) { myLV = ''; myScore = 0; coopRound = 0; coopLog = []; coopReveal = false; myLives = maxLives(); hackMiss = 0; cameraAngle = Math.PI / 2; isDead = false; diedAt = 0; specId = ''; specKey = ''; specPanelKey = ''; playAt(session + 600, () => SFX.start()); }
   closeResult();   // 시상식/투표 화면이 떠 있으면 닫고 게임 화면으로
   applyUIState(true);
   $('koHud').style.display = (['knockout', 'onehit', 'speedrun', 'liar'].includes(gameMode) && !isDead) ? 'block' : 'none';
@@ -582,6 +627,7 @@ function startLocal(session) {
 /* 나만의 다음 문제 */
 function nextProblem() {
   if (!gameStarted || isDead) return;
+  if (gameMode === 'coop') return nextCoopProblem();
   if (gameMode === 'stack') return nextStackProblem();
   if (gameMode === 'blueprint') return nextBlueprintProblem();
   if (gameMode === 'liar') return nextLiarProblem();
@@ -596,7 +642,7 @@ function nextProblem() {
 
 function endGameLocal() {
   endedSession = currentSession; endedAt = Date.now(); iAmHost = false;
-  gameStarted = false; currentBlocks = []; liarState = null; myLV = ''; chat = []; $('choiceButtons').style.maxHeight = ''; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
+  gameStarted = false; currentBlocks = []; liarState = null; myLV = ''; chat = []; coopState = null; coopRound = 0; coopLog = []; coopReveal = false; $('choiceButtons').style.maxHeight = ''; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
   koDeadline = 0; runEnd = 0; isDead = false; myLives = 3; diedAt = 0; specId = ''; specKey = ''; specPanelKey = '';
   ['koHud', 'specPrev', 'specNext'].forEach(id => { $(id).style.display = 'none'; });
   $('cardModalOverlay').classList.remove('active'); $('pwModalOverlay').classList.remove('active'); isTargetSelectMode = false; pendingAttackType = null;
@@ -611,7 +657,7 @@ function teacherTick(users) {
   if (!isTeacher || !iAmHost) return;
   const now = Date.now();
   if (phase === 'vote1' && now >= voteEnd) {
-    const ks = ['showdown', 'knockout', 'hacking', 'speedrun', 'onehit', 'stack', 'blueprint', 'liar'], c = k => users.filter(u => u.vote === 'vote1:' + k).length;
+    const ks = ['showdown', 'knockout', 'speedrun', 'onehit', 'stack', 'blueprint', 'liar', 'coop'], c = k => users.filter(u => u.vote === 'vote1:' + k).length;
     const mx = Math.max(...ks.map(c)), top = ks.filter(k => c(k) === mx);
     const best = mx === 0 ? 'showdown' : top[Math.floor(Math.random() * top.length)];   // 무투표는 쇼다운, 동점은 랜덤
     if (best === 'showdown') { phase = 'vote2'; voteEnd = now + S.voteSec * 1000; sendSoon(); }
@@ -655,7 +701,7 @@ function renderVote(users) {
   $('voteTimer').innerText = left;
   const cnt = k => users.filter(u => u.vote === stage + ':' + k).length + '표';
   const mark = (id, k) => $(id).classList.toggle('voted', myVote === stage + ':' + k);
-  if (stage === 'vote1') { [['showdown', 'showdown'], ['knockout', 'knockout'], ['hacking', 'hacking'], ['speedrun', 'speed'], ['onehit', 'onehit'], ['stack', 'stack'], ['blueprint', 'blueprint'], ['liar', 'liar']].forEach(([k, id]) => { $(id + 'Count').innerText = cnt(k); mark(id + 'Btn', k); }); }
+  if (stage === 'vote1') { [['showdown', 'showdown'], ['knockout', 'knockout'], ['speedrun', 'speed'], ['onehit', 'onehit'], ['stack', 'stack'], ['blueprint', 'blueprint'], ['liar', 'liar'], ['coop', 'coop']].forEach(([k, id]) => { $(id + 'Count').innerText = cnt(k); mark(id + 'Btn', k); }); }
   else { $('soloCount').innerText = cnt('solo'); $('duoCount').innerText = cnt('duo'); mark('soloBtn', 'solo'); mark('duoBtn', 'duo'); }
 }
 
@@ -688,9 +734,15 @@ function startMode(mode, users) {
     liarState = { session, players: ps, liarId: ps[Math.floor(Math.random() * ps.length)], bp: Math.random() * 100 < S.liarBp, round: 1, roundEnd: Date.now() + liarMs(), out: [], msg: '', winner: '', pts: {} };
   }
 
+  if (mode === 'coop') {   // 2명씩 팀: 한 명은 설명, 한 명은 쌓기 (홀수면 남는 1명은 마지막 팀의 쌓기)
+    const ids = users.map(u => u.id).sort(() => Math.random() - 0.5), ts = [];
+    for (let i = 0; i + 1 < ids.length; i += 2) ts.push({ d: ids[i], b: [ids[i + 1]] });
+    if (ids.length % 2 && ts.length) ts[ts.length - 1].b.push(ids[ids.length - 1]); else if (ids.length % 2) ts.push({ d: ids[0], b: [] });
+    coopState = { session, teams: ts };
+  }
   startLocal(session);
   updatePresence();
-  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState, cfg: S } }); } catch (e) {}
+  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState, coop: coopState, cfg: S } }); } catch (e) {}
 }
 
 async function teacherEndGame() {
@@ -723,7 +775,7 @@ async function connect() {
     if (isTeacher && iAmHost && payload.action === 'start' && gameStarted && payload.session > currentSession) return;   // 동시에 시작하면 먼저 시작한 쪽만 인정
     if (payload.action === 'start') { iAmHost = false; if (phase.startsWith('vote')) phase = ''; }
     if (payload.action === 'end') { endGameLocal(); sendSoon(); if (payload.result && payload.result.session === currentSession) showResult(payload.result); }
-    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; if (payload.cfg) Object.assign(S, payload.cfg); startLocal(payload.session); }
+    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; if (payload.coop) coopState = payload.coop; if (payload.cfg) Object.assign(S, payload.cfg); startLocal(payload.session); }
   });
 
   ch.on('broadcast', { event: 'ping' }, ({ payload }) => {
@@ -737,7 +789,7 @@ async function connect() {
     clk.push({ rtt, off: payload.ts + rtt / 2 - t1, at: t1 }); clk = clk.filter(x => t1 - x.at < 60000).slice(-10);
     clockOff = clk.reduce((a, b) => b.rtt < a.rtt ? b : a).off;   // 왕복이 가장 짧았던 측정값이 가장 정확함
   });
-  ch.on('broadcast', { event: 'chat' }, ({ payload }) => { if (gameMode === 'liar' && payload && payload.s === currentSession) addChat(payload); });
+  ch.on('broadcast', { event: 'chat' }, ({ payload }) => { if (!payload || payload.s !== currentSession) return; if (gameMode === 'liar') addChat(payload); else if (gameMode === 'coop') coopRecv(payload); });
 
   ch.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
     if (payload.targetId !== myId) return;
@@ -818,6 +870,7 @@ function renderUserList(users) {
 }
 
 function renderRankingList(users) {
+  if (gameMode === 'coop') { $('rankingTitle').innerText = '팀 채팅'; return; }
   if (gameMode === 'liar') { $('rankingTitle').innerText = '💬 라이어를 찾아라'; return; }
   let html;
   const duo = gameMode === 'duo', ko = gameMode === 'knockout' || gameMode === 'onehit';
@@ -961,20 +1014,20 @@ function handleCardSelect(card) {
 }
 
 /* ---------- 모드별 화면 구성 ---------- */
-const defaultBadge = () => !gameStarted ? '3D 관찰 카메라 회전 중' : gameMode === 'liar' ? (liarState && liarState.liarId === myId ? '🕵️ 당신은 라이어!' : '🙂 시민 · 모양을 기억하세요') : gameMode === 'stack' ? '🧱 쌓기 모드' : gameMode === 'blueprint' ? '📐 도면 보고 맞추기' : '3D 관찰 카메라 회전 중';
+const defaultBadge = () => !gameStarted ? '3D 관찰 카메라 회전 중' : gameMode === 'coop' ? (coopRole() === 'd' ? '설명하는 사람 · 도면과 3D를 볼 수 있어요' : '쌓는 사람 · 설명을 듣고 쌓으세요') : gameMode === 'liar' ? (liarState && liarState.liarId === myId ? '🕵️ 당신은 라이어!' : '🙂 시민 · 모양을 기억하세요') : gameMode === 'stack' ? '🧱 쌓기 모드' : gameMode === 'blueprint' ? '📐 도면 보고 맞추기' : '3D 관찰 카메라 회전 중';
 const modalOpen = () => $('cardModalOverlay').classList.contains('active') || $('pwModalOverlay').classList.contains('active');
 
 function setModeUI() {
-  const st = gameStarted && gameMode === 'stack', bp = gameStarted && gameMode === 'blueprint', tc = $('threeContainer');
-  const lr = gameStarted && gameMode === 'liar'; $('chatBox').style.display = lr ? 'flex' : 'none'; $('rankingList').style.display = lr ? 'none' : '';
+  const co = gameStarted && gameMode === 'coop', st = gameStarted && (gameMode === 'stack' || co), bp = gameStarted && gameMode === 'blueprint', tc = $('threeContainer');
+  const lr = gameStarted && (gameMode === 'liar' || co); document.querySelector('.chat-in').style.display = (co && coopRole() !== 'd') ? 'none' : ''; $('padSubmit').style.display = co ? '' : 'none'; $('topView').style.display = (co && coopRole() !== 'd') ? 'none' : ''; $('chatBox').style.display = lr ? 'flex' : 'none'; $('rankingList').style.display = lr ? 'none' : '';
   document.querySelector('.left-card').classList.toggle('stack-left', st);          // 쌓기 모드: 왼쪽 캐릭터 그림을 줄여 버튼 공간 확보
   if (st) $('stackView').appendChild(tc);                                           // 3D 화면을 오른쪽 아래 카드로 이동
   else if (tc.parentNode !== $('gameUI')) $('gameUI').insertBefore(tc, $('bpView'));  // 원래 자리로 복귀
   $('stackView').style.display = st ? 'block' : 'none';
-  $('stackPad').style.display = st ? 'flex' : 'none';
+  $('stackPad').style.display = (st && !(co && coopRole() === 'd')) ? 'flex' : 'none';
   $('choiceButtons').style.display = st ? 'none' : '';
   $('gameRankingUI').classList.toggle('stack-mode', st);
-  $('bpView').style.display = bp ? 'flex' : 'none';
+  $('bpView').style.display = (bp || (co && coopRole() === 'd')) ? 'flex' : 'none';
   tc.style.display = bp ? 'none' : '';
   if (stackGroup && !st) while (stackGroup.children.length) stackGroup.remove(stackGroup.children[0]);
   if (!isDead) $('cameraStatusBadge').innerText = defaultBadge();
@@ -1015,7 +1068,7 @@ function renderStack() {
   $('topView').innerHTML = html + '</div>';
 }
 function stackAct(k) {
-  if (gameMode !== 'stack' || !gameStarted || isDead || hasGuessed || modalOpen()) return;
+  if (!stackish() || (gameMode === 'coop' && coopRole() !== 'b') || !gameStarted || isDead || hasGuessed || modalOpen()) return;
   if (['w', 'a', 's', 'd'].includes(k)) {               // 화면(카메라) 기준 방향으로 커서 이동
     const fx = -Math.cos(cameraAngle), fz = -Math.sin(cameraAngle);
     const f = Math.abs(fx) > Math.abs(fz) ? [Math.sign(fx), 0] : [0, Math.sign(fz)], r = [-f[1], f[0]];
@@ -1024,7 +1077,9 @@ function stackAct(k) {
   } else if (k === 'add') { if (stackH[stackCur.x][stackCur.y] < 3) stackH[stackCur.x][stackCur.y]++; }
   else if (k === 'del') { if (stackH[stackCur.x][stackCur.y] > 0) stackH[stackCur.x][stackCur.y]--; }
   renderStack();
-  for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) if (stackH[x][y] !== stackT[x][y]) return;
+  let same = true; for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) if (stackH[x][y] !== stackT[x][y]) same = false;
+  if (gameMode === 'coop') { if (k === 'submit') coopSubmit(same); return; }
+  if (!same) return;
   hasGuessed = true; SFX.correct(); myScore += S.score; updatePresence();
   const fb = $('feedbackMessage'); fb.innerText = '완성! 카드 보상을 선택하세요.'; fb.style.color = '#22c55e';
   setTimeout(openCardModal, 500);
@@ -1186,7 +1241,7 @@ function initThreeOnce() {
   container.appendChild(renderer.domElement);
   const cv = renderer.domElement; cv.style.touchAction = 'none';
   let dragX = null;                                   // 쌓기 모드: 3D 화면은 좌우(수평)로만 회전
-  cv.addEventListener('pointerdown', e => { if (gameMode === 'stack') { dragX = e.clientX; try { cv.setPointerCapture(e.pointerId); } catch (_) {} } });
+  cv.addEventListener('pointerdown', e => { if (stackish()) { dragX = e.clientX; try { cv.setPointerCapture(e.pointerId); } catch (_) {} } });
   cv.addEventListener('pointermove', e => { if (dragX === null) return; if (!isCameraFrozen) cameraAngle += (e.clientX - dragX) * 0.012 / uiScale; dragX = e.clientX; });
   ['pointerup', 'pointercancel'].forEach(ev => cv.addEventListener(ev, () => { dragX = null; }));
   resizeThree = () => {
@@ -1208,7 +1263,7 @@ function initThreeOnce() {
 
   (function animate() {
     requestAnimationFrame(animate);
-    if (!isCameraFrozen && gameMode !== 'stack') cameraAngle += gameMode === 'speedrun' ? S.spCam : S.cam;
+    if (!isCameraFrozen && !stackish()) cameraAngle += gameMode === 'speedrun' ? S.spCam : S.cam;
     const r = 9.5;
     camera.position.set(1 + r * Math.cos(cameraAngle), 6.5, 1 + r * Math.sin(cameraAngle));
     camera.lookAt(1, 0.9, 1);
@@ -1459,7 +1514,7 @@ function askTeacherMode() {
 const CFG_TABS = [
   ['공통', [['voteSec', '투표 시간', '초', 3, 60, 1], ['score', '정답 점수', '점', 1, 100, 1], ['blkLo', '블록 최소 개수', '개', 2, 20, 1], ['blkHi', '블록 최대 개수', '개', 2, 20, 1], ['choices', '선택지 개수', '개', 2, 6, 1], ['cam', '3D 회전 속도', '', 0, 0.1, 0.002], ['wrongMs', '오답 후 대기', 'ms', 300, 8000, 100], ['cards', '정답 후 카드 보상', 'bool'], ['inv', '선생님 무적', 'bool']]],
   ['녹아웃/한방', [['koSec', '문제당 제한시간', '초', 1, 30, 0.5], ['koLives', '목숨 (녹아웃)', '개', 1, 10, 1], ['koAutoEnd', '생존자 1명 남으면 자동 종료', 'bool']]],
-  ['해킹', [['hackProb', '해킹 카드 확률', '%', 0, 100, 1], ['hackPity', '미등장 몇 번 뒤 확정', '번', 0, 10, 1], ['hackMin', '뺏는 비율 최소', '%', 1, 100, 1], ['hackMax', '뺏는 비율 최대', '%', 1, 100, 1], ['hackMult', '코인 카드 배수', '배', 1, 10, 1]]],
+  ['협동 쌓기', [['coopSwap', '채팅 바꿔치기 확률', '%', 0, 100, 5]]],
   ['스피드런', [['spSec', '제한시간', '초', 10, 600, 5], ['spBlkLo', '블록 최소 개수', '개', 2, 20, 1], ['spBlkHi', '블록 최대 개수', '개', 2, 20, 1], ['spCam', '회전 속도', '', 0, 0.1, 0.002]]],
   ['도면', [['bpRevealMs', '오답 시 정답 공개 시간', 'ms', 500, 15000, 100]]],
   ['라이어', [['liarSec', '라운드 시간', '초', 5, 120, 1], ['liarMax', '최대 참가 인원', '명', 3, 20, 1], ['liarBp', '도면 문제 확률', '%', 0, 100, 5], ['liarLeft', '라이어 승리 남은 인원', '명', 1, 6, 1], ['liarChat', '채팅 허용', 'bool']]],
@@ -1544,7 +1599,7 @@ function initUI() {
   $('soloBtn').addEventListener('click', () => vote('solo'));
   $('duoBtn').addEventListener('click', () => vote('duo'));
   $('knockoutBtn').addEventListener('click', () => vote('knockout'));
-  $('hackingBtn').addEventListener('click', () => vote('hacking'));
+  $('coopBtn').addEventListener('click', () => vote('coop'));
   ;
   $('speedBtn').addEventListener('click', () => vote('speedrun'));
   $('onehitBtn').addEventListener('click', () => vote('onehit'));
@@ -1562,7 +1617,7 @@ function initUI() {
 
   $('stackPad').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; stackAct(b.dataset.k); b.blur(); });
   window.addEventListener('keydown', e => {           // 쌓기 모드 키보드: WASD 이동 / Space·E 쌓기 / Q 빼기 / ←→ 회전
-    if (gameMode !== 'stack' || !gameStarted || isDead || modalOpen()) return;
+    if (!stackish() || !gameStarted || isDead || modalOpen()) return;
     const tag = document.activeElement && document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
     if (tag === 'BUTTON') document.activeElement.blur();   // 포커스된 버튼이 Space로 한 번 더 눌리는 것 방지
@@ -1570,6 +1625,7 @@ function initUI() {
     if (k.length === 1 && 'wasd'.includes(k)) { e.preventDefault(); stackAct(k); }
     else if (k === ' ' || k === 'e') { e.preventDefault(); stackAct('add'); }
     else if (k === 'q') { e.preventDefault(); stackAct('del'); }
+    else if (k === 'enter' && gameMode === 'coop') { e.preventDefault(); stackAct('submit'); }
     else if (k === 'arrowleft') { e.preventDefault(); if (!isCameraFrozen) cameraAngle -= 0.2; }
     else if (k === 'arrowright') { e.preventDefault(); if (!isCameraFrozen) cameraAngle += 0.2; }
   });
