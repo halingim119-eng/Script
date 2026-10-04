@@ -165,19 +165,31 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 #voteStage3 .mode-btn{height:96px}
 #voteStage3 .mode-emoji{font-size:38px;height:50px;line-height:50px}
 #chatBox{display:none;flex:1;min-height:0;flex-direction:column;gap:6px;margin-top:6px}
-#chatMsgs{flex:1;min-height:0;overflow-y:auto;background:#b2c7da;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+#chatMsgs{flex:1;min-height:0;overflow-y:auto;background:#f1f2f4;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
 .chat-row{display:flex;gap:6px;align-items:flex-start}
 .chat-row.me{justify-content:flex-end}
 .chat-av{width:28px;height:28px;border-radius:50%;background:#fff;object-fit:contain;flex:none}
 .chat-name{font-size:10px;color:#334155;margin-bottom:1px}
-.chat-bub{background:#fff;color:#1e293b;font-size:12px;padding:5px 9px;border-radius:4px 12px 12px 12px;max-width:190px;word-break:break-all;text-align:left}
-.chat-bub.me{background:#fee500;border-radius:12px 4px 12px 12px}
-.chat-sys{align-self:center;background:rgba(0,0,0,.25);color:#fff;font-size:11px;padding:3px 10px;border-radius:10px}
+.chat-bub{background:#fff;border:1px solid #e5e7eb;color:#1e293b;font-size:12px;padding:5px 9px;border-radius:4px 12px 12px 12px;max-width:190px;word-break:break-all;text-align:left}
+.chat-bub.me{background:#e4e6ea;border-color:#d8dbe0;border-radius:12px 4px 12px 12px}
+.chat-sys{align-self:center;background:rgba(0,0,0,.06);color:#64748b;font-size:11px;padding:3px 10px;border-radius:10px}
 .chat-in{display:flex;gap:6px;flex:none}
 .chat-in input{flex:1;min-width:0;padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;outline:none}
-.chat-in button{padding:6px 12px;border:none;border-radius:8px;background:#fee500;font-weight:bold;font-size:12px;cursor:pointer}
+.chat-in button{padding:6px 12px;border:none;border-radius:8px;background:#e4e6ea;color:#334155;font-weight:bold;font-size:12px;cursor:pointer}
 .lv-btn{padding:6px 4px!important;font-size:12px!important}
 .lv-btn small{opacity:.7}
+.t-ask{position:absolute;right:12px;bottom:12px;max-width:calc(100% - 24px);background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;z-index:4;font-size:12px;color:#334155}
+.t-ask p{margin-bottom:8px}
+.t-ask div{display:flex;gap:6px}
+.t-ask button{flex:1;padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;font-size:12px;cursor:pointer;font-family:inherit}
+.t-ask button.y{background:#0f172a;color:#fff;border-color:#0f172a}
+.cfg-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.cfg-tab{padding:4px 9px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#64748b;cursor:pointer;font-family:inherit}
+.cfg-tab.on{background:#0f172a;color:#fff;border-color:#0f172a}
+.cfg-body{flex:1;min-height:0;overflow-y:auto;padding-right:4px}
+.cfg-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 2px;border-bottom:1px solid #f1f5f9;font-size:13px;color:#334155}
+.cfg-row input[type=number]{width:72px;padding:4px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;text-align:right}
+.cfg-foot{display:flex;justify-content:flex-end;padding-top:8px}
 </style>
 </head>
 <body>
@@ -226,7 +238,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
       <div class="user-list-container" id="userListContainer"><div class="empty-state">접속자를 감지하는 중...</div></div>
 
       <div class="vote-overlay" id="voteOverlay">
-        <div class="vote-title">게임 모드 투표 ⏱ <span id="voteTimer">3</span>초</div>
+        <div class="vote-title">게임 모드 투표 ⏱ <span id="voteTimer">10</span>초</div>
         <div class="vote-stage" id="voteStage1">
           <div class="vote-row">
             <button class="mode-btn" id="showdownBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="쇼다운"><span>쇼다운</span><span class="vote-count" id="showdownCount">0표</span></button>
@@ -254,6 +266,13 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
           </div>
         </div>
       </div>
+    </div>
+
+    <div id="settingsUI" class="card right-card" style="display:none;">
+      <div class="board-header"><div class="board-title">설정</div><button id="cfgClose" style="border:none;background:none;cursor:pointer;font-size:13px;color:#64748b;font-weight:bold;">닫기</button></div>
+      <div class="cfg-tabs" id="cfgTabs"></div>
+      <div class="cfg-body" id="cfgBody"></div>
+      <div class="cfg-foot"><button class="cfg-tab" id="cfgReset">기본값으로</button></div>
     </div>
 
     <div id="profilePickerUI" class="card right-card" style="display:none;">
@@ -329,13 +348,19 @@ let phase = '', voteEnd = 0, myVote = '', curStage = '', gameMode = 'solo', team
 let myLives = 3, isDead = false, diedAt = 0, koDeadline = 0, specId = '', specKey = '', specPanelKey = '', invincible = false, koEndAt = 0;
 const TEAM_NAMES = ['🔴 레드팀', '🔵 블루팀'], TEAM_COLORS = ['#ef4444', '#2563eb'];
 let uiScale = 1, runEnd = 0, hackMiss = 0;
-const SPEED_MS = 90000;                                   // 스피드런 제한시간(90초)
-const maxLives = () => gameMode === 'onehit' ? 1 : 3;     // 한방 모드는 목숨 1개
+const CFG_DEF = { voteSec: 10, score: 10, blkLo: 5, blkHi: 9, choices: 4, cam: 0.012, wrongMs: 2000, cards: true, koSec: 4, koLives: 3, koAutoEnd: true, hackProb: 30, hackPity: 2, hackMin: 10, hackMax: 60, hackMult: 2, spSec: 90, spBlkLo: 11, spBlkHi: 17, spCam: 0.02, bpRevealMs: 3800, liarSec: 25, liarMax: 8, liarBp: 50, liarLeft: 2, liarChat: true, c_confusion: true, c_taunt: true, c_freeze: true, c_lightning: true, c_shining_eyes: true, glitchSec: 4, tauntSec: 2.5, freezeSec: 3 };
+let S = { ...CFG_DEF };
+try { Object.assign(S, JSON.parse(localStorage.getItem('blocksCfg') || '{}')); } catch (e) {}
+let iAmHost = false, hostAt = 0, endedSession = 0, settingsOpen = false, cfgTab = 0;
+const becomeHost = () => { iAmHost = true; hostAt = Date.now(); };
+const hostTeacher = us => us.filter(u => u.isTeacher && u.host).sort((a, b) => (a.hostAt || 0) - (b.hostAt || 0) || String(a.id).localeCompare(String(b.id)))[0] || null;
+const spMs = () => S.spSec * 1000;                                   // 스피드런 제한시간(90초)
+const maxLives = () => gameMode === 'onehit' ? 1 : S.koLives;     // 한방 모드는 목숨 1개
 let stackH = [], stackT = [], stackCur = { x: 1, y: 1 };
 
 /* ---------- 라이어 모드 ---------- */
 let liarState = null, myLV = '', chat = [];
-const LIAR_MS = 25000;
+const liarMs = () => S.liarSec * 1000;
 function seeded(seed, fn) {
   const o = Math.random; let s = (seed >>> 0) || 1;
   Math.random = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
@@ -372,7 +397,7 @@ function renderChat() {
 }
 function sendChat() {
   const i = $('chatInput'), text = i.value.trim();
-  if (!text || !liarCanAct()) return;
+  if (!text || !S.liarChat || !liarCanAct()) return;
   i.value = '';
   const m = { id: myId, n: myNickname, a: selectedImage, text, s: currentSession };
   addChat(m);
@@ -395,7 +420,7 @@ function renderLiarVote(users) {
 function liarTick() {
   const L = liarState; if (!L) return;
   const l = Math.max(0, L.roundEnd - Date.now());
-  $('koBarFill').style.width = (l / LIAR_MS * 100) + '%';
+  $('koBarFill').style.width = (l / liarMs() * 100) + '%';
   $('koLives').innerText = `🗳 투표까지 ${Math.ceil(l / 1000)}초`;
 }
 function liarResolve(users) {
@@ -411,9 +436,9 @@ function liarResolve(users) {
   if (ent[0] && !(ent[1] && ent[1][1] === ent[0][1]) && ent[0][1] > skip) {
     const id = ent[0][0], nm = nameOf(id);
     if (id === L.liarId) { winner = 'crew'; msg = `🎉 ${nm} 님이 라이어였어요! 시민 승리`; }
-    else { out = [...out, id]; msg = `❌ ${nm} 님은 시민이었어요… 탈락!`; if (alive.length - 1 <= 2) { winner = 'liar'; msg += ' 라이어 승리!'; } }
+    else { out = [...out, id]; msg = `❌ ${nm} 님은 시민이었어요… 탈락!`; if (alive.length - 1 <= S.liarLeft) { winner = 'liar'; msg += ' 라이어 승리!'; } }
   }
-  syncLiar({ ...L, round: r + 1, roundEnd: Date.now() + LIAR_MS, out, msg, winner });
+  syncLiar({ ...L, round: r + 1, roundEnd: Date.now() + liarMs(), out, msg, winner });
   sendSoon();
   if (winner) setTimeout(teacherEndGame, 800);
 }
@@ -445,6 +470,7 @@ function getMyPayload() {
     lives: myLives, dead: isDead, diedAt, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
     runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, lv: myLV,
     vote: myVote,
+    host: isTeacher && iAmHost, hostAt: isTeacher ? hostAt : 0, cfg: isTeacher ? S : null,
     joinedAt, hb: Date.now()
   };
 }
@@ -490,17 +516,23 @@ function collectUsers() {
 function renderAll() {
   const users = collectUsers();
   activeUsers = users;
-  if (!isTeacher) {
-    const t = users.find(u => u.isTeacher);
-    if (t) {
-      noTeacherSince = 0;
-      if (t.gameStarted) { gameMode = t.mode || 'solo'; teams = t.teams || {}; runEnd = t.runEnd || 0; if (t.liar) syncLiar(t.liar); if (t.session && (t.session !== currentSession || !gameStarted)) startLocal(t.session); }
-      else { if (gameStarted) endGameLocal(); if (t.result && t.result.session === currentSession) showResult(t.result); }
-    } else if (gameStarted) {
-      noTeacherSince = noTeacherSince || Date.now();
-      if (Date.now() - noTeacherSince > 30000) endGameLocal();
-    }
+  const host = hostTeacher(users), rt = users.find(u => u.isTeacher && u.result && u.result.session === currentSession);
+  if (host && host.id !== myId) {   // 다른 선생님이 진행 중이면 학생이든 두 번째 선생님이든 그 진행을 따라감
+    if (iAmHost) { iAmHost = false; if (phase.startsWith('vote')) phase = ''; }
+    noTeacherSince = 0; Object.assign(S, host.cfg || {});
+    if (host.gameStarted) { gameMode = host.mode || 'solo'; teams = host.teams || {}; runEnd = host.runEnd || 0; if (host.liar) syncLiar(host.liar); if (host.session && host.session !== endedSession && (host.session !== currentSession || !gameStarted)) startLocal(host.session); }
+    else if (gameStarted) endGameLocal();
+  } else if (!host) {
+    if (gameStarted) {
+      if (rt) endGameLocal();
+      else {
+        noTeacherSince = noTeacherSince || Date.now();
+        if (isTeacher && Date.now() - noTeacherSince > 4000) { becomeHost(); noTeacherSince = 0; }   // 진행하던 선생님이 나가면 남은 선생님이 이어받음
+        else if (!isTeacher && Date.now() - noTeacherSince > 30000) endGameLocal();
+      }
+    } else noTeacherSince = 0;
   }
+  if (rt && !gameStarted) showResult(rt.result);
   teacherTick(users);
   if (gameStarted && $('gameUI').style.display === 'none') applyUIState(true);
   koTick(); renderSpectate(users);   // 게임 중인데 게임 화면이 아니면 이동
@@ -528,16 +560,17 @@ function nextProblem() {
   if (gameMode === 'stack') return nextStackProblem();
   if (gameMode === 'blueprint') return nextBlueprintProblem();
   if (gameMode === 'liar') return nextLiarProblem();
-  currentBlocks = gameMode === 'speedrun' ? generateValidBlocks(11, 17) : generateValidBlocks();   // 스피드런: 블록이 훨씬 많음
+  currentBlocks = gameMode === 'speedrun' ? generateValidBlocks(S.spBlkLo, S.spBlkHi) : generateValidBlocks();   // 스피드런: 블록이 훨씬 많음
   activeShiningEyesRound = hasShiningEyesBuff;
   hasShiningEyesBuff = false;
   rebuildBlocks(currentBlocks);
   setupChoices(currentBlocks.length);
-  koDeadline = gameMode === 'knockout' ? Date.now() + 4000 : 0;   // 녹아웃: 문제당 4초
+  koDeadline = gameMode === 'knockout' ? Date.now() + S.koSec * 1000 : 0;   // 녹아웃: 문제당 4초
   if (gameMode === 'knockout' || gameMode === 'onehit') { renderHud(); sendSoon(); }
 }
 
 function endGameLocal() {
+  endedSession = currentSession; iAmHost = false;
   gameStarted = false; currentBlocks = []; liarState = null; myLV = ''; chat = []; $('choiceButtons').style.maxHeight = ''; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
   koDeadline = 0; runEnd = 0; isDead = false; myLives = 3; diedAt = 0; specId = ''; specKey = ''; specPanelKey = '';
   ['koHud', 'specPrev', 'specNext'].forEach(id => { $(id).style.display = 'none'; });
@@ -550,20 +583,20 @@ function endGameLocal() {
 function sendSoon() { clearTimeout(presenceTimer); presenceTimer = setTimeout(sendState, 200); }
 
 function teacherTick(users) {
-  if (!isTeacher) return;
+  if (!isTeacher || !iAmHost) return;
   const now = Date.now();
   if (phase === 'vote1' && now >= voteEnd) {
     const c = k => users.filter(u => u.vote === 'vote1:' + k).length;
     let best = 'showdown', bc = c('showdown');            // 표가 가장 많은 모드 (동점이면 쇼다운 → 녹아웃 → 해킹 → 기타 순)
     for (const k of ['knockout', 'hacking', 'etc']) if (c(k) > bc) { best = k; bc = c(k); }
-    if (best === 'showdown') { phase = 'vote2'; voteEnd = now + 3000; sendSoon(); }
-    else if (best === 'etc') { phase = 'vote3'; voteEnd = now + 3000; sendSoon(); }
+    if (best === 'showdown') { phase = 'vote2'; voteEnd = now + S.voteSec * 1000; sendSoon(); }
+    else if (best === 'etc') { phase = 'vote3'; voteEnd = now + S.voteSec * 1000; sendSoon(); }
     else startMode(best, users);
   }
   else if (phase === 'vote2' && now >= voteEnd) finishVote(users);
   else if (phase === 'vote3' && now >= voteEnd) finishVote3(users);
   else if (gameStarted && gameMode === 'speedrun') { if (runEnd && now >= runEnd) teacherEndGame(); }
-  else if (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit') && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
+  else if (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit') && S.koAutoEnd && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
     if (users.filter(u => !u.dead).length <= 1) { koEndAt = koEndAt || now + 2500; if (now >= koEndAt) { koEndAt = 0; teacherEndGame(); } }
     else koEndAt = 0;
   }
@@ -580,8 +613,8 @@ function teacherTick(users) {
 }
 
 function renderVote(users) {
-  const t = users.find(u => u.isTeacher);
-  const stage = (t && !gameStarted) ? t.phase : '';
+  const t = hostTeacher(users);
+  const stage = (t && !gameStarted) ? (t.phase || '') : '';
   const active = stage === 'vote1' || stage === 'vote2' || stage === 'vote3';
   curStage = active ? stage : '';
   $('voteOverlay').style.display = active ? 'flex' : 'none';
@@ -589,6 +622,7 @@ function renderVote(users) {
   if (!active) return;
   $('profilePickerUI').style.display = 'none';
   $('defaultUserListUI').style.display = 'flex';
+  closeSettings();
   $('voteStage1').style.display = stage === 'vote1' ? 'flex' : 'none';
   $('voteStage2').style.display = stage === 'vote2' ? 'flex' : 'none';
   $('voteStage3').style.display = stage === 'vote3' ? 'flex' : 'none';
@@ -623,17 +657,17 @@ function startMode(mode, users) {
     const off = Math.random() < 0.5 ? 0 : 1;
     users.map(u => u.id).sort(() => Math.random() - 0.5).forEach((id, i) => { teams[id] = (i + off) % 2; });
   }
-  runEnd = mode === 'speedrun' ? Date.now() + SPEED_MS : 0;
+  runEnd = mode === 'speedrun' ? Date.now() + spMs() : 0;
   const session = Date.now();
 
   if (mode === 'liar') {
-    const ps = users.slice(0, 8).map(u => u.id);
-    liarState = { session, players: ps, liarId: ps[Math.floor(Math.random() * ps.length)], bp: Math.random() < 0.5, round: 1, roundEnd: Date.now() + LIAR_MS, out: [], msg: '', winner: '' };
+    const ps = users.slice(0, S.liarMax).map(u => u.id);
+    liarState = { session, players: ps, liarId: ps[Math.floor(Math.random() * ps.length)], bp: Math.random() * 100 < S.liarBp, round: 1, roundEnd: Date.now() + liarMs(), out: [], msg: '', winner: '' };
   }
 
   startLocal(session);
   updatePresence();
-  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState } }); } catch (e) {}
+  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState, cfg: S } }); } catch (e) {}
 }
 
 async function teacherEndGame() {
@@ -663,9 +697,10 @@ async function connect() {
   });
 
   ch.on('broadcast', { event: 'game_control' }, ({ payload }) => {
-    if (isTeacher) return;
+    if (isTeacher && iAmHost && payload.action === 'start' && gameStarted && payload.session > currentSession) return;   // 동시에 시작하면 먼저 시작한 쪽만 인정
+    if (payload.action === 'start') { iAmHost = false; if (phase.startsWith('vote')) phase = ''; }
     if (payload.action === 'end') { endGameLocal(); if (payload.result && payload.result.session === currentSession) showResult(payload.result); }
-    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; startLocal(payload.session); }
+    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; if (payload.cfg) Object.assign(S, payload.cfg); startLocal(payload.session); }
   });
 
   ch.on('broadcast', { event: 'chat' }, ({ payload }) => { if (gameMode === 'liar' && payload && payload.s === currentSession) addChat(payload); });
@@ -722,6 +757,7 @@ window.addEventListener('pagehide', () => {
 
 /* ---------- UI ---------- */
 function applyUIState(started) {
+  closeSettings();
   $('cardImage').src = started ? GAME_CARD_IMAGE : selectedImage;
   $('normalUI').style.display = started ? 'none' : 'flex';
   $('gameUI').style.display = started ? 'flex' : 'none';
@@ -789,7 +825,7 @@ function renderRankingList(users) {
 }
 
 /* ---------- 문제 / 카드 ---------- */
-function generateValidBlocks(lo = 5, hi = 9) {
+function generateValidBlocks(lo = S.blkLo, hi = S.blkHi) {
   const blocks = [], grid = {};
   const target = lo + Math.floor(Math.random() * (hi - lo + 1));
   const sx = Math.floor(Math.random() * 2), sy = Math.floor(Math.random() * 2);
@@ -817,7 +853,7 @@ function setupChoices(correct) {
   box.style.gridTemplateColumns = ''; $('quizTitle').innerText = '쌓기나무는 모두 몇 개일까요?'; specPanelKey = '';
   toggleOutline(activeShiningEyesRound);
   const set = new Set([correct]);
-  while (set.size < 4) {
+  while (set.size < S.choices) {
     const d = Math.random() < 0.7 ? (Math.random() < 0.5 ? 1 : -1) : (Math.random() < 0.5 ? 2 : -2);
     if (correct + d > 0) set.add(correct + d);
   }
@@ -831,8 +867,8 @@ function setupChoices(correct) {
       const sess = currentSession;
       if (num === correct) {
         btn.classList.add('correct'); SFX.correct();
-        let gain = 10;
-        if (hasTripleScoreMultiplier) { gain = 30; hasTripleScoreMultiplier = false; fb.innerText = '정답입니다! ⚡벼락치기 발동 (+30점)!'; }
+        let gain = S.score;
+        if (hasTripleScoreMultiplier) { gain = S.score * 3; hasTripleScoreMultiplier = false; fb.innerText = '정답입니다! ⚡벼락치기 발동 (+' + gain + '점)!'; }
         else fb.innerText = gameMode === 'speedrun' ? '정답! ⚡' : '정답입니다! 카드 보상을 선택하세요.';
         fb.style.color = '#22c55e';
         myScore += gain; updatePresence();
@@ -843,7 +879,7 @@ function setupChoices(correct) {
         fb.innerText = `틀렸습니다! (정답: ${correct}개)`; fb.style.color = '#ef4444';
         if (gameMode === 'onehit') { myLives = 0; renderHud(); die(); updatePresence(); return; }   // 한방: 틀리면 즉시 탈락
         if (gameMode === 'blueprint') revealBlueprint(correct);                                  // 도면: 틀리면 3D로 정답 공개
-        setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, gameMode === 'blueprint' ? 3800 : gameMode === 'speedrun' ? 700 : 2000);
+        setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, gameMode === 'blueprint' ? S.bpRevealMs : gameMode === 'speedrun' ? 700 : S.wrongMs);
       }
     });
     box.appendChild(btn);
@@ -862,10 +898,11 @@ function generateCardOptions() {
     { type: 'lightning', title: '벼락 치기 카드', img: SC('Cz9rD81f7Qrva9kzgZvA'), desc: '다음 문제를 맞히면 얻는 점수가 3배(30점)로 폭증합니다.' },
     { type: 'shining_eyes', title: '빛나는 눈 카드', img: SC('Y7xeUH3uBvNkQBzSXkA6'), desc: '다음 라운드에 쌓기나무가 반투명해지고 윤곽선이 빛나고 정답 버튼 하나가 빛납니다.' }
   ];
-  return pool.filter(c => !(gameMode === 'stack' && c.type === 'shining_eyes')).sort(() => Math.random() - 0.5).slice(0, 3);
+  return pool.filter(c => !(gameMode === 'stack' && c.type === 'shining_eyes') && (c.type === 'coin' || S['c_' + c.type] !== false)).sort(() => Math.random() - 0.5).slice(0, 3);
 }
 
 function openCardModal() {
+  if (!S.cards) { nextProblem(); return; }
   const modal = $('cardModalOverlay'), box = $('cardContainer');
   box.innerHTML = '';
   generateCardOptions().forEach(card => {
@@ -954,7 +991,7 @@ function stackAct(k) {
   else if (k === 'del') { if (stackH[stackCur.x][stackCur.y] > 0) stackH[stackCur.x][stackCur.y]--; }
   renderStack();
   for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) if (stackH[x][y] !== stackT[x][y]) return;
-  hasGuessed = true; SFX.correct(); myScore += 10; updatePresence();
+  hasGuessed = true; SFX.correct(); myScore += S.score; updatePresence();
   const fb = $('feedbackMessage'); fb.innerText = '완성! 카드 보상을 선택하세요.'; fb.style.color = '#22c55e';
   setTimeout(openCardModal, 500);
 }
@@ -980,7 +1017,7 @@ function bpCountSet(bl) {   // 위·앞·옆 도면만으로 가능한 블록 �
 }
 function generateBlueprintBlocks() {
   let bl;
-  for (let i = 0; i < 300; i++) { bl = generateValidBlocks(5, 9); if (bpCountSet(bl).size === 1) return bl; }
+  for (let i = 0; i < 300; i++) { bl = generateValidBlocks(); if (bpCountSet(bl).size === 1) return bl; }
   return bl;
 }
 function drawBlueprint(bl) {
@@ -1043,10 +1080,10 @@ function notifyAttack(p) {   // 모든 모드 공통: 누가 방해했는지 작
 
 function generateHackCards() {   // 해킹 모드: 코인 카드만(양 2배), 30% 확률로 한 장은 해킹 카드
   const imgs = { 5: 'XMEic2GRdS2qq7GJaEiB', 7: 'TGQBtafzmsdeiJwZSmpo', 10: 'ET4DYhvXCLzJPiw96NtX' };
-  const cards = [5, 7, 10].map(b => ({ type: 'coin', title: `코인 ${b * 2}개`, img: SC(imgs[b]), desc: `점수 +${b * 2}점을 즉시 획득합니다.`, val: b * 2 }));
-  const roll = hackMiss >= 2 || Math.random() < 0.3;   // 해킹 카드 없이 2번 뜨면 3번째는 무조건 등장
+  const cards = [5, 7, 10].map(b => ({ type: 'coin', title: `코인 ${b * S.hackMult}개`, img: SC(imgs[b]), desc: `점수 +${b * S.hackMult}점을 즉시 획득합니다.`, val: b * S.hackMult }));
+  const roll = hackMiss >= S.hackPity || Math.random() * 100 < S.hackProb;   // 해킹 카드 없이 2번 뜨면 3번째는 무조건 등장
   hackMiss = roll ? 0 : hackMiss + 1;
-  if (roll) cards[Math.floor(Math.random() * 3)] = { type: 'hack', title: '해킹 카드', img: HACK_IMG, desc: '상대를 지목하고 비밀번호를 맞히면 상대 코인의 10~60%를 뺏습니다.' };
+  if (roll) cards[Math.floor(Math.random() * 3)] = { type: 'hack', title: '해킹 카드', img: HACK_IMG, desc: '상대를 지목하고 비밀번호를 맞히면 상대 코인의 ' + S.hackMin + '~' + S.hackMax + '%를 뺏습니다.' };
   return cards;
 }
 
@@ -1068,7 +1105,7 @@ async function finishHack(targetId, ok) {
   const t = activeUsers.find(u => u.id === targetId);
   const img = t ? t.avatarUrl : null, name = t ? (t.nickname || '익명') : '상대';
   if (!ok) { SFX.wrong(); showToast(img, '해킹 실패', `${name}: 비밀번호가 틀렸어요 ❌`, '#94a3b8'); return; }
-  const pct = 10 + Math.floor(Math.random() * 51);
+  const pct = S.hackMin + Math.floor(Math.random() * (S.hackMax - S.hackMin + 1));
   const amt = Math.floor(((t && t.score) || 0) * pct / 100);
   if (amt <= 0) { showToast(img, '해킹 성공', `${name}에게 뺏을 코인이 없어요`, '#94a3b8'); return; }
   SFX.correct(); myScore += amt; updatePresence();
@@ -1089,15 +1126,15 @@ function triggerGlitchEffect() {
     glitchGroup.add(m); glitchMeshes.push(m);
   }
   clearTimeout(glitchTimer);
-  glitchTimer = setTimeout(() => { while (glitchGroup.children.length) glitchGroup.remove(glitchGroup.children[0]); glitchMeshes = []; }, 4000);
+  glitchTimer = setTimeout(() => { while (glitchGroup.children.length) glitchGroup.remove(glitchGroup.children[0]); glitchMeshes = []; }, S.glitchSec * 1000);
 }
 function triggerTauntEffect() {
   $('tauntOverlay').style.display = 'flex';
-  setTimeout(() => { $('tauntOverlay').style.display = 'none'; }, 2500);
+  setTimeout(() => { $('tauntOverlay').style.display = 'none'; }, S.tauntSec * 1000);
 }
 function triggerFreezeEffect() {
-  isCameraFrozen = true; $('cameraStatusBadge').innerText = '❄️ 카메라가 3초간 얼어붙었습니다!';
-  setTimeout(() => { isCameraFrozen = false; $('cameraStatusBadge').innerText = defaultBadge(); }, 3000);
+  isCameraFrozen = true; $('cameraStatusBadge').innerText = '❄️ 카메라가 ' + S.freezeSec + '초간 얼어붙었습니다!';
+  setTimeout(() => { isCameraFrozen = false; $('cameraStatusBadge').innerText = defaultBadge(); }, S.freezeSec * 1000);
 }
 
 /* ---------- 3D ---------- */
@@ -1137,7 +1174,7 @@ function initThreeOnce() {
 
   (function animate() {
     requestAnimationFrame(animate);
-    if (!isCameraFrozen && gameMode !== 'stack') cameraAngle += gameMode === 'speedrun' ? 0.02 : 0.012;
+    if (!isCameraFrozen && gameMode !== 'stack') cameraAngle += gameMode === 'speedrun' ? S.spCam : S.cam;
     const r = 9.5;
     camera.position.set(1 + r * Math.cos(cameraAngle), 6.5, 1 + r * Math.sin(cameraAngle));
     camera.lookAt(1, 0.9, 1);
@@ -1177,13 +1214,13 @@ function koTick() {
   if (!gameStarted || isDead) return;
   if (gameMode === 'speedrun') {                       // 스피드런: 전체 제한시간 표시
     const l = Math.max(0, runEnd - Date.now());
-    $('koBarFill').style.width = (runEnd ? l / SPEED_MS * 100 : 100) + '%';
+    $('koBarFill').style.width = (runEnd ? l / spMs() * 100 : 100) + '%';
     $('koLives').innerText = runEnd ? `⚡ 남은 시간 ${Math.ceil(l / 1000)}초` : '⚡ 스피드런';
     return;
   }
   if (gameMode !== 'knockout' || !koDeadline) return;
   const left = koDeadline - Date.now();
-  $('koBarFill').style.width = Math.max(0, left / 4000 * 100) + '%';
+  $('koBarFill').style.width = Math.max(0, left / (S.koSec * 1000) * 100) + '%';
   if (left <= 0) koTimeout();
 }
 setInterval(koTick, 100);
@@ -1376,22 +1413,66 @@ function askTeacherMode() {
   let was = false; try { was = localStorage.getItem(TKEY) === '1'; } catch (e) {}
   if (!was) return;
   const el = document.createElement('div');
-  el.className = 'toast ask'; el.style.setProperty('--tc', '#2563eb');
-  el.innerHTML = '<div><b>👩‍🏫 선생님 모드로 들어갈까요?</b><br><span>이전에 선생님으로 접속했어요</span></div><div class="ask-btns"><button class="yes">선생님 모드</button><button class="no">학생으로</button></div>';
-  $('toastBox').appendChild(el);
-  el.querySelector('.yes').addEventListener('click', () => { $('teacherCode').value = 'PANdA'; setTeacher(true); el.remove(); });
-  el.querySelector('.no').addEventListener('click', () => { try { localStorage.removeItem(TKEY); } catch (e) {} el.remove(); });
+  el.className = 't-ask';
+  el.innerHTML = '<p>선생님 모드로 들어갈까요?</p><div><button class="y">네</button><button class="n">아니요</button></div>';
+  $('defaultUserListUI').appendChild(el);
+  el.querySelector('.y').addEventListener('click', () => { $('teacherCode').value = 'PANdA'; setTeacher(true); el.remove(); });
+  el.querySelector('.n').addEventListener('click', () => { try { localStorage.removeItem(TKEY); } catch (e) {} el.remove(); });
+}
+
+/* ---------- 설정 카드 (선생님: Alt+Tab+1) ---------- */
+const CFG_TABS = [
+  ['공통', [['voteSec', '투표 시간', '초', 3, 60, 1], ['score', '정답 점수', '점', 1, 100, 1], ['blkLo', '블록 최소 개수', '개', 2, 20, 1], ['blkHi', '블록 최대 개수', '개', 2, 20, 1], ['choices', '선택지 개수', '개', 2, 6, 1], ['cam', '3D 회전 속도', '', 0, 0.1, 0.002], ['wrongMs', '오답 후 대기', 'ms', 300, 8000, 100], ['cards', '정답 후 카드 보상', 'bool'], ['inv', '선생님 무적', 'bool']]],
+  ['녹아웃/한방', [['koSec', '문제당 제한시간', '초', 1, 30, 0.5], ['koLives', '목숨 (녹아웃)', '개', 1, 10, 1], ['koAutoEnd', '생존자 1명 남으면 자동 종료', 'bool']]],
+  ['해킹', [['hackProb', '해킹 카드 확률', '%', 0, 100, 1], ['hackPity', '미등장 몇 번 뒤 확정', '번', 0, 10, 1], ['hackMin', '뺏는 비율 최소', '%', 1, 100, 1], ['hackMax', '뺏는 비율 최대', '%', 1, 100, 1], ['hackMult', '코인 카드 배수', '배', 1, 10, 1]]],
+  ['스피드런', [['spSec', '제한시간', '초', 10, 600, 5], ['spBlkLo', '블록 최소 개수', '개', 2, 20, 1], ['spBlkHi', '블록 최대 개수', '개', 2, 20, 1], ['spCam', '회전 속도', '', 0, 0.1, 0.002]]],
+  ['도면', [['bpRevealMs', '오답 시 정답 공개 시간', 'ms', 500, 15000, 100]]],
+  ['라이어', [['liarSec', '라운드 시간', '초', 5, 120, 1], ['liarMax', '최대 참가 인원', '명', 3, 20, 1], ['liarBp', '도면 문제 확률', '%', 0, 100, 5], ['liarLeft', '라이어 승리 남은 인원', '명', 1, 6, 1], ['liarChat', '채팅 허용', 'bool']]],
+  ['카드', [['c_confusion', '혼란 카드', 'bool'], ['c_taunt', '괴롭히기 카드', 'bool'], ['c_freeze', '얼음 카드', 'bool'], ['c_lightning', '벼락 치기 카드', 'bool'], ['c_shining_eyes', '빛나는 눈 카드', 'bool'], ['glitchSec', '혼란 지속', '초', 1, 15, 0.5], ['tauntSec', '괴롭히기 지속', '초', 1, 10, 0.5], ['freezeSec', '얼음 지속', '초', 1, 15, 0.5]]]
+];
+const cfgGet = k => k === 'inv' ? invincible : S[k];
+const saveCfg = () => { try { localStorage.setItem('blocksCfg', JSON.stringify(S)); } catch (e) {} };
+function fixCfg() { if (S.blkHi < S.blkLo) S.blkHi = S.blkLo; if (S.spBlkHi < S.spBlkLo) S.spBlkHi = S.spBlkLo; if (S.hackMax < S.hackMin) S.hackMax = S.hackMin; }
+function renderCfg() {
+  $('cfgTabs').innerHTML = CFG_TABS.map((t, i) => `<button class="cfg-tab${i === cfgTab ? ' on' : ''}" data-i="${i}">${t[0]}</button>`).join('');
+  $('cfgBody').innerHTML = CFG_TABS[cfgTab][1].map(([k, label, unit, mn, mx, st]) => {
+    const v = cfgGet(k);
+    return `<div class="cfg-row"><span>${label}</span>` + (unit === 'bool' ? `<input type="checkbox" data-k="${k}"${v ? ' checked' : ''}>` : `<span><input type="number" data-k="${k}" value="${v}" min="${mn}" max="${mx}" step="${st}"> ${unit}</span>`) + `</div>`;
+  }).join('');
+}
+function toggleSettings() {
+  if (!isTeacher || gameStarted || curStage) return;
+  settingsOpen = !settingsOpen;
+  $('settingsUI').style.display = settingsOpen ? 'flex' : 'none';
+  $('defaultUserListUI').style.display = settingsOpen ? 'none' : 'flex';
+  $('profilePickerUI').style.display = 'none';
+  if (settingsOpen) renderCfg();
+}
+function closeSettings() {
+  if (!settingsOpen) return;
+  settingsOpen = false; $('settingsUI').style.display = 'none';
+  if (!gameStarted) $('defaultUserListUI').style.display = 'flex';
 }
 
 /* ---------- 이벤트 ---------- */
 function initUI() {
   fitScreen();
   $('lobbyBtn').addEventListener('click', closeResult);
+  $('cfgClose').addEventListener('click', closeSettings);
+  $('cfgTabs').addEventListener('click', e => { const b = e.target.closest('.cfg-tab'); if (b) { cfgTab = +b.dataset.i; renderCfg(); } });
+  $('cfgBody').addEventListener('change', e => {
+    const el = e.target, k = el.dataset.k; if (!k) return;
+    if (k === 'inv') invincible = el.checked;
+    else { S[k] = el.type === 'checkbox' ? el.checked : Math.min(+el.max, Math.max(+el.min, Number(el.value) || +el.min)); fixCfg(); }
+    saveCfg(); renderCfg(); sendSoon();
+  });
+  $('cfgReset').addEventListener('click', () => { S = { ...CFG_DEF }; saveCfg(); renderCfg(); sendSoon(); });
   $('nickname').addEventListener('input', syncNickname);
   $('nickname').addEventListener('change', syncNickname);
   $('nickname').addEventListener('blur', syncNickname);
 
   $('changeProfileBtn').addEventListener('click', () => {
+    closeSettings();
     $('defaultUserListUI').style.display = 'none';
     $('profilePickerUI').style.display = 'flex';
     $('profileGrid').innerHTML = profileImages.map(u => `<div class="profile-thumb-card" data-img="${u}"><img src="${u}" class="profile-thumb-img" alt="프로필선택"></div>`).join('');
@@ -1462,21 +1543,26 @@ function initUI() {
 
   // 선생님 전용 무적 토글 (Alt+Tab). 화면 표시는 없음
   // Alt+Tab은 OS가 창 전환에 쓰기 때문에, Alt를 누른 직후 창이 포커스를 잃는 경우도 함께 감지함
-  let altAt = 0, lastInv = 0;
+  let altAt = 0, lastInv = 0, altTabAt = 0;
   const toggleInv = () => {
     const n = Date.now(); if (n - lastInv < 800) return;   // 중복 방지
     lastInv = n; if (isTeacher) invincible = !invincible;
   };
   window.addEventListener('keydown', e => {
     if (e.key === 'Alt') { altAt = Date.now(); e.preventDefault(); }
-    else if (e.altKey && e.key === 'Tab') { e.preventDefault(); toggleInv(); }
+    else if (e.altKey && e.key === 'Tab') { e.preventDefault(); altTabAt = Date.now(); toggleInv(); }
+    else if ((e.code === 'Digit1' || e.key === '1') && isTeacher && (e.altKey || Date.now() - altTabAt < 2500)) {   // Alt+Tab+1 (또는 Alt+1): 설정 카드
+      e.preventDefault();
+      if (lastInv && Date.now() - lastInv < 2500) invincible = !invincible;   // Alt+Tab 때 바뀐 무적 상태를 되돌림
+      lastInv = 0; toggleSettings();
+    }
   });
   window.addEventListener('blur', () => { if (Date.now() - altAt < 700) toggleInv(); });
 
   // 선생님: 시작 → 1차 → 2차 투표. 진행은 renderAll의 워커 타이머가 처리
   $('startBtn').addEventListener('click', () => {
     if (!isTeacher || phase.startsWith('vote')) return;
-    phase = 'vote1'; voteEnd = Date.now() + 3000; myVote = '';
+    closeSettings(); becomeHost(); phase = 'vote1'; voteEnd = Date.now() + S.voteSec * 1000; myVote = '';
     updatePresence();
   });
   $('endBtn').addEventListener('click', teacherEndGame);
