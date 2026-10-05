@@ -83,6 +83,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .vote-count{font-size:12px;color:#2563eb}
 .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(8px);z-index:2000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
 .modal-overlay.active{opacity:1;pointer-events:auto}
+.modal-overlay:not(.active){backdrop-filter:none}
 .card-container{display:flex;gap:20px}
 .reward-card{width:200px;height:290px;background:#fff;border-radius:16px;box-shadow:0 20px 25px -5px rgba(0,0,0,.2);border:2px solid #e2e8f0;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;cursor:pointer;transition:transform .2s,border-color .2s}
 .reward-card:hover{transform:translateY(-8px) scale(1.03);border-color:#2563eb}
@@ -119,7 +120,8 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .res-team{display:flex;flex-direction:column;gap:6px;min-width:0}
 .res-list .rank-item{flex-shrink:0}
 .res-lobby{width:100%;padding:1.2vh;font-size:2vh;font-weight:bold;color:#fff;background:#2563eb;border:none;border-radius:10px;cursor:pointer}
-.res-lobby:hover{background:#1d4ed8}
+.res-lobby:hover:not(:disabled){background:#1d4ed8}
+.res-lobby:disabled{background:#cbd5e1;cursor:not-allowed}
 #tauntOverlay{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
 #tauntOverlay img{width:95vw;height:95vh;max-width:1400px;max-height:1400px;object-fit:contain;transform:scale(1.8)}
 /* 알림: 오른쪽 아래, 흰색 반투명, 클릭은 뒤로 통과 */
@@ -1404,6 +1406,7 @@ function initThreeOnce() {
 
   (function animate() {
     requestAnimationFrame(animate);
+    if (!gameStarted) return;   // 게임 중이 아니면 3D 렌더링 중지 (시상식 렉 방지)
     if (!isCameraFrozen && !stackish()) cameraAngle += gameMode === 'speedrun' ? S.spCam : S.cam;
     const r = S.camR;
     camera.position.set(1 + r * Math.cos(cameraAngle), S.camH, 1 + r * Math.sin(cameraAngle));
@@ -1575,12 +1578,13 @@ Object.assign(SFX, {
     }
   }
 });
+const PAL = ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1', '#a855f7', '#ec4899'];
 const fxFlash = () => { const s = $('strobe'); if (!s) return; s.classList.remove('f'); void s.offsetWidth; s.classList.add('f'); };
 function fxBoom(x, y, n = 90) {   // 무지개색 불꽃놀이
   const hue = Math.random() * 360;
   for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2, sp = Math.random() * 9 + 2;
-    parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, decay: .012 + Math.random() * .012, size: 3 + Math.random() * 5, c: `hsl(${(hue + Math.random() * 60) % 360},100%,${50 + Math.random() * 20}%)` });
+    parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, decay: .012 + Math.random() * .012, size: 3 + Math.random() * 5, c: PAL[(Math.floor(hue / 30) + Math.floor(Math.random() * 3)) % 12] });
   }
 }
 function buildTroll() {   // 방해를 가장 많이 한 순서
@@ -1597,7 +1601,7 @@ function trollSchedule(res, lt, t) {
   lt(t, () => { $('podium').classList.add('out'); $('resPanel').classList.remove('on'); SFX.whoosh(); });   // 점수 단상이 왼쪽으로 밀려남
   lt(t + 1100, () => trollIntro(tp));
   order.forEach((r, i) => lt(t + 3300 + i * 2300, () => trollReveal(r)));
-  lt(t + 3300 + Math.max(order.length - 1, 0) * 2300 + 2500, () => { trollList(res); $('resPanel').classList.add('on'); });
+  lt(t + 3300 + Math.max(order.length - 1, 0) * 2300 + 2500, () => { trollList(res); $('resPanel').classList.add('on'); $('lobbyBtn').disabled = false; });
 }
 function trollIntro(tp) {
   $('trollPodium').innerHTML = [2, 1, 3].filter(r => tp[r - 1]).map(r => {
@@ -1612,7 +1616,7 @@ function trollIntro(tp) {
 }
 function trollTick() {
   const w = innerWidth, h = innerHeight, E = ['😈', '👿', '🤡', '💥', '🔥', '⚡', '🎉', '✨', '👑', '🤣', '😝', '🎊'];
-  fxBoom(Math.random() * w, Math.random() * h * .6 + 20, 40);
+  fxBoom(Math.random() * w, Math.random() * h * .6 + 20, 30);
   if (Math.random() < .25) fxFlash();
   if (Math.random() < .3) SFX.boom();
   for (let i = 0; i < 2; i++) parts.push({ x: Math.random() * w, y: -20, vx: Math.random() * 2 - 1, vy: 2 + Math.random() * 3, g: .02, life: 1, decay: .002, size: 24 + Math.random() * 22, c: '#000', e: E[Math.floor(Math.random() * E.length)] });
@@ -1696,13 +1700,13 @@ function showResult(res, force) {
     ? res.teams.map((t, i) => `<div class="res-team"><div class="rank-item" style="border:2px solid ${TEAM_COLORS[t.k]};background:#f8fafc;"><div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2'][i]}">${i + 1}등</span><span>${TEAM_NAMES[t.k]}</span></div><span style="font-size:14px;">${res.mode === 'knockout' ? t.s + '승' : t.s + '점'}</span></div>` + t.m.map(u => row(u, 0, false)).join('') + `</div>`).join('')
     : res.full.map((u, i) => row(u, i, true)).join('');
   $('resPanel').classList.remove('on');
-  ov.classList.add('active');
+  ov.classList.add('active'); $('lobbyBtn').disabled = true;   // 시상식 진행 중에는 로비 버튼 잠금
   fxOn = true; fxLoop();
   const order = [3, 2, 1].filter(r => res.podium[r - 1]);
   const okAt = res.at && Math.abs(hostNow() - res.at) < 15000, t0 = okAt ? res.at + 2000 : Date.now() + 1200, lt = (ms, fn) => later(Math.max(0, t0 + ms - (okAt ? hostNow() : Date.now())), fn);   // 모두 같은 시각에 연출/소리
   order.forEach((r, i) => { lt(i * 1700, () => revealPlace(r)); if (r === 1) lt(i * 1700 - 1000, SFX.roll); });   // 3등 → 2등 → 1등
   const T = Math.max(order.length - 1, 0) * 1700 + 1000;
-  lt(T, () => $('resPanel').classList.add('on'));
+  lt(T, () => { $('resPanel').classList.add('on'); if (!(res.troll && res.troll.podium)) $('lobbyBtn').disabled = false; });
   if (res.troll && res.troll.podium) trollSchedule(res, lt, T + 3000);   // 점수 시상식 6초 뒤 트롤왕 시상식   // 1등 1초 뒤 전체 랭킹
 }
 
@@ -1731,7 +1735,7 @@ function fxLoop() {
   ctx.clearRect(0, 0, cv.width, cv.height);
   if (fxConfetti && Math.random() < .5) parts.push({ x: Math.random() * cv.width, y: -10, vx: Math.random() * 2 - 1, vy: 2 + Math.random() * 3, life: 1, decay: .003, size: 4 + Math.random() * 4, c: ['#facc15', '#f472b6', '#60a5fa', '#4ade80', '#a78bfa'][Math.floor(Math.random() * 5)] });
   parts = parts.filter(p => p.life > 0 && p.y < cv.height + 20);
-  if (parts.length > 700) parts.splice(0, parts.length - 700);
+  if (parts.length > 350) parts.splice(0, parts.length - 350);
   parts.forEach(p => {
     p.vy += (p.g === undefined ? .16 : p.g); p.x += p.vx; p.y += p.vy; p.life -= p.decay;
     ctx.globalAlpha = Math.max(p.life, 0); ctx.fillStyle = p.c; if (p.e) { ctx.font = p.size + 'px sans-serif'; ctx.fillText(p.e, p.x, p.y); } else ctx.fillRect(p.x, p.y, p.size, p.size * .6);
@@ -1904,4 +1908,4 @@ connect();
 askTeacherMode();
 </script>
 </body>
-</html>
+</html
