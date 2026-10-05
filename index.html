@@ -198,6 +198,17 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .vote-overlay{padding:14px 0}
 .beam{display:none!important}
 .chat-bub.sw{background:#fee2e2;border-color:#fca5a5}
+.main-container{padding:6px}
+.mode-btn{background:#fff;border-color:#e5e7eb}
+.mode-btn:not(.locked):hover{background:#f8fafc;border-color:#94a3b8}
+.mode-btn.voted{background:#f1f5f9;border-color:#2563eb}
+#voteStage1{flex-direction:row!important;flex-wrap:wrap;align-content:center;justify-content:center;gap:10px;padding:0 8px}
+#voteStage1 .vote-row{display:contents}
+#voteStage1 .mode-btn{width:124px;height:168px;font-size:14px;padding:4px}
+#voteStage1 .mode-btn img{width:92px;height:92px}
+#voteStage2 .mode-btn img{width:104px;height:104px}
+.cfg-row input[type=color]{width:44px;height:26px;padding:0;border:1px solid #cbd5e1;background:#fff}
+.cfg-row input[type=text]{padding:4px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;width:120px}
 </style>
 </head>
 <body>
@@ -253,16 +264,22 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
             <button class="mode-btn" id="knockoutBtn"><img src="https://media.ffycdn.net/eu/supercell/g9QYVzuSVxq372RUXLte.png?width=2400" alt="녹아웃"><span>녹아웃</span><span class="vote-count" id="knockoutCount">0표</span></button>
           </div>
           <div class="vote-row">
-            <button class="mode-btn" id="speedBtn"><span class="mode-emoji">⚡</span><span>스피드런</span><span class="vote-count" id="speedCount">0표</span></button>
-            <button class="mode-btn" id="onehitBtn"><span class="mode-emoji">💀</span><span>한방</span><span class="vote-count" id="onehitCount">0표</span></button>
+            <button class="mode-btn" id="speedBtn"><img src="https://media.ffycdn.net/eu/supercell/Q9NfQk57PnnpP9SVvyUR.png?width=2400" alt="스피드런">
+<span>스피드런</span><span class="vote-count" id="speedCount">0표</span></button>
+            <button class="mode-btn" id="onehitBtn"><img src="https://media.ffycdn.net/eu/supercell/ZvRjhpftKDfgK4zcyvLQ.png?width=2400" alt="한방">
+<span>한방</span><span class="vote-count" id="onehitCount">0표</span></button>
           </div>
           <div class="vote-row">
-            <button class="mode-btn" id="stackBtn"><span class="mode-emoji">🧱</span><span>쌓기 모드</span><span class="vote-count" id="stackCount">0표</span></button>
-            <button class="mode-btn" id="blueprintBtn"><span class="mode-emoji">📐</span><span>도면보고 맞추기</span><span class="vote-count" id="blueprintCount">0표</span></button>
+            <button class="mode-btn" id="stackBtn"><img src="https://media.ffycdn.net/eu/supercell/PQVbThjT3zxxtSMb2Ji8.png?width=2400" alt="쌓기 모드">
+<span>쌓기 모드</span><span class="vote-count" id="stackCount">0표</span></button>
+            <button class="mode-btn" id="blueprintBtn"><img src="https://media.ffycdn.net/eu/supercell/qRCHU9udC89wwbegbVKw.png?width=2400" alt="도면">
+<span>도면보고 맞추기</span><span class="vote-count" id="blueprintCount">0표</span></button>
           </div>
           <div class="vote-row">
-            <button class="mode-btn" id="liarBtn"><span class="mode-emoji">🕵️</span><span>라이어 모드</span><span class="vote-count" id="liarCount">0표</span></button>
-            <button class="mode-btn" id="coopBtn"><span class="mode-emoji">🤝</span><span>협동 쌓기</span><span class="vote-count" id="coopCount">0표</span></button>
+            <button class="mode-btn" id="liarBtn"><img src="https://media.ffycdn.net/eu/supercell/y46nReaY9L9cZkjd5x2m.png?width=2400" alt="라이어">
+<span>라이어 모드</span><span class="vote-count" id="liarCount">0표</span></button>
+            <button class="mode-btn" id="coopBtn"><img src="https://media.ffycdn.net/eu/supercell/v889UjVZ57DW1nNmHPZK.png?width=2400" alt="협동 쌓기">
+<span>협동 쌓기</span><span class="vote-count" id="coopCount">0표</span></button>
           </div>
         </div>
         
@@ -356,7 +373,97 @@ let myLives = 3, isDead = false, diedAt = 0, koDeadline = 0, specId = '', specKe
 const TEAM_NAMES = ['🔴 레드팀', '🔵 블루팀'], TEAM_COLORS = ['#ef4444', '#2563eb'];
 let uiScale = 1, runEnd = 0, hackMiss = 0;
 const CFG_DEF = { voteSec: 10, score: 10, blkLo: 5, blkHi: 9, choices: 4, cam: 0.012, wrongMs: 2000, cards: true, koSec: 4, koLives: 3, koAutoEnd: true, hackProb: 30, hackPity: 2, hackMin: 10, hackMax: 60, hackMult: 2, coopSwap: 60, spSec: 90, spBlkLo: 11, spBlkHi: 17, spCam: 0.02, bpRevealMs: 3800, liarSec: 25, liarMax: 8, liarBp: 50, liarLeft: 2, liarChat: true, c_confusion: true, c_taunt: true, c_freeze: true, c_lightning: true, c_shining_eyes: true, glitchSec: 4, tauntSec: 2.5, freezeSec: 3 };
-let S = { ...CFG_DEF };
+/* 설정 정의: [키,이름,종류(n/b/c/t),기본값,최소,최대,증감,단위,CSS선택자,CSS속성] */
+const sC = (k, l, d, s, p) => [k, l, 'c', d, 0, 0, 0, '', s, p + ':$'];
+const sN = (k, l, d, mn, mx, s, p, u = 'px', st = 1) => [k, l, 'n', d, mn, mx, st, u, s, p.includes(':') ? p : p.split(',').map(x => x + ':$').join(';')];
+const N = (k, l, u, d, mn, mx, st) => [k, l, 'n', d, mn, mx, st, u], B = (k, l, d) => [k, l, 'b', d], CL = (k, l, d) => [k, l, 'c', d, 0, 0, 0, ''];
+const STY = [
+  sC('cardBg', '카드 배경색', '#ffffff', '.card', 'background'), sC('cardBorder', '카드 테두리색', '#e2e8f0', '.card', 'border-color'), sN('cardR', '카드 모서리', 16, 0, 40, '.card', 'border-radius'), sN('cardPad', '카드 안쪽 여백', 20, 4, 40, '.card', 'padding'), sN('cardBW', '카드 테두리 굵기', 1, 0, 8, '.card', 'border-width'),
+  sC('quizColor', '문제 글자색', '#1e293b', '.quiz-title', 'color'), sN('quizSize', '문제 글자 크기', 15, 10, 30, '.quiz-title', 'font-size'), sN('quizW', '문제 글자 굵기', 700, 100, 900, '.quiz-title', 'font-weight', '', 100),
+  sC('choiceBg', '선택지 배경색', '#f1f5f9', '.choice-btn', 'background'), sC('choiceColor', '선택지 글자색', '#334155', '.choice-btn', 'color'), sC('choiceBorder', '선택지 테두리색', '#cbd5e1', '.choice-btn', 'border-color'), sN('choiceR', '선택지 모서리', 8, 0, 30, '.choice-btn', 'border-radius'), sN('choiceSize', '선택지 글자 크기', 15, 10, 30, '.choice-btn', 'font-size'), sN('choicePad', '선택지 안쪽 여백', 12, 2, 30, '.choice-btn', 'padding'), sN('choiceBW', '선택지 테두리 굵기', 1, 0, 6, '.choice-btn', 'border-width'), sN('choiceGap', '선택지 간격', 10, 0, 30, '.choice-grid', 'gap'),
+  sN('fbSize', '안내 문구 크기', 13, 9, 24, '.feedback-msg', 'font-size'),
+  sC('badgeBg', '상단 배지 배경', '#e2e8f0', '.game-title-badge', 'background'), sC('badgeColor', '상단 배지 글자색', '#1e293b', '.game-title-badge', 'color'), sN('badgeSize', '상단 배지 글자 크기', 13, 9, 24, '.game-title-badge', 'font-size'), sN('badgeR', '상단 배지 모서리', 12, 0, 30, '.game-title-badge', 'border-radius'),
+  sC('rankBg', '랭킹 줄 배경', '#f8fafc', '.rank-item', 'background'), sC('rankColor', '랭킹 글자색', '#334155', '.rank-item', 'color'), sN('rankR', '랭킹 줄 모서리', 8, 0, 30, '.rank-item', 'border-radius'), sN('rankSize', '랭킹 글자 크기', 13, 9, 24, '.rank-item', 'font-size'), sN('rankGap', '랭킹 줄 간격', 8, 0, 24, '.rank-list', 'gap'), sN('rankBadge', '등수 배지 크기', 11, 8, 20, '.rank-badge', 'font-size'),
+  sC('titleColor', '카드 제목색', '#1e293b', '.board-title', 'color'), sN('titleSize', '카드 제목 크기', 16, 10, 30, '.board-title', 'font-size'),
+  sC('bpBg', '도면/쌓기 화면 배경', '#f8fafc', '#bpView|#stackView', 'background'), sN('threeR', '화면 모서리', 12, 0, 30, '#threeContainer|#bpView', 'border-radius'),
+  sC('chatBg', '채팅창 배경', '#f1f2f4', '#chatMsgs', 'background'), sC('bubbleBg', '상대 말풍선', '#ffffff', '.chat-bub', 'background'), sC('bubbleMe', '내 말풍선', '#e4e6ea', '.chat-bub.me', 'background'), sC('bubbleColor', '말풍선 글자색', '#1e293b', '.chat-bub', 'color'), sN('chatSize', '채팅 글자 크기', 12, 9, 22, '.chat-bub', 'font-size'), sN('chatAv', '채팅 프로필 크기', 28, 16, 48, '.chat-av', 'width,height'),
+  sC('tvBg', '위에서 본 모양 배경', '#ffffff', '#topView', 'background'), sN('tvCell', '위에서 본 모양 칸 높이', 22, 12, 40, '.tv-cell', 'height'),
+  sC('padBg', '조작 버튼 배경', '#f8fafc', '.pad-btn', 'background'), sC('padColor', '조작 버튼 글자색', '#334155', '.pad-btn', 'color'), sC('padBorder', '조작 버튼 테두리', '#cbd5e1', '.pad-btn', 'border-color'), sN('padSize', '조작 버튼 크기', 50, 30, 80, '.pad-row:not(.pad-act) .pad-btn', 'width,height'), sN('padR', '조작 버튼 모서리', 12, 0, 40, '.pad-btn', 'border-radius'), sN('padFont', '조작 버튼 글자 크기', 18, 10, 30, '.pad-btn', 'font-size'), sC('hintColor', '조작 안내 글자색', '#94a3b8', '.pad-hint', 'color'),
+  sN('lifeSize', '목숨 글자 크기', 16, 10, 40, '.ko-lives', 'font-size'), sN('barH', '타이머 바 높이', 8, 2, 24, '.ko-bar', 'height'), sC('barBg', '타이머 바 배경', '#e2e8f0', '.ko-bar', 'background'), sC('barColor', '타이머 바 색', '#ef4444', '#koBarFill', 'background'),
+  sC('specBg', '관전 버튼 색', '#2563eb', '.spec-btn', 'background'), sN('specSize', '관전 버튼 크기', 34, 20, 60, '.spec-btn', 'width,height'), sN('avatarSize', '접속자 프로필 크기', 32, 16, 56, '.user-avatar-mini', 'width,height')
+];
+const sty = p => STY.map(([k, ...r]) => [p + '_' + k, ...r]);
+const CD = [
+  sN('rcW', '보상 카드 너비', 200, 120, 320, '.reward-card', 'width'), sN('rcH', '보상 카드 높이', 290, 160, 420, '.reward-card', 'height'), sC('rcBg', '보상 카드 배경', '#ffffff', '.reward-card', 'background'), sC('rcBorder', '보상 카드 테두리', '#e2e8f0', '.reward-card', 'border-color'), sN('rcBW', '보상 카드 테두리 굵기', 2, 0, 8, '.reward-card', 'border-width'), sN('rcR', '보상 카드 모서리', 16, 0, 40, '.reward-card', 'border-radius'), sN('rcPad', '보상 카드 안쪽 여백', 16, 4, 40, '.reward-card', 'padding'),
+  sC('rcTitleC', '보상 제목색', '#0f172a', '.reward-card-title', 'color'), sN('rcTitleS', '보상 제목 크기', 16, 10, 30, '.reward-card-title', 'font-size'), sC('rcDescC', '보상 설명색', '#64748b', '.reward-card-desc', 'color'), sN('rcDescS', '보상 설명 크기', 12, 8, 22, '.reward-card-desc', 'font-size'), sN('rcImg', '보상 그림 크기', 100, 40, 180, '.reward-card-img', 'width,height'), sN('rcGap', '보상 카드 간격', 20, 0, 60, '.card-container', 'gap'),
+  sC('toastBg', '알림 배경', '#ffffff', '.toast', 'background'), sC('toastColor', '알림 글자색', '#1e293b', '.toast', 'color'), sN('toastSize', '알림 글자 크기', 13, 9, 24, '.toast', 'font-size'), sN('toastR', '알림 모서리', 12, 0, 30, '.toast', 'border-radius'), sN('toastOp', '알림 불투명도', 1, 0.2, 1, '.toast', 'opacity', '', 0.05), sN('toastBottom', '알림 아래 여백', 12, 0, 100, '#toastBox', 'bottom'), sN('toastRight', '알림 오른쪽 여백', 12, 0, 100, '#toastBox', 'right'), sN('toastGap', '알림 사이 간격', 6, 0, 30, '#toastBox', 'gap'), sN('toastImg', '알림 프로필 크기', 30, 16, 60, '.toast img', 'width,height'),
+  sN('modalBlur', '카드창 뒤 흐림', 8, 0, 30, '.modal-overlay', 'backdrop-filter:blur($)'), sN('tauntScale', '괴롭히기 이미지 확대', 1.8, 0.5, 3, '#tauntOverlay img', 'transform:scale($)', '', 0.1), sN('tauntSize', '괴롭히기 이미지 크기', 95, 30, 100, '#tauntOverlay img', 'width,height', '%'),
+  sC('pwBg', '해킹창 배경', '#ffffff', '.pw-box', 'background'), sC('pwBtnBg', '해킹 버튼 배경', '#0f172a', '.pw-btn', 'background'), sC('pwBtnC', '해킹 버튼 글자', '#4ade80', '.pw-btn', 'color'), sN('pwBtnS', '해킹 버튼 글자 크기', 18, 10, 30, '.pw-btn', 'font-size'),
+  sC('resBg', '시상식 배경', '#eef2ff', '#resultOverlay', 'background'), sN('podAv', '시상 프로필 크기', 18, 8, 28, '.pod-avatar', 'width,height', 'vh'), sN('podName', '시상 이름 크기', 3, 1.5, 5, '.pod-name', 'font-size', 'vh', 0.5), sC('resListBg', '시상 랭킹 배경', '#ffffff', '.res-list', 'background')
+];
+const CFG_TABS = [
+  ['공통', [N('voteSec', '투표 시간', '초', 10, 3, 60, 1), N('score', '정답 점수', '점', 10, 1, 100, 1), N('blkLo', '블록 최소 개수', '개', 5, 2, 20, 1), N('blkHi', '블록 최대 개수', '개', 9, 2, 20, 1), N('choices', '선택지 개수', '개', 4, 2, 6, 1), N('cam', '3D 회전 속도', '', 0.012, 0, 0.1, 0.002), N('wrongMs', '오답 후 대기', 'ms', 2000, 300, 8000, 100), B('cards', '정답 후 카드 보상', true), B('inv', '선생님 무적', false), N('camH', '카메라 높이', '', 6.5, 2, 15, 0.5), N('camR', '카메라 거리', '', 9.5, 5, 20, 0.5), CL('blockCol', '블록 색', '#3b82f6'), ...sty('g')], 'g'],
+  ['녹아웃', [N('koSec', '문제당 제한시간', '초', 4, 1, 30, 0.5), N('koLives', '목숨 (라운드마다 회복)', '개', 2, 1, 10, 1), N('koWrongLife', '오답 시 잃는 목숨', '개', 1, 0, 3, 1), N('koWins', '승리에 필요한 라운드', '판', 2, 1, 5, 1), N('koRoundSec', '라운드 제한시간', '초', 60, 15, 300, 5), N('koBreakMs', '라운드 사이 대기', 'ms', 3500, 1000, 10000, 100), ...sty('ko')], 'ko'],
+  ['한방', [B('koAutoEnd', '생존자 1명 남으면 자동 종료', true), ...sty('oh')], 'oh'],
+  ['스피드런', [N('spSec', '제한시간', '초', 90, 10, 600, 5), N('spBlkLo', '블록 최소 개수', '개', 11, 2, 20, 1), N('spBlkHi', '블록 최대 개수', '개', 17, 2, 20, 1), N('spCam', '회전 속도', '', 0.02, 0, 0.1, 0.002), ...sty('sp')], 'sp'],
+  ['도면', [N('bpRevealMs', '오답 시 정답 공개 시간', 'ms', 3800, 500, 15000, 100), ...sty('bp')], 'bp'],
+  ['쌓기', [...sty('st')], 'st'],
+  ['협동', [N('coopSwap', '채팅 바꿔치기 확률', '%', 60, 0, 100, 5), ...sty('co')], 'co'],
+  ['라이어', [N('liarSec', '라운드 시간', '초', 25, 5, 120, 1), N('liarMax', '최대 참가 인원', '명', 8, 3, 20, 1), N('liarBp', '도면 문제 확률', '%', 50, 0, 100, 5), N('liarLeft', '라이어 승리 남은 인원', '명', 2, 1, 6, 1), B('liarChat', '채팅 허용', true), ...sty('li')], 'li'],
+  ['카드/효과', [B('c_confusion', '혼란 카드 사용', true), B('c_taunt', '괴롭히기 카드 사용', true), B('c_freeze', '얼음 카드 사용', true), B('c_lightning', '벼락 치기 카드 사용', true), B('c_shining_eyes', '빛나는 눈 카드 사용', true), N('glitchSec', '혼란 지속', '초', 4, 1, 15, 0.5), N('tauntSec', '괴롭히기 지속', '초', 2.5, 1, 10, 0.5), N('freezeSec', '얼음 지속', '초', 3, 1, 15, 0.5), N('coinA', '코인 카드 ①', '점', 5, 1, 50, 1), N('coinB', '코인 카드 ②', '점', 7, 1, 50, 1), N('coinC', '코인 카드 ③', '점', 10, 1, 50, 1), N('cardCount', '보상 카드 장수', '장', 3, 1, 5, 1), N('triple', '벼락 치기 배수', '배', 3, 1, 10, 1), N('shineOp', '빛나는 눈 투명도', '', 0.6, 0.1, 1, 0.05), N('toastMax', '알림 최대 개수', '개', 3, 1, 8, 1), N('toastMs', '알림 표시 시간', 'ms', 3800, 1000, 10000, 100), N('glitchOpacity', '혼란 블록 불투명도', '', 0.85, 0.1, 1, 0.05), N('cardDelay', '카드창 열리는 지연', 'ms', 500, 0, 3000, 50), ...CD], '']
+];
+CFG_TABS.forEach(t => t[1].forEach(e => { if (!(e[0] in CFG_DEF)) CFG_DEF[e[0]] = e[3]; }));
+CFG_DEF.koLives = 2;
+const MP = { knockout: 'ko', onehit: 'oh', speedrun: 'sp', blueprint: 'bp', stack: 'st', coop: 'co', liar: 'li' };
+const cfgDiff = () => { const o = {}; for (const k in S) if (S[k] !== CFG_DEF[k]) o[k] = S[k]; return o; };
+let S = { ...CFG_DEF }, cssKey = '', koState = null;
+function applyCfgCss() {   // 설정값을 화면 스타일로 반영 (모드 탭은 그 모드에서만 적용)
+  const key = JSON.stringify(S); if (key === cssKey) return; cssKey = key;
+  let css = '';
+  CFG_TABS.forEach(t => t[1].forEach(e => {
+    if (!e[8] || S[e[0]] === CFG_DEF[e[0]]) return;
+    const sc = t[2] === '' ? '' : t[2] === 'g' ? '#mainContainer' : `#mainContainer[data-m="${t[2]}"]`;
+    css += e[8].split('|').map(x => sc + ' ' + x).join(',') + '{' + e[9].split('$').join(S[e[0]] + e[7]) + '}\n';
+  }));
+  let el = document.getElementById('cfgStyle');
+  if (!el) { el = document.createElement('style'); el.id = 'cfgStyle'; document.head.appendChild(el); }
+  el.textContent = css;
+}
+/* ---------- 녹아웃 (브롤스타즈식): 팀 대결, 전멸시키면 라운드 승리, 먼저 N라운드 이기면 우승 ---------- */
+function koHostTick(users) {
+  const K = koState; if (!K || K.over) return;
+  const now = Date.now(); if (now < K.startAt + 1500) return;
+  const mem = k => users.filter(u => teams[u.id] === k), al = [0, 1].map(k => mem(k).filter(u => !u.dead).length);
+  let w = -1;
+  if (mem(0).length && !al[0]) w = 1; else if (mem(1).length && !al[1]) w = 0;
+  else if (now >= K.startAt + S.koRoundSec * 1000) {   // 시간 종료: 남은 목숨이 많은 팀이 승리
+    const lv = [0, 1].map(k => mem(k).reduce((s, u) => s + (u.dead ? 0 : (u.lives || 0)), 0));
+    w = lv[0] > lv[1] ? 0 : lv[1] > lv[0] ? 1 : Math.floor(Math.random() * 2);
+  }
+  if (w < 0) return;
+  const wins = [...K.wins]; wins[w]++;
+  const over = wins[w] >= S.koWins;
+  koState = { ...K, wins, round: K.round + 1, startAt: now + S.koBreakMs, over: over ? 'win' : '', msg: `${TEAM_NAMES[w]} 라운드 승리! (${wins[0]}:${wins[1]})${over ? ' 🏆 우승!' : ''}` };
+  koNewRound(koState); sendSoon();
+  if (over) setTimeout(teacherEndGame, 2500);
+}
+function syncKo(n) {
+  const p = koState;
+  if (p && p.session === n.session && n.round < p.round) return;
+  koState = n;
+  if (p && p.session === n.session && p.round !== n.round) koNewRound(n);
+}
+function koNewRound(n) {
+  myLives = maxLives(); isDead = false; diedAt = 0; hasGuessed = true; koDeadline = 0; specId = ''; specKey = ''; specPanelKey = '';
+  ['specPrev', 'specNext'].forEach(id => { $(id).style.display = 'none'; });
+  $('cardImage').src = GAME_CARD_IMAGE; $('koHud').style.display = 'block'; $('cardModalOverlay').classList.remove('active');
+  renderHud(); if (n.msg) showToast(null, '라운드 결과', n.msg, '#f59e0b');
+  if (n.over) return;
+  $('quizTitle').innerText = '🥊 ' + n.round + '라운드 준비!'; $('choiceButtons').innerHTML = ''; $('feedbackMessage').innerText = '';
+  const r = n.round, s = currentSession;
+  setTimeout(() => { if (gameStarted && s === currentSession && koState && koState.round === r && !koState.over) nextProblem(); }, Math.max(0, n.startAt - hostNow()));
+  sendSoon();
+}
 try { Object.assign(S, JSON.parse(localStorage.getItem('blocksCfg') || '{}')); } catch (e) {}
 let iAmHost = false, hostAt = 0, endedSession = 0, endedAt = 0, settingsOpen = false, cfgTab = 0;
 let clockOff = 0, clk = [], lastHostId = '', tickKey = '', resClosed = 0;
@@ -520,7 +627,7 @@ const roster = new Map();
 
 /* ---------- 화면 크기에 맞춰 UI 확대/축소 ---------- */
 function fitScreen() {
-  uiScale = Math.min(window.innerWidth / 960, window.innerHeight / 550);
+  uiScale = Math.min(window.innerWidth / 940, window.innerHeight / 530);
   uiScale = Math.max(0.4, Math.min(uiScale, 3));
   $('mainContainer').style.transform = `scale(${uiScale})`;
   if (renderer) { renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * uiScale, 3)); if (resizeThree) resizeThree(); }
@@ -535,9 +642,9 @@ function getMyPayload() {
     phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
     mode: isTeacher ? gameMode : '', teams: isTeacher ? teams : null, result: isTeacher ? resultData : null,
     lives: myLives, dead: isDead, diedAt, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
-    runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, lv: myLV,
+    runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, lv: myLV, ko: isTeacher ? koState : null,
     vote: myVote,
-    host: isTeacher && iAmHost, hostAt: isTeacher ? hostAt : 0, cfg: isTeacher ? S : null, coop: isTeacher ? coopState : null, cr: coopRound, cs: currentSession,
+    host: isTeacher && iAmHost, hostAt: isTeacher ? hostAt : 0, cfg: isTeacher ? cfgDiff() : null, coop: isTeacher ? coopState : null, cr: coopRound, cs: currentSession,
     joinedAt, hb: Date.now()
   };
 }
@@ -582,13 +689,13 @@ function collectUsers() {
 
 function renderAll() {
   const users = collectUsers();
-  activeUsers = users;
+  activeUsers = users; applyCfgCss();
   const host = hostTeacher(users), rt = users.find(u => u.isTeacher && u.result && u.result.session === currentSession);
   if (host && host.id !== myId) {   // 다른 선생님이 진행 중이면 학생이든 두 번째 선생님이든 그 진행을 따라감
     if (iAmHost) { iAmHost = false; if (phase.startsWith('vote')) phase = ''; }
-    noTeacherSince = 0; Object.assign(S, host.cfg || {});
+    noTeacherSince = 0; S = { ...CFG_DEF, ...(host.cfg || {}) };
     if (host.id !== lastHostId) { lastHostId = host.id; clk = []; pingHost(); }
-    if (host.gameStarted) { gameMode = host.mode || 'solo'; teams = host.teams || {}; runEnd = host.runEnd || 0; if (host.liar) syncLiar(host.liar); if (host.coop) coopState = host.coop; if (host.session && (host.session !== endedSession || Date.now() - endedAt > 6000) && (host.session !== currentSession || !gameStarted)) startLocal(host.session); }
+    if (host.gameStarted) { gameMode = host.mode || 'solo'; teams = host.teams || {}; runEnd = host.runEnd || 0; if (host.liar) syncLiar(host.liar); if (host.ko) syncKo(host.ko); if (host.coop) coopState = host.coop; if (host.session && (host.session !== endedSession || Date.now() - endedAt > 6000) && (host.session !== currentSession || !gameStarted)) startLocal(host.session); }
     else if (gameStarted) endGameLocal();
   } else if (!host) {
     if (gameStarted) {
@@ -642,7 +749,7 @@ function nextProblem() {
 
 function endGameLocal() {
   endedSession = currentSession; endedAt = Date.now(); iAmHost = false;
-  gameStarted = false; currentBlocks = []; liarState = null; myLV = ''; chat = []; coopState = null; coopRound = 0; coopLog = []; coopReveal = false; $('choiceButtons').style.maxHeight = ''; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
+  gameStarted = false; currentBlocks = []; liarState = null; koState = null; myLV = ''; chat = []; coopState = null; coopRound = 0; coopLog = []; coopReveal = false; $('choiceButtons').style.maxHeight = ''; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
   koDeadline = 0; runEnd = 0; isDead = false; myLives = 3; diedAt = 0; specId = ''; specKey = ''; specPanelKey = '';
   ['koHud', 'specPrev', 'specNext'].forEach(id => { $(id).style.display = 'none'; });
   $('cardModalOverlay').classList.remove('active'); $('pwModalOverlay').classList.remove('active'); isTargetSelectMode = false; pendingAttackType = null;
@@ -666,7 +773,8 @@ function teacherTick(users) {
   else if (phase === 'vote2' && now >= voteEnd) finishVote(users);
   else if (phase === 'vote3' && now >= voteEnd) finishVote3(users);
   else if (gameStarted && gameMode === 'speedrun') { if (runEnd && now >= runEnd) teacherEndGame(); }
-  else if (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit') && S.koAutoEnd && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
+  else if (gameStarted && gameMode === 'knockout') koHostTick(users);
+  else if (gameStarted && gameMode === 'onehit' && S.koAutoEnd && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
     if (users.filter(u => !u.dead).length <= 1) { koEndAt = koEndAt || now + 2500; if (now >= koEndAt) { koEndAt = 0; teacherEndGame(); } }
     else koEndAt = 0;
   }
@@ -722,12 +830,13 @@ function startMode(mode, users) {
   if (!isTeacher) return;
   gameMode = mode;
   teams = {};
-  if (mode === 'duo') {                               // 랜덤으로 섞어 반반 (홀수면 남는 1명은 랜덤 팀)
+  if (mode === 'duo' || mode === 'knockout') {                               // 랜덤으로 섞어 반반 (홀수면 남는 1명은 랜덤 팀)
     const off = Math.random() < 0.5 ? 0 : 1;
     users.map(u => u.id).sort(() => Math.random() - 0.5).forEach((id, i) => { teams[id] = (i + off) % 2; });
   }
   runEnd = mode === 'speedrun' ? Date.now() + spMs() : 0;
   const session = Date.now();
+  koState = mode === 'knockout' ? { session, round: 1, wins: [0, 0], startAt: session, msg: '', over: '' } : null;
 
   if (mode === 'liar') {
     const ps = users.slice(0, S.liarMax).map(u => u.id);
@@ -742,7 +851,7 @@ function startMode(mode, users) {
   }
   startLocal(session);
   updatePresence();
-  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState, coop: coopState, cfg: S } }); } catch (e) {}
+  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState, coop: coopState, ko: koState, cfg: cfgDiff() } }); } catch (e) {}
 }
 
 async function teacherEndGame() {
@@ -775,7 +884,7 @@ async function connect() {
     if (isTeacher && iAmHost && payload.action === 'start' && gameStarted && payload.session > currentSession) return;   // 동시에 시작하면 먼저 시작한 쪽만 인정
     if (payload.action === 'start') { iAmHost = false; if (phase.startsWith('vote')) phase = ''; }
     if (payload.action === 'end') { endGameLocal(); sendSoon(); if (payload.result && payload.result.session === currentSession) showResult(payload.result); }
-    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; if (payload.coop) coopState = payload.coop; if (payload.cfg) Object.assign(S, payload.cfg); startLocal(payload.session); }
+    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; if (payload.ko) koState = payload.ko; if (payload.coop) coopState = payload.coop; if (payload.cfg) S = { ...CFG_DEF, ...payload.cfg }; startLocal(payload.session); }
   });
 
   ch.on('broadcast', { event: 'ping' }, ({ payload }) => {
@@ -794,7 +903,7 @@ async function connect() {
   ch.on('broadcast', { event: 'attack_event' }, ({ payload }) => {
     if (payload.targetId !== myId) return;
     SFX.hit();
-    if (gameMode === 'duo' && teams[payload.fromId] === teams[myId]) return;   // 같은 팀은 공격 불가
+    if ((gameMode === 'duo' || gameMode === 'knockout') && teams[payload.fromId] === teams[myId]) return;   // 같은 팀은 공격 불가
     notifyAttack(payload);
     if (payload.type === 'glitch') triggerGlitchEffect();
     else if (payload.type === 'taunt') triggerTauntEffect();
@@ -873,7 +982,7 @@ function renderRankingList(users) {
   if (gameMode === 'coop') { $('rankingTitle').innerText = '팀 채팅'; return; }
   if (gameMode === 'liar') { $('rankingTitle').innerText = '💬 라이어를 찾아라'; return; }
   let html;
-  const duo = gameMode === 'duo', ko = gameMode === 'knockout' || gameMode === 'onehit';
+  const duo = gameMode === 'duo' || gameMode === 'knockout', ko = gameMode === 'knockout' || gameMode === 'onehit';
   const av = u => `<img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필">`;
   if (isTargetSelectMode) {
     $('rankingTitle').innerHTML = `<span style="color:#ef4444;">🎯 공격할 상대방을 클릭하세요!</span>`;
@@ -889,13 +998,13 @@ function renderRankingList(users) {
     $('rankingTitle').innerHTML = `🏆 팀 랭킹`;
     html = [0, 1].map(k => {
       const m = users.filter(u => teams[u.id] === k);
-      return { k, m, score: m.reduce((s, u) => s + (u.score || 0), 0) };
+      return { k, m, score: gameMode === 'knockout' ? ((koState && koState.wins[k]) || 0) : m.reduce((s, u) => s + (u.score || 0), 0) };
     }).sort((a, b) => b.score - a.score).map((t, i) => `
       <div class="rank-item" style="border:2px solid ${TEAM_COLORS[t.k]};">
         <div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2'][i]}">${i + 1}등</span>
           <span>${TEAM_NAMES[t.k]}${teams[myId] === t.k ? ' (내 팀)' : ''}</span>
-          <span style="color:#94a3b8;font-size:11px;">${t.m.length}명</span></div>
-        <span style="color:#334155;font-size:14px;">${t.score}점</span>
+          <span style="color:#94a3b8;font-size:11px;">${gameMode === 'knockout' ? '생존 ' + t.m.filter(u => !u.dead).length + '/' + t.m.length : t.m.length + '명'}</span></div>
+        <span style="color:#334155;font-size:14px;">${gameMode === 'knockout' ? '🏆' + t.score + '승' : t.score + '점'}</span>
       </div>`).join('');
   } else {
     $('rankingTitle').innerHTML = `🏆 실시간 랭킹`;
@@ -955,16 +1064,17 @@ function setupChoices(correct) {
       if (num === correct) {
         btn.classList.add('correct'); SFX.correct();
         let gain = S.score;
-        if (hasTripleScoreMultiplier) { gain = S.score * 3; hasTripleScoreMultiplier = false; fb.innerText = '정답입니다! ⚡벼락치기 발동 (+' + gain + '점)!'; }
+        if (hasTripleScoreMultiplier) { gain = S.score * S.triple; hasTripleScoreMultiplier = false; fb.innerText = '정답입니다! ⚡벼락치기 발동 (+' + gain + '점)!'; }
         else fb.innerText = gameMode === 'speedrun' ? '정답! ⚡' : '정답입니다! 카드 보상을 선택하세요.';
         fb.style.color = '#22c55e';
         myScore += gain; updatePresence();
         if (gameMode === 'speedrun') setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, 350);   // 스피드런: 카드 없이 바로 다음 문제
-        else setTimeout(openCardModal, 500);   // 카드를 고르면 다음 문제로 넘어감
+        else setTimeout(openCardModal, S.cardDelay);   // 카드를 고르면 다음 문제로 넘어감
       } else {
         btn.classList.add('wrong'); SFX.wrong();
         fb.innerText = `틀렸습니다! (정답: ${correct}개)`; fb.style.color = '#ef4444';
-        if (gameMode === 'onehit') { myLives = 0; renderHud(); die(); updatePresence(); return; }   // 한방: 틀리면 즉시 탈락
+        if (gameMode === 'onehit') { myLives = 0; renderHud(); die(); updatePresence(); return; }
+        if (gameMode === 'knockout' && S.koWrongLife > 0) { myLives -= S.koWrongLife; renderHud(); if (myLives <= 0) { myLives = 0; die(); updatePresence(); return; } updatePresence(); }   // 한방: 틀리면 즉시 탈락
         if (gameMode === 'blueprint') revealBlueprint(correct);                                  // 도면: 틀리면 3D로 정답 공개
         setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, gameMode === 'blueprint' ? S.bpRevealMs : gameMode === 'speedrun' ? 700 : S.wrongMs);
       }
@@ -975,8 +1085,8 @@ function setupChoices(correct) {
 
 function generateCardOptions() {
   if (gameMode === 'hacking') return generateHackCards();
-  const coin = [5, 7, 10][Math.floor(Math.random() * 3)];
-  const coinImg = { 5: 'XMEic2GRdS2qq7GJaEiB', 7: 'TGQBtafzmsdeiJwZSmpo', 10: 'ET4DYhvXCLzJPiw96NtX' }[coin];
+  const ci = Math.floor(Math.random() * 3), coin = [S.coinA, S.coinB, S.coinC][ci];
+  const coinImg = ['XMEic2GRdS2qq7GJaEiB', 'TGQBtafzmsdeiJwZSmpo', 'ET4DYhvXCLzJPiw96NtX'][ci];
   const pool = [
     { type: 'coin', title: `코인 ${coin}개`, img: SC(coinImg), desc: `점수 +${coin}점을 즉시 획득합니다.`, val: coin },
     { type: 'confusion', title: '혼란 카드', img: 'https://media1.tenor.com/m/ZINlqqwHYQ4AAAAC/brawl-stars-brawl-stars-emoji.gif', desc: '상대방을 지목하여 4초간 화면에 글리치 블록을 잔뜩 생성합니다.' },
@@ -985,7 +1095,7 @@ function generateCardOptions() {
     { type: 'lightning', title: '벼락 치기 카드', img: SC('Cz9rD81f7Qrva9kzgZvA'), desc: '다음 문제를 맞히면 얻는 점수가 3배(30점)로 폭증합니다.' },
     { type: 'shining_eyes', title: '빛나는 눈 카드', img: SC('Y7xeUH3uBvNkQBzSXkA6'), desc: '다음 라운드에 쌓기나무가 반투명해지고 윤곽선이 빛나고 정답 버튼 하나가 빛납니다.' }
   ];
-  return pool.filter(c => !(gameMode === 'stack' && c.type === 'shining_eyes') && (c.type === 'coin' || S['c_' + c.type] !== false)).sort(() => Math.random() - 0.5).slice(0, 3);
+  return pool.filter(c => !(gameMode === 'stack' && c.type === 'shining_eyes') && (c.type === 'coin' || S['c_' + c.type] !== false)).sort(() => Math.random() - 0.5).slice(0, S.cardCount);
 }
 
 function openCardModal() {
@@ -1018,6 +1128,7 @@ const defaultBadge = () => !gameStarted ? '3D 관찰 카메라 회전 중' : gam
 const modalOpen = () => $('cardModalOverlay').classList.contains('active') || $('pwModalOverlay').classList.contains('active');
 
 function setModeUI() {
+  $('mainContainer').dataset.m = gameStarted ? (MP[gameMode] || '') : '';
   const co = gameStarted && gameMode === 'coop', st = gameStarted && (gameMode === 'stack' || co), bp = gameStarted && gameMode === 'blueprint', tc = $('threeContainer');
   const lr = gameStarted && (gameMode === 'liar' || co); document.querySelector('.chat-in').style.display = (co && coopRole() !== 'd') ? 'none' : ''; $('padSubmit').style.display = co ? '' : 'none'; $('topView').style.display = (co && coopRole() !== 'd') ? 'none' : ''; $('chatBox').style.display = lr ? 'flex' : 'none'; $('rankingList').style.display = lr ? 'none' : '';
   document.querySelector('.left-card').classList.toggle('stack-left', st);          // 쌓기 모드: 왼쪽 캐릭터 그림을 줄여 버튼 공간 확보
@@ -1082,7 +1193,7 @@ function stackAct(k) {
   if (!same) return;
   hasGuessed = true; SFX.correct(); myScore += S.score; updatePresence();
   const fb = $('feedbackMessage'); fb.innerText = '완성! 카드 보상을 선택하세요.'; fb.style.color = '#22c55e';
-  setTimeout(openCardModal, 500);
+  setTimeout(openCardModal, S.cardDelay);
 }
 
 /* ---------- 도면보고 맞추기 ---------- */
@@ -1146,12 +1257,12 @@ const secretPw = () => PASSWORDS[Math.abs(currentSession) % PASSWORDS.length];  
 
 function showToast(img, title, sub, color) {
   const box = $('toastBox');
-  while (box.querySelectorAll('.toast:not(.ask)').length >= 3) box.querySelector('.toast:not(.ask)').remove();   // 선택지 알림은 남겨둠
+  while (box.querySelectorAll('.toast:not(.ask)').length >= S.toastMax) box.querySelector('.toast:not(.ask)').remove();   // 선택지 알림은 남겨둠
   const el = document.createElement('div');
   el.className = 'toast'; el.style.setProperty('--tc', color || '#3b82f6');
   el.innerHTML = `<img src="${esc(img || characterImages[0])}" alt=""><div><b>${esc(title)}</b><br><span>${esc(sub)}</span></div>`;
   box.appendChild(el);
-  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 3800);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, S.toastMs);
 }
 
 function notifyAttack(p) {   // 모든 모드 공통: 누가 방해했는지 작은 알림
@@ -1210,7 +1321,7 @@ function triggerGlitchEffect() {
   glitchMeshes = [];
   const geo = new THREE.BoxGeometry(1, 1, 1), count = (Math.floor(Math.random() * 8) + 5) * 3;
   for (let i = 0; i < count; i++) {
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff, transparent: true, opacity: .85 }));
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: Math.random() * 0xffffff, transparent: true, opacity: S.glitchOpacity }));
     m.position.set(Math.random() * 4 - 1, Math.random() * 3, Math.random() * 4 - 1);
     glitchGroup.add(m); glitchMeshes.push(m);
   }
@@ -1264,8 +1375,8 @@ function initThreeOnce() {
   (function animate() {
     requestAnimationFrame(animate);
     if (!isCameraFrozen && !stackish()) cameraAngle += gameMode === 'speedrun' ? S.spCam : S.cam;
-    const r = 9.5;
-    camera.position.set(1 + r * Math.cos(cameraAngle), 6.5, 1 + r * Math.sin(cameraAngle));
+    const r = S.camR;
+    camera.position.set(1 + r * Math.cos(cameraAngle), S.camH, 1 + r * Math.sin(cameraAngle));
     camera.lookAt(1, 0.9, 1);
     glitchMeshes.forEach(m => m.material.color.setHex(Math.random() * 0xffffff));
     renderer.render(scene, camera);
@@ -1276,7 +1387,8 @@ function rebuildBlocks(blocks) {
   if (!blockGroup || !outlineGroup) return;
   [blockGroup, outlineGroup].forEach(g => { while (g.children.length) g.remove(g.children[0]); });
   const geo = new THREE.BoxGeometry(1, 1, 1), edges = new THREE.EdgesGeometry(geo), t = activeShiningEyesRound;
-  const boxMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: .3, metalness: .1, transparent: t, opacity: t ? .6 : 1, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  const boxMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(S.blockCol), roughness: .3, metalness: .1, transparent: t, opacity: t ? S.shineOp : 1, 
+polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   const edgeMat = new THREE.LineBasicMaterial({ color: 0x0f172a });
   const glowMat = new THREE.LineBasicMaterial({ color: 0x00ffff, depthTest: false });
   blocks.forEach(b => {
@@ -1424,7 +1536,7 @@ function buildResult() {
   const us = collectUsers().sort(ko ? (a, b) => (surv(b) - surv(a)) || ((b.score || 0) - (a.score || 0)) : (a, b) => (b.score || 0) - (a.score || 0))
     .map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: u.score || 0, t: teams[u.id], x: ko ? (u.dead ? '탈락' : '생존') : undefined }));
   const res = { session: currentSession, mode: gameMode, podium: us.slice(0, 3), at: hostNow() };   // 듀오도 개인 기여 점수 순
-  if (gameMode === 'duo') res.teams = [0, 1].map(k => { const m = us.filter(u => u.t === k); return { k, s: m.reduce((x, u) => x + u.s, 0), m }; }).sort((a, b) => b.s - a.s);
+  if (gameMode === 'duo' || gameMode === 'knockout') res.teams = [0, 1].map(k => { const m = us.filter(u => u.t === k); return { k, s: gameMode === 'knockout' ? ((koState && koState.wins[k]) || 0) : m.reduce((x, u) => x + u.s, 0), m }; }).sort((a, b) => b.s - a.s);
   else res.full = us;
   return res;
 }
@@ -1433,7 +1545,7 @@ function showResult(res, force) {
   if (!res || (!force && shownSession === res.session)) return;
   shownSession = res.session;
   closeResult(true);
-  const duo = res.mode === 'duo', ov = $('resultOverlay');
+  const duo = res.mode === 'duo' || res.mode === 'knockout', ov = $('resultOverlay');
   const av = (u, sz) => `<img src="${esc(u.a || characterImages[0])}" class="user-avatar-mini" style="width:${sz}px;height:${sz}px;" alt="">`;
   $('podium').innerHTML = [2, 1, 3].filter(r => res.podium[r - 1]).map(r => {
     const p = res.podium[r - 1];
@@ -1442,7 +1554,7 @@ function showResult(res, force) {
   }).join('');
   const row = (u, i, badge) => `<div class="rank-item"><div class="user-info">${badge ? `<span class="rank-badge ${['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc'}">${i + 1}등</span>` : ''}${av(u, 24)}<span>${esc(u.n)}</span></div><span style="color:#64748b;font-size:12px;">${u.x ? u.x + ' · ' : ''}${u.s}점</span></div>`;
   $('resList').innerHTML = duo
-    ? res.teams.map((t, i) => `<div class="res-team"><div class="rank-item" style="border:2px solid ${TEAM_COLORS[t.k]};background:#f8fafc;"><div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2'][i]}">${i + 1}등</span><span>${TEAM_NAMES[t.k]}</span></div><span style="font-size:14px;">${t.s}점</span></div>` + t.m.map(u => row(u, 0, false)).join('') + `</div>`).join('')
+    ? res.teams.map((t, i) => `<div class="res-team"><div class="rank-item" style="border:2px solid ${TEAM_COLORS[t.k]};background:#f8fafc;"><div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2'][i]}">${i + 1}등</span><span>${TEAM_NAMES[t.k]}</span></div><span style="font-size:14px;">${res.mode === 'knockout' ? t.s + '승' : t.s + '점'}</span></div>` + t.m.map(u => row(u, 0, false)).join('') + `</div>`).join('')
     : res.full.map((u, i) => row(u, i, true)).join('');
   $('resPanel').classList.remove('on');
   ov.classList.add('active');
@@ -1511,23 +1623,19 @@ function askTeacherMode() {
 }
 
 /* ---------- 설정 카드 (선생님: Alt+Tab+1) ---------- */
-const CFG_TABS = [
-  ['공통', [['voteSec', '투표 시간', '초', 3, 60, 1], ['score', '정답 점수', '점', 1, 100, 1], ['blkLo', '블록 최소 개수', '개', 2, 20, 1], ['blkHi', '블록 최대 개수', '개', 2, 20, 1], ['choices', '선택지 개수', '개', 2, 6, 1], ['cam', '3D 회전 속도', '', 0, 0.1, 0.002], ['wrongMs', '오답 후 대기', 'ms', 300, 8000, 100], ['cards', '정답 후 카드 보상', 'bool'], ['inv', '선생님 무적', 'bool']]],
-  ['녹아웃/한방', [['koSec', '문제당 제한시간', '초', 1, 30, 0.5], ['koLives', '목숨 (녹아웃)', '개', 1, 10, 1], ['koAutoEnd', '생존자 1명 남으면 자동 종료', 'bool']]],
-  ['협동 쌓기', [['coopSwap', '채팅 바꿔치기 확률', '%', 0, 100, 5]]],
-  ['스피드런', [['spSec', '제한시간', '초', 10, 600, 5], ['spBlkLo', '블록 최소 개수', '개', 2, 20, 1], ['spBlkHi', '블록 최대 개수', '개', 2, 20, 1], ['spCam', '회전 속도', '', 0, 0.1, 0.002]]],
-  ['도면', [['bpRevealMs', '오답 시 정답 공개 시간', 'ms', 500, 15000, 100]]],
-  ['라이어', [['liarSec', '라운드 시간', '초', 5, 120, 1], ['liarMax', '최대 참가 인원', '명', 3, 20, 1], ['liarBp', '도면 문제 확률', '%', 0, 100, 5], ['liarLeft', '라이어 승리 남은 인원', '명', 1, 6, 1], ['liarChat', '채팅 허용', 'bool']]],
-  ['카드', [['c_confusion', '혼란 카드', 'bool'], ['c_taunt', '괴롭히기 카드', 'bool'], ['c_freeze', '얼음 카드', 'bool'], ['c_lightning', '벼락 치기 카드', 'bool'], ['c_shining_eyes', '빛나는 눈 카드', 'bool'], ['glitchSec', '혼란 지속', '초', 1, 15, 0.5], ['tauntSec', '괴롭히기 지속', '초', 1, 10, 0.5], ['freezeSec', '얼음 지속', '초', 1, 15, 0.5]]]
-];
+/* 설정 항목은 위쪽 CFG_TABS 참고 */
 const cfgGet = k => k === 'inv' ? invincible : S[k];
 const saveCfg = () => { try { localStorage.setItem('blocksCfg', JSON.stringify(S)); } catch (e) {} };
 function fixCfg() { if (S.blkHi < S.blkLo) S.blkHi = S.blkLo; if (S.spBlkHi < S.spBlkLo) S.spBlkHi = S.spBlkLo; if (S.hackMax < S.hackMin) S.hackMax = S.hackMin; }
 function renderCfg() {
-  $('cfgTabs').innerHTML = CFG_TABS.map((t, i) => `<button class="cfg-tab${i === cfgTab ? ' on' : ''}" data-i="${i}">${t[0]}</button>`).join('');
-  $('cfgBody').innerHTML = CFG_TABS[cfgTab][1].map(([k, label, unit, mn, mx, st]) => {
+  $('cfgTabs').innerHTML = CFG_TABS.map((t, i) => `<button class="cfg-tab${i === cfgTab ? ' on' : ''}" data-i="${i}">${t[0]} ${t[1].length}</button>`).join('');
+  $('cfgBody').innerHTML = CFG_TABS[cfgTab][1].map(([k, label, type, , mn, mx, st, unit]) => {
     const v = cfgGet(k);
-    return `<div class="cfg-row"><span>${label}</span>` + (unit === 'bool' ? `<input type="checkbox" data-k="${k}"${v ? ' checked' : ''}>` : `<span><input type="number" data-k="${k}" value="${v}" min="${mn}" max="${mx}" step="${st}"> ${unit}</span>`) + `</div>`;
+    const inp = type === 'b' ? `<input type="checkbox" data-k="${k}"${v ? ' checked' : ''}>`
+      : type === 'c' ? `<input type="color" data-k="${k}" value="${esc(v)}">`
+      : type === 't' ? `<input type="text" data-k="${k}" value="${esc(v)}">`
+      : `<span><input type="number" data-k="${k}" value="${v}" min="${mn}" max="${mx}" step="${st}"> ${unit || ''}</span>`;
+    return `<div class="cfg-row"><span>${label}</span>${inp}</div>`;
   }).join('');
 }
 function toggleSettings() {
@@ -1551,13 +1659,13 @@ $('cfgTabs').addEventListener('click', e => {
 });
 $('cfgBody').addEventListener('change', e => {
   const el = e.target, k = el.dataset.k; if (!k) return;
-  const v = el.type === 'checkbox' ? el.checked : parseFloat(el.value);
-  if (el.type !== 'checkbox' && isNaN(v)) return;
+  const v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? parseFloat(el.value) : el.value;
+  if (el.type === 'number' && isNaN(v)) return;
   if (k === 'inv') invincible = v; else { S[k] = v; fixCfg(); saveCfg(); }
-  renderCfg(); sendSoon();
+  applyCfgCss(); renderCfg(); sendSoon();
 });
 $('cfgReset').addEventListener('click', () => {
-  S = { ...CFG_DEF }; invincible = false; saveCfg(); renderCfg(); sendSoon();
+  S = { ...CFG_DEF }; invincible = false; saveCfg(); applyCfgCss(); renderCfg(); sendSoon();
 });
 
 /* ---------- 이벤트 연결 ---------- */
@@ -1645,7 +1753,7 @@ window.addEventListener('keydown', e => {
 });
 
 /* ---------- 시작 ---------- */
-fitScreen();
+fitScreen(); applyCfgCss();
 applyUIState(false);
 renderAll();
 connect();
