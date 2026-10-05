@@ -1593,7 +1593,7 @@ function trollSchedule(res, lt, t) {
   lt(t, () => { $('podium').classList.add('out'); $('resPanel').classList.remove('on'); SFX.whoosh(); });   // 점수 단상이 왼쪽으로 밀려남
   lt(t + 1100, () => trollIntro(tp));
   order.forEach((r, i) => lt(t + 3300 + i * 2300, () => trollReveal(r)));
-  lt(t + 3300 + (order.length - 1) * 2300 + 2500, () => { trollList(res); $('resPanel').classList.add('on'); });
+  lt(t + 3300 + Math.max(order.length - 1, 0) * 2300 + 2500, () => { trollList(res); $('resPanel').classList.add('on'); });
 }
 function trollIntro(tp) {
   $('trollPodium').innerHTML = [2, 1, 3].filter(r => tp[r - 1]).map(r => {
@@ -1602,6 +1602,7 @@ function trollIntro(tp) {
   }).join('');
   $('resultOverlay').classList.add('troll'); $('trollPodium').classList.add('show');
   const b = $('resBanner'); b.innerText = '😈 오늘의 트롤왕은?! 😈'; b.classList.add('on');
+  if (!tp.length) { b.innerText = '😇 오늘은 아무도 트롤하지 않았어요!'; SFX.sparkle(); fxConfetti = true; return; }
   SFX.siren(); SFX.drop(); SFX.partyBeat(9); fxConfetti = true; fxTroll = true; fxFlash();
   clearInterval(trollInt); trollInt = setInterval(trollTick, 420);
 }
@@ -1644,6 +1645,13 @@ function forceView(users) {
     $('cardModalOverlay').classList.remove('active'); $('pwModalOverlay').classList.remove('active');
     if ($('defaultUserListUI').style.display === 'none') $('defaultUserListUI').style.display = 'flex';
   }
+}
+
+function previewResult() {   // Alt+2: 가짜 데이터로 점수 시상식 → 트롤 시상식 미리보기
+  const mk = (n, i, s, tr) => ({ n, a: characterImages[i], s, tr });
+  const full = [mk('철수', 0, 120, 1), mk('영희', 1, 100, 5), mk('민수', 2, 80, 3), mk('지민', 3, 60, 0)];
+  const tp = full.slice().sort((a, b) => b.tr - a.tr).filter(u => u.tr > 0);
+  showResult({ session: Date.now(), mode: 'solo', podium: full.slice(0, 3), full, at: 0, troll: { podium: tp } }, true);
 }
 
 /* ---------- 게임 종료: 시상식 ---------- */
@@ -1691,7 +1699,7 @@ function showResult(res, force) {
   order.forEach((r, i) => { lt(i * 1700, () => revealPlace(r)); if (r === 1) lt(i * 1700 - 1000, SFX.roll); });   // 3등 → 2등 → 1등
   const T = Math.max(order.length - 1, 0) * 1700 + 1000;
   lt(T, () => $('resPanel').classList.add('on'));
-  if (res.troll && res.troll.podium && res.troll.podium.length) trollSchedule(res, lt, T + 6000);   // 점수 시상식 6초 뒤 트롤왕 시상식   // 1등 1초 뒤 전체 랭킹
+  if (res.troll && res.troll.podium) trollSchedule(res, lt, T + 3000);   // 점수 시상식 6초 뒤 트롤왕 시상식   // 1등 1초 뒤 전체 랭킹
 }
 
 function revealPlace(r) {
@@ -1849,7 +1857,7 @@ $('rankingList').addEventListener('click', async e => {
   if (type === 'hack') { openHackModal(targetId); return; }
   const t = activeUsers.find(u => u.id === targetId);
   myTroll++; updatePresence();
-  showToast(t && t.avatarUrl, t ? (t.nickname || '익명') : '상대', '공격 성공!', '#22c55e');
+  showToast(t && t.avatarUrl, t ? (t.nickname || '익명') : '상대', '공격 성공! 😈 내 트롤 ' + myTroll + '회', '#22c55e');
   try { await room.send({ type: 'broadcast', event: 'attack_event', payload: { targetId, fromId: myId, type } }); } catch (err) {}
 });
 
@@ -1870,6 +1878,7 @@ $('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendCha
 document.querySelectorAll('#stackPad .pad-btn').forEach(b => b.addEventListener('click', () => stackAct(b.dataset.k)));
 window.addEventListener('keydown', e => {
   if (e.altKey && e.key === '1') { e.preventDefault(); toggleSettings(); return; }
+  if (e.altKey && e.key === '2') { e.preventDefault(); if (isTeacher && !gameStarted) previewResult(); return; }   // 선생님: 시상식 미리보기
   const tag = (e.target.tagName || '').toUpperCase();
   if (tag === 'INPUT' || tag === 'TEXTAREA') return;
   if (!stackish()) return;
