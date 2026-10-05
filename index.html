@@ -462,7 +462,7 @@ const CFG_TABS = [
   ['협동', [N('coopSwap', '채팅 바꿔치기 확률', '%', 60, 0, 100, 5), ...sty('co')], 'co'],
   ['라이어', [N('liarSec', '라운드 시간', '초', 25, 5, 120, 1), N('liarMax', '최대 참가 인원', '명', 8, 3, 20, 1), N('liarBp', '도면 문제 확률', '%', 50, 0, 100, 5), N('liarLeft', '라이어 승리 남은 인원', '명', 2, 1, 6, 1), B('liarChat', '채팅 허용', true), ...sty('li')], 'li'],
   ['카드/효과', [B('c_confusion', '혼란 카드 사용', true), B('c_taunt', '괴롭히기 카드 사용', true), B('c_freeze', '얼음 카드 사용', true), B('c_lightning', '벼락 치기 카드 사용', true), B('c_shining_eyes', '빛나는 눈 카드 사용', true), N('glitchSec', '혼란 지속', '초', 4, 1, 15, 0.5), N('tauntSec', '괴롭히기 지속', '초', 2.5, 1, 10, 0.5), N('freezeSec', '얼음 지속', '초', 3, 1, 15, 0.5), N('coinA', '코인 카드 ①', '점', 5, 1, 50, 1), N('coinB', '코인 카드 ②', '점', 7, 1, 50, 1), N('coinC', '코인 카드 ③', '점', 10, 1, 50, 1), N('cardCount', '보상 카드 장수', '장', 3, 1, 5, 1), N('triple', '벼락 치기 배수', '배', 3, 1, 10, 1), N('shineOp', '빛나는 눈 투명도', '', 0.6, 0.1, 1, 0.05), N('toastMax', '알림 최대 개수', '개', 3, 1, 8, 1), N('toastMs', '알림 표시 시간', 'ms', 3800, 1000, 10000, 100), N('glitchOpacity', '혼란 블록 불투명도', '', 0.85, 0.1, 1, 0.05), N('cardDelay', '카드창 열리는 지연', 'ms', 500, 0, 3000, 50), ...CD], ''], ['소리', [N('vol', '효과음 크기', '%', 100, 0, 100, 5), B('sfxOn', '효과음 켜기', true), B('sfxHover', '마우스 올릴 때 소리', true)], 'snd'],
-['트롤 시상식', [B('trFx1', '① 폭죽 · 대포 · 충격파', false), B('trFx2', '② 번쩍 · 레이저 · 배너 · 별비', false), B('trFx3', '③ 완전 폭주 (초거대 이모지 · 줌 · 무지개)', false)], 'tr'],
+['트롤 시상식', [B('trFx1', '① 폭죽 · 대포 · 충격파', true), B('trFx2', '② 번쩍 · 레이저 · 배너 · 별비', true), B('trFx3', '③ 완전 폭주 (초거대 이모지 · 줌 · 무지개)', true)], 'tr'],
 ['솔로', [...sty('sl')], 'sl'], ['듀오', [...sty('du')], 'du'],
 ['디버그', [], 'dbg']
 ];
@@ -685,7 +685,7 @@ function fkSet(n) {
   while (fakes.length > n) { const f = fakes.pop(); try { Promise.resolve(room.send({ type: 'broadcast', event: 'bye', payload: { id: f.id, t: Date.now() } })).catch(() => {}); } catch (e) {} }
   while (fakes.length < n) {
     const i = FK.seq++, t = Date.now();
-    fakes.push({ id: 'fake_' + t.toString(36) + i, nickname: FK_NAMES[i % 20] + (i >= 20 ? Math.floor(i / 20) + 1 : ''), avatarUrl: characterImages[Math.floor(Math.random() * characterImages.length)], score: 0, s0: 0, tr: 0, t0: 0, act: 1, lives: 3, dead: false, diedAt: 0, vote: '', lv: '', joinedAt: t + i, vs: '', va: 0, kr: 0, sess: -1 });
+    fakes.push({ id: 'fake_' + t.toString(36) + i, nickname: '익명', avatarUrl: characterImages[Math.floor(Math.random() * characterImages.length)], score: 0, s0: 0, tr: 0, t0: 0, act: 1, lives: 3, dead: false, diedAt: 0, vote: '', lv: '', joinedAt: t + i, vs: '', va: 0, kr: 0, sess: -1 });
   }
   console.log('가짜 유저 ' + fakes.length + '명'); dbgFkRender(); sendSoon(); renderAll();
 }
@@ -1671,6 +1671,57 @@ const SFX = (() => {
     crash: () => Z(1.4, .25, 0, 'highpass', 4000, 9000),
     airhorn: () => [466, 622, 740].forEach(f => { T(f, .6, 'sawtooth', .07); T(f * 1.005, .6, 'square', .04); }),
     bass: () => { T(60, .35, 'sine', .5, 0, 30); Z(.05, .1, 0, 'lowpass', 200); },
+    laser: () => T(3000, .3, 'sawtooth', .05, 0, 300),
+    siren: n => { for (let i = 0; i < n; i++) { T(700, .3, 'sawtooth', .06, i * .6, 1300); T(1300, .3, 'sawtooth', .06, i * .6 + .3, 700); } }
+  });
+  /* ===== 브롤스타즈풍 효과음 전면 교체 (통통 튀는 킥 · 반짝 벨 · 빵빵한 브라스) ===== */
+  const V = (f, d, at = 0, v = .1, ty = 'sawtooth', cut = 2600, to = 0) => { try { const a = A(), o = a.createOscillator(), g = a.createGain(), fl = a.createBiquadFilter(), s = a.currentTime + at; o.type = ty; o.frequency.setValueAtTime(f, s); if (to) o.frequency.exponentialRampToValueAtTime(to, s + d); fl.type = 'lowpass'; fl.frequency.setValueAtTime(cut, s); fl.frequency.exponentialRampToValueAtTime(Math.max(200, cut * .25), s + d); g.gain.setValueAtTime(.0001, s); g.gain.linearRampToValueAtTime(v, s + .012); g.gain.exponentialRampToValueAtTime(.0001, s + d); o.connect(fl); fl.connect(g); g.connect(OUT()); o.start(s); o.stop(s + d + .02); } catch (e) {} };
+  const K = (at = 0, v = .4, f = 170, to = 45, d = .16) => T(f, d, 'sine', v, at, to);
+  const BL = (f, at = 0, v = .07, d = .5) => { T(f, d, 'sine', v, at); T(f * 2.76, d * .6, 'sine', v * .4, at); T(f * 5.4, d * .3, 'sine', v * .18, at); };
+  const CH = (fs, d, at, v, ty = 'sawtooth', cut = 2600) => fs.forEach(f => V(f, d, at, v, ty, cut));
+  Object.assign(X, {
+    tick: () => { K(0, .3, 220, 90, .07); T(880, .05, 'triangle', .05); },
+    click: () => { K(0, .35, 420, 120, .07); T(1900, .02, 'square', .04); BL(1568, .02, .03, .12); },
+    hover: () => T(2200, .015, 'sine', .015),
+    pop: () => { T(300, .14, 'sine', .15, 0, 900); T(600, .1, 'triangle', .05, .04, 1500); },
+    join: () => { BL(784, 0, .07, .3); BL(1175, .08, .07, .4); },
+    leave: () => { BL(880, 0, .06, .3); BL(587, .09, .06, .4); },
+    unlock: () => { CH([523, 659], .25, 0, .08); CH([659, 784], .25, .1, .08); CH([784, 988, 1175], .6, .2, .09); BL(2093, .22, .05, .6); },
+    start: () => { CH([220, 277, 330, 440], .55, 0, .1); K(0, .6, 160, 35, .3); Z(.5, .15, 0, 'highpass', 600, 6000); BL(1760, .05, .05, .5); BL(2349, .12, .04, .5); },
+    round: () => { T(110, 1.4, 'sine', .3, 0, 80); T(165, 1.2, 'triangle', .1); BL(440, 0, .06, 1.2); K(0, .6, 120, 30, .4); Z(.9, .1, 0, 'bandpass', 500, 4000); },
+    newq: () => { Z(.14, .08, 0, 'bandpass', 500, 2800); T(700, .06, 'sine', .08, .08, 1200); },
+    correct: () => { K(0, .2, 300, 100, .08); BL(1319, 0, .09, .25); BL(1760, .07, .09, .4); BL(2637, .15, .07, .5); },
+    wrong: () => { V(300, .35, 0, .12, 'sawtooth', 1500, 150); V(220, .5, .2, .12, 'sawtooth', 1200, 90); K(0, .3, 200, 50, .15); },
+    die: () => { K(0, .7, 200, 30, .4); Z(.3, .3, 0, 'lowpass', 3000, 150); V(392, .3, .05, .1, 'sawtooth', 1800, 196); V(294, .4, .3, .1, 'sawtooth', 1500, 130); V(196, .7, .6, .1, 'sawtooth', 1000, 80); },
+    hit: () => { Z(.1, .4, 0, 'bandpass', 2500, 400); K(0, .5, 260, 50, .12); T(1400, .04, 'square', .08, 0, 500); },
+    boom: () => { Z(1, .45, 0, 'lowpass', 2200, 60); K(0, .8, 120, 25, .6); T(70, .7, 'sawtooth', .1, 0, 25); },
+    sparkle: () => { for (let i = 0; i < 4; i++) BL(1500 + Math.random() * 2000, i * .04, .03, .2); },
+    fw: () => { const n = performance.now(); if (n - (X._fw || 0) < 90) return; X._fw = n; Z(.35, .2, 0, 'lowpass', 4500, 300); K(0, .2, 200, 60, .1); for (let i = 0; i < 4; i++) Z(.03, .06, .08 + i * .04 + Math.random() * .03, 'highpass', 5000 + Math.random() * 3000); },
+    fwUp: () => T(500, .45, 'sine', .05, 0, 2400),
+    whoosh: () => Z(.45, .16, 0, 'bandpass', 300, 3500),
+    heart: () => { K(0, .5, 90, 35, .12); K(.2, .4, 80, 32, .12); },
+    drumroll: d => { const n = Math.floor(d * 16); for (let i = 0; i < n; i++) { Z(.05, .05 + .2 * i / n, i / 16, 'bandpass', 1800, 1500); if (i % 4 === 0) K(i / 16, .1 + .2 * i / n, 130, 70, .08); } },
+    partyBeat: n => { for (let i = 0; i < n; i++) { K(i * .3, .6, 150, 40, .14); Z(.06, .12, i * .3 + .15, 'bandpass', 2200, 1800); } },
+    bigFanfare: () => { CH([392, 494, 587], .22, 0, .08); CH([440, 554, 659], .22, .2, .08); CH([523, 659, 784], .25, .4, .09); CH([523, 659, 784, 1047], .9, .65, .1); K(.65, .6, 150, 35, .3); Z(1.2, .2, .65, 'highpass', 4000, 9000); BL(2093, .7, .05, .8); BL(2637, .8, .04, .8); },
+    applause: n => { for (let i = 0; i < n * 8; i++) Z(.04 + Math.random() * .04, .07, Math.random() * n * .7, 'bandpass', 1500 + Math.random() * 3000); },
+    cardOpen: () => { Z(.2, .1, 0, 'highpass', 900, 5000); BL(1047, .05, .06, .3); BL(1568, .12, .06, .4); },
+    cardPick: t => {
+      if (t === 'coin') { K(0, .2, 300, 100, .08); BL(1319, 0, .09, .25); BL(1760, .07, .09, .4); BL(2637, .15, .07, .5); }
+      else if (t === 'lightning') { Z(.35, .28, 0, 'highpass', 2000, 9000); T(150, .3, 'sawtooth', .1, 0, 2000); K(0, .4, 200, 40, .2); }
+      else if (t === 'shining_eyes') { [1319, 1568, 2093, 2637].forEach((f, i) => BL(f, i * .07, .06, .4)); }
+      else { V(330, .25, 0, .09, 'square', 3000, 660); BL(1319, .1, .06, .4); }
+    },
+    glitch: () => { for (let i = 0; i < 12; i++) T(150 + Math.random() * 2200, .04, i % 2 ? 'square' : 'sawtooth', .07, i * .04); Z(.5, .1, 0, 'bandpass', 3000, 400); },
+    taunt: () => { V(392, .3, 0, .1, 'sawtooth', 1500, 370); V(349, .3, .3, .1, 'sawtooth', 1500, 330); V(311, .3, .6, .1, 'sawtooth', 1500, 290); V(262, .8, .9, .1, 'sawtooth', 900, 200); },
+    freeze: () => { [3136, 2637, 2093, 1568].forEach((f, i) => BL(f, i * .06, .05, .4)); Z(.5, .08, 0, 'highpass', 6000); },
+    hack: () => { for (let i = 0; i < 6; i++) T(900 + (i % 3) * 400, .05, 'square', .05, i * .07); },
+    send: () => BL(1175, 0, .05, .15),
+    move: () => T(600, .03, 'sine', .06, 0, 900),
+    place: () => { K(0, .5, 300, 70, .1); Z(.05, .1, 0, 'lowpass', 1800); BL(1047, .03, .04, .2); },
+    remove: () => T(800, .08, 'sine', .08, 0, 300),
+    crash: () => Z(1.4, .25, 0, 'highpass', 4500, 9000),
+    airhorn: () => { CH([466, 622, 740], .6, 0, .08, 'sawtooth', 3200); K(0, .4, 140, 40, .2); },
+    bass: () => K(0, .8, 70, 28, .3),
     laser: () => T(3000, .3, 'sawtooth', .05, 0, 300),
     siren: n => { for (let i = 0; i < n; i++) { T(700, .3, 'sawtooth', .06, i * .6, 1300); T(1300, .3, 'sawtooth', .06, i * .6 + .3, 700); } }
   });
