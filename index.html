@@ -312,7 +312,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
         <div class="vote-stage" id="voteStage1">
           <div class="vote-row">
             <button class="mode-btn" id="showdownBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="쇼다운"><span>쇼다운</span><span class="vote-count" id="showdownCount">0표</span></button>
-            <button class="mode-btn" id="knockoutBtn"><img src="https://media.ffycdn.net/eu/supercell/g9QYVzuSVxq372RUXLte.png?width=2400" alt="녹아웃"><span>녹아웃</span><span class="vote-count" id="knockoutCount">0표</span></button>
+            <button class="mode-btn" id="hideBtn"><img src="https://media.ffycdn.net/eu/supercell/g9QYVzuSVxq372RUXLte.png?width=2400" alt="숨바꼭질"><span>숨바꼭질</span><span class="vote-count" id="hideCount">0표</span></button>
           </div>
           <div class="vote-row">
             <button class="mode-btn" id="speedBtn"><img src="https://media.ffycdn.net/eu/supercell/Q9NfQk57PnnpP9SVvyUR.png?width=2400" alt="스피드런">
@@ -334,6 +334,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
           </div>
         </div>
         
+<div class="vote-stage" id="voteStage3"></div>
 <div class="vote-stage" id="voteStage2">
           <div class="vote-row">
             <button class="mode-btn" id="soloBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="솔로 쇼다운"><span>솔로 쇼다운</span><span class="vote-count" id="soloCount">0표</span></button>
@@ -457,15 +458,15 @@ const CD = [
 ];
 const CFG_TABS = [
   ['공통', [N('voteSec', '투표 시간', '초', 10, 3, 60, 1), N('score', '정답 점수', '점', 10, 1, 100, 1), N('blkLo', '블록 최소 개수', '개', 5, 2, 20, 1), N('blkHi', '블록 최대 개수', '개', 9, 2, 20, 1), N('choices', '선택지 개수', '개', 4, 2, 6, 1), N('cam', '3D 회전 속도', '', 0.012, 0, 0.1, 0.002), N('wrongMs', '오답 후 대기', 'ms', 2000, 300, 8000, 100), B('cards', '정답 후 카드 보상', true), B('inv', '선생님 무적', false), N('camH', '카메라 높이', '', 6.5, 2, 15, 0.5), N('camR', '카메라 거리', '', 9.5, 5, 20, 0.5), CL('blockCol', '블록 색', '#3b82f6'), ...sty('g')], 'g'],
-  ['녹아웃', [N('koSec', '문제당 제한시간', '초', 4, 1, 30, 0.5), N('koLives', '목숨 (라운드마다 회복)', '개', 2, 1, 10, 1), N('koWrongLife', '오답 시 잃는 목숨', '개', 1, 0, 3, 1), N('koWins', '승리에 필요한 라운드', '판', 2, 1, 5, 1), N('koRoundSec', '라운드 제한시간', '초', 60, 15, 300, 5), N('koBreakMs', '라운드 사이 대기', 'ms', 3500, 1000, 10000, 100), ...sty('ko')], 'ko'],
-  ['한방', [B('koAutoEnd', '생존자 1명 남으면 자동 종료', true), ...sty('oh')], 'oh'],
+  /* 녹아웃 탭 제거 */
+['한방', [B('koAutoEnd', '생존자 1명 남으면 자동 종료', true), ...sty('oh')], 'oh'],
   ['스피드런', [N('spSec', '제한시간', '초', 90, 10, 600, 5), N('spBlkLo', '블록 최소 개수', '개', 11, 2, 20, 1), N('spBlkHi', '블록 최대 개수', '개', 17, 2, 20, 1), N('spCam', '회전 속도', '', 0.02, 0, 0.1, 0.002), ...sty('sp')], 'sp'],
   ['도면', [N('bpRevealMs', '오답 시 정답 공개 시간', 'ms', 3800, 500, 15000, 100), ...sty('bp')], 'bp'],
   ['쌓기', [...sty('st')], 'st'],
   ['협동', [N('coopSwap', '채팅 바꿔치기 확률', '%', 60, 0, 100, 5), ...sty('co')], 'co'],
   ['라이어', [N('liarSec', '라운드 시간', '초', 25, 5, 120, 1), N('liarMax', '최대 참가 인원', '명', 8, 3, 20, 1), N('liarBp', '도면 문제 확률', '%', 50, 0, 100, 5), N('liarLeft', '라이어 승리 남은 인원', '명', 2, 1, 6, 1), B('liarChat', '채팅 허용', true), ...sty('li')], 'li'],
   ['카드/효과', [B('c_confusion', '혼란 카드 사용', true), B('c_taunt', '괴롭히기 카드 사용', true), B('c_freeze', '얼음 카드 사용', true), B('c_lightning', '벼락 치기 카드 사용', true), B('c_shining_eyes', '빛나는 눈 카드 사용', true), N('glitchSec', '혼란 지속', '초', 4, 1, 15, 0.5), N('tauntSec', '괴롭히기 지속', '초', 2.5, 1, 10, 0.5), N('freezeSec', '얼음 지속', '초', 3, 1, 15, 0.5), N('coinA', '코인 카드 ①', '점', 5, 1, 50, 1), N('coinB', '코인 카드 ②', '점', 7, 1, 50, 1), N('coinC', '코인 카드 ③', '점', 10, 1, 50, 1), N('cardCount', '보상 카드 장수', '장', 3, 1, 5, 1), N('triple', '벼락 치기 배수', '배', 3, 1, 10, 1), N('shineOp', '빛나는 눈 투명도', '', 0.6, 0.1, 1, 0.05), N('toastMax', '알림 최대 개수', '개', 3, 1, 8, 1), N('toastMs', '알림 표시 시간', 'ms', 3800, 1000, 10000, 100), N('glitchOpacity', '혼란 블록 불투명도', '', 0.85, 0.1, 1, 0.05), N('cardDelay', '카드창 열리는 지연', 'ms', 500, 0, 3000, 50), ...CD], ''], ['소리', [N('vol', '효과음 크기', '%', 100, 0, 100, 5), B('sfxOn', '효과음 켜기', true), B('sfxHover', '마우스 올릴 때 소리', true)], 'snd'],
-['트롤 시상식', [B('trFx1', '① 폭죽 · 대포 · 충격파', true), B('trFx2', '② 번쩍 · 레이저 · 배너 · 별비', true), B('trFx3', '③ 완전 폭주 (초거대 이모지 · 줌 · 무지개)', true)], 'tr'],
+/* 트롤 설정 탭 제거 */
 ['솔로', [...sty('sl')], 'sl'], ['듀오', [...sty('du')], 'du'],
 ['디버그', [], 'dbg']
 ];
@@ -544,6 +545,7 @@ const hostTeacher = us => us.filter(u => u.isTeacher && u.host).sort((a, b) => (
 const spMs = () => S.spSec * 1000;                                   // 스피드런 제한시간(90초)
 const maxLives = () => gameMode === 'onehit' ? 1 : S.koLives;     // 한방 모드는 목숨 1개
 let stackH = [], stackT = [], stackCur = { x: 1, y: 1 };
+let hsState = null, hsN = 4;
 
 /* ---------- 라이어 모드 ---------- */
 let liarState = null, myLV = '', chat = [];
@@ -704,7 +706,7 @@ function fakeTick() {   // 가짜 유저가 투표하고 점수를 얻고 탈락
     const p = pp * (f.act == null ? 1 : f.act);
     if (curStage && FK.vote) {
       if (f.vs !== curStage) { f.vs = curStage; f.vote = ''; f.va = now + 500 + Math.random() * Math.max(1000, S.voteSec * 800); ch = true; }
-      if (!f.vote && now >= f.va) { const o = curStage === 'vote1' ? ['showdown', 'knockout', 'speedrun', 'onehit', 'stack', 'blueprint', 'liar', 'coop'] : ['solo', 'duo']; f.vote = curStage + ':' + o[Math.floor(Math.random() * o.length)]; ch = true; }
+      if (!f.vote && now >= f.va) { const o = curStage === 'vote1' ? ['showdown', 'hide', 'speedrun', 'onehit', 'stack', 'blueprint', 'liar', 'coop'] : ['solo', 'duo']; f.vote = curStage + ':' + o[Math.floor(Math.random() * o.length)]; ch = true; }
     } else if (!curStage && f.vs) { f.vs = ''; f.vote = ''; ch = true; }
     if (!gameStarted || !FK.play) return;
     if (f.sess !== currentSession) { f.sess = currentSession; f.score = f.s0 || 0; f.tr = f.t0 || 0; f.dead = false; f.lives = f.l0 || maxLives(); f.lv = ''; f.kr = 0; ch = true; }
@@ -826,7 +828,7 @@ function getMyPayload() {
     phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
     mode: isTeacher ? gameMode : '', teams: isTeacher ? teams : null, result: isTeacher ? resultData : null,
     lives: myLives, dead: isDead, diedAt, tr: myTroll, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
-    runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, lv: myLV, ko: isTeacher ? koState : null,
+    runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, hs: isTeacher ? hsState : null, lv: myLV, ko: isTeacher ? koState : null,
     vote: myVote,
     host: isTeacher && iAmHost, hostAt: isTeacher ? hostAt : 0, cfg: isTeacher ? cfgDiff() : null, coop: isTeacher ? coopState : null, cr: coopRound, cs: currentSession,
     joinedAt, hb: Date.now()
@@ -880,7 +882,7 @@ function renderAll() {
     if (iAmHost) { iAmHost = false; if (phase.startsWith('vote')) phase = ''; }
     noTeacherSince = 0; S = { ...CFG_DEF, ...(host.cfg || {}) };
     if (host.id !== lastHostId) { lastHostId = host.id; clk = []; pingHost(); }
-    if (host.gameStarted) { gameMode = host.mode || 'solo'; teams = host.teams || {}; runEnd = host.runEnd || 0; if (host.liar) syncLiar(host.liar); if (host.ko) syncKo(host.ko); if (host.coop) coopState = host.coop; if (host.session && (host.session !== endedSession || Date.now() - endedAt > 6000) && (host.session !== currentSession || !gameStarted)) startLocal(host.session); }
+    if (host.gameStarted) { gameMode = host.mode || 'solo'; teams = host.teams || {}; runEnd = host.runEnd || 0; if (host.liar) syncLiar(host.liar); if (host.hs) hsState = host.hs; if (host.ko) syncKo(host.ko); if (host.coop) coopState = host.coop; if (host.session && (host.session !== endedSession || Date.now() - endedAt > 6000) && (host.session !== currentSession || !gameStarted)) startLocal(host.session); }
     else if (gameStarted) endGameLocal();
   } else if (!host) {
     if (gameStarted) {
@@ -919,6 +921,7 @@ function startLocal(session) {
 /* 나만의 다음 문제 */
 function nextProblem() {
   if (!gameStarted || isDead) return;
+  if (gameMode === 'hide') return hsStart();
   if (gameMode === 'coop') return nextCoopProblem();
   if (gameMode === 'stack') return nextStackProblem();
   if (gameMode === 'blueprint') return nextBlueprintProblem();
@@ -950,16 +953,19 @@ function teacherTick(users) {
   if (!isTeacher || !iAmHost) return;
   const now = Date.now();
   if (phase === 'vote1' && now >= voteEnd) {
-    const ks = ['showdown', 'knockout', 'speedrun', 'onehit', 'stack', 'blueprint', 'liar', 'coop'], c = k => users.filter(u => u.vote === 'vote1:' + k).length;
+    const ks = ['showdown', 'hide', 'speedrun', 'onehit', 'stack', 'blueprint', 'liar', 'coop'], c = k => users.filter(u => u.vote === 'vote1:' + k).length;
     const mx = Math.max(...ks.map(c)), top = ks.filter(k => c(k) === mx);
     const best = mx === 0 ? 'showdown' : top[Math.floor(Math.random() * top.length)];   // 무투표는 쇼다운, 동점은 랜덤
-    if (best === 'showdown') { phase = 'vote2'; voteEnd = now + S.voteSec * 1000; sendSoon(); }
+    if (best === 'showdown' || best === 'hide') { phase = best === 'hide' ? 'vote3' : 'vote2'; voteEnd = now + S.voteSec * 1000; sendSoon(); }
     else startMode(best, users);
   }
   else if (phase === 'vote2' && now >= voteEnd) finishVote(users);
   else if (phase === 'vote3' && now >= voteEnd) finishVote3(users);
   else if (gameStarted && gameMode === 'speedrun') { if (runEnd && now >= runEnd) teacherEndGame(); }
-  else if (gameStarted && gameMode === 'knockout') koHostTick(users);
+  else if (gameStarted && gameMode === 'hide') {
+    const H = hsState;
+    if (H) { const hd = H.players.filter(i => !H.seekers.includes(i)), t = hostNow() - H.t0; if (t >= HS_END + 2000 || (t > HS_REL + 1500 && users.filter(u => hd.includes(u.id) && !u.dead).length === 0)) teacherEndGame(); }
+  }
   else if (gameStarted && gameMode === 'onehit' && S.koAutoEnd && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
     if (users.filter(u => !u.dead).length <= 1) { koEndAt = koEndAt || now + 2500; if (now >= koEndAt) { koEndAt = 0; teacherEndGame(); } }
     else koEndAt = 0;
@@ -989,13 +995,15 @@ function renderVote(users) {
   closeSettings();
   $('voteStage1').style.display = stage === 'vote1' ? 'flex' : 'none';
   $('voteStage2').style.display = stage === 'vote2' ? 'flex' : 'none';
+  $('voteStage3').style.display = stage === 'vote3' ? 'flex' : 'none';
+  if (stage === 'vote3') for (let i = 2; i <= 7; i++) { $('hc' + i).innerText = users.filter(u => u.vote === 'vote3:n' + i).length + '표'; $('hb' + i).classList.toggle('voted', myVote === 'vote3:n' + i); }
   ;
   const left = Math.max(0, Math.ceil((t.voteEnd - hostNow()) / 1000));
   scheduleTicks(stage, t.voteEnd);
   $('voteTimer').innerText = left;
   const cnt = k => users.filter(u => u.vote === stage + ':' + k).length + '표';
   const mark = (id, k) => $(id).classList.toggle('voted', myVote === stage + ':' + k);
-  if (stage === 'vote1') { [['showdown', 'showdown'], ['knockout', 'knockout'], ['speedrun', 'speed'], ['onehit', 'onehit'], ['stack', 'stack'], ['blueprint', 'blueprint'], ['liar', 'liar'], ['coop', 'coop']].forEach(([k, id]) => { $(id + 'Count').innerText = cnt(k); mark(id + 'Btn', k); }); }
+  if (stage === 'vote1') { [['showdown', 'showdown'], ['hide', 'hide'], ['speedrun', 'speed'], ['onehit', 'onehit'], ['stack', 'stack'], ['blueprint', 'blueprint'], ['liar', 'liar'], ['coop', 'coop']].forEach(([k, id]) => { $(id + 'Count').innerText = cnt(k); mark(id + 'Btn', k); }); }
   else { $('soloCount').innerText = cnt('solo'); $('duoCount').innerText = cnt('duo'); mark('soloBtn', 'solo'); mark('duoBtn', 'duo'); }
 }
 
@@ -1007,9 +1015,9 @@ function finishVote(users) {
 
 function finishVote3(users) {
   if (!isTeacher || phase !== 'vote3') return;
-  const ks = ['speedrun', 'onehit', 'stack', 'blueprint', 'liar'], n = k => users.filter(u => u.vote === 'vote3:' + k).length;
-  const mx = Math.max(...ks.map(n)), top = ks.filter(k => n(k) === mx);
-  startMode(top[Math.floor(Math.random() * top.length)], users);   // 동점/무투표는 랜덤
+  const ks = [2, 3, 4, 5, 6, 7], n = k => users.filter(u => u.vote === 'vote3:n' + k).length, mx = Math.max(...ks.map(n)), top = ks.filter(k => n(k) === mx);
+  hsN = Math.max(1, Math.min(top[Math.floor(Math.random() * top.length)], users.length));
+  startMode('hide', users);
 }
 
 function startMode(mode, users) {
@@ -1029,6 +1037,7 @@ function startMode(mode, users) {
     liarState = { session, players: ps, liarId: ps[Math.floor(Math.random() * ps.length)], bp: Math.random() * 100 < S.liarBp, round: 1, roundEnd: Date.now() + liarMs(), out: [], msg: '', winner: '', pts: {} };
   }
 
+  if (mode === 'hide') { const ids = users.map(u => u.id).sort(() => Math.random() - 0.5).slice(0, hsN); hsState = { session, players: ids, seekers: ids.slice(0, hsN >= 5 ? 2 : 1), n: hsN, t0: session }; }
   if (mode === 'coop') {   // 2명씩 팀: 한 명은 설명, 한 명은 쌓기 (홀수면 남는 1명은 마지막 팀의 쌓기)
     const ids = users.map(u => u.id).sort(() => Math.random() - 0.5), ts = [];
     for (let i = 0; i + 1 < ids.length; i += 2) ts.push({ d: ids[i], b: [ids[i + 1]] });
@@ -1037,12 +1046,12 @@ function startMode(mode, users) {
   }
   startLocal(session);
   updatePresence();
-  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState, coop: coopState, ko: koState, cfg: cfgDiff() } }); } catch (e) {}
+  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState, hs: hsState, coop: coopState, ko: koState, cfg: cfgDiff() } }); } catch (e) {}
 }
 
 async function teacherEndGame() {
   if (!isTeacher || !gameStarted) return;
-  resultData = buildResult(); resultData.troll = buildTroll(); resultData.troll.fx = [!!S.trFx1, !!S.trFx2, !!S.trFx3]; const res = resultData;
+  resultData = buildResult(); resultData.troll = buildTroll(); resultData.troll.fx = [true, true, false]; const res = resultData;
   endGameLocal(); showResult(res); updatePresence();
   try { await room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'end', result: res } }); } catch (err) {}
 }
@@ -1075,7 +1084,7 @@ async function connect() {
     if (isTeacher && iAmHost && payload.action === 'start' && gameStarted && payload.session > currentSession) return;   // 동시에 시작하면 먼저 시작한 쪽만 인정
     if (payload.action === 'start') { iAmHost = false; if (phase.startsWith('vote')) phase = ''; }
     if (payload.action === 'end') { endGameLocal(); sendSoon(); if (payload.result && payload.result.session === currentSession) showResult(payload.result); }
-    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; if (payload.ko) koState = payload.ko; if (payload.coop) coopState = payload.coop; if (payload.cfg) S = { ...CFG_DEF, ...payload.cfg }; startLocal(payload.session); }
+    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; if (payload.hs) hsState = payload.hs; if (payload.ko) koState = payload.ko; if (payload.coop) coopState = payload.coop; if (payload.cfg) S = { ...CFG_DEF, ...payload.cfg }; startLocal(payload.session); }
   });
 
   ch.on('broadcast', { event: 'ping' }, ({ payload }) => {
@@ -1101,6 +1110,8 @@ async function connect() {
     else if (payload.type === 'freeze') triggerFreezeEffect();
   });
 
+  ch.on('broadcast', { event: 'hspos' }, ({ payload }) => hsRecv(payload));
+  ch.on('broadcast', { event: 'hscatch' }, ({ payload }) => hsCaught(payload));
   ch.subscribe(status => {
     if (ch !== room) return;
     if (status === 'SUBSCRIBED') {
@@ -1775,7 +1786,7 @@ setInterval(koTick, 100);
 let shownSess = 0, resT = [], trollInt = null, parts = [], fxOn = false, lastTk = 0;
 const rt = (f, d) => resT.push(setTimeout(f, d));
 function buildResult() {
-  const us = collectUsers(), duo = gameMode === 'duo' || gameMode === 'knockout', ko = gameMode === 'knockout' || gameMode === 'onehit';
+  const us = collectUsers().filter(u => gameMode !== 'hide' || (hsState && hsState.players.includes(u.id))), duo = gameMode === 'duo' || gameMode === 'knockout', ko = gameMode === 'knockout' || gameMode === 'onehit';
   const r = { session: currentSession, at: hostNow(), mode: gameMode, duo };
   if (duo) {
     r.teams = [0, 1].map(k => { const m = us.filter(u => teams[u.id] === k); return { k, m: m.map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: u.score || 0 })), score: gameMode === 'knockout' ? ((koState && koState.wins[k]) || 0) : m.reduce((s, u) => s + (u.score || 0), 0) }; }).sort((a, b) => b.score - a.score);
@@ -1965,7 +1976,7 @@ $('teacherCode').addEventListener('input', e => {
 $('startBtn').onclick = () => { if (!isTeacher) return; phase = 'vote1'; voteEnd = Date.now() + S.voteSec * 1000; myVote = ''; updatePresence(); };
 $('endBtn').onclick = teacherEndGame;
 $('lobbyBtn').onclick = closeResult;
-[['showdownBtn', 'showdown'], ['knockoutBtn', 'knockout'], ['speedBtn', 'speedrun'], ['onehitBtn', 'onehit'], ['stackBtn', 'stack'], ['blueprintBtn', 'blueprint'], ['liarBtn', 'liar'], ['coopBtn', 'coop'], ['soloBtn', 'solo'], ['duoBtn', 'duo']]
+[['showdownBtn', 'showdown'], ['hideBtn', 'hide'], ['speedBtn', 'speedrun'], ['onehitBtn', 'onehit'], ['stackBtn', 'stack'], ['blueprintBtn', 'blueprint'], ['liarBtn', 'liar'], ['coopBtn', 'coop'], ['soloBtn', 'solo'], ['duoBtn', 'duo']]
   .forEach(([id, k]) => { $(id).onclick = () => { if (!curStage) return; myVote = curStage + ':' + k; updatePresence(); }; });
 $('changeProfileBtn').onclick = () => { closeSettings(); $('defaultUserListUI').style.display = 'none'; $('profilePickerUI').style.display = 'flex'; };
 $('closeProfilePickerBtn').onclick = () => { $('profilePickerUI').style.display = 'none'; $('defaultUserListUI').style.display = 'flex'; };
@@ -2007,6 +2018,150 @@ setInterval(() => { if (gameStarted && $('resultOverlay').classList.contains('ac
 $('cfgBtn').onclick = () => { if (settingsOpen) closeSettings(); else openSettings(); };
 $('cfgTabs').addEventListener('wheel', e => { e.currentTarget.scrollLeft += e.deltaY; e.preventDefault(); }, { passive: false });
 setInterval(() => { if (isTeacher && settingsOpen) dbgFkRender(); }, 1000);
+/* ===== 숨바꼭질 모드 ===== */
+const HS = { card: 10000, hide: 10000, hunt: 60000 }, HS_REL = HS.card + HS.hide, HS_END = HS_REL + HS.hunt;
+let hsT = null, hsPeers = {}, hsMe = null, hsCatch = 0, hsStill = 0, hsKeys = {}, hsYaw = .8, hsLast = 0, hsEnded = false, hsLoop = 0;
+const hsEl = document.createElement('div');
+hsEl.style.cssText = 'position:fixed;inset:0;z-index:1500;background:#fff;display:none';
+hsEl.innerHTML = '<div id="hsC" style="position:absolute;inset:0"></div><div id="hsHud" style="position:absolute;top:10px;left:0;right:0;text-align:center;font:bold 18px Malgun Gothic;color:#1e293b;z-index:3"></div><button id="hsEnd" style="position:absolute;top:8px;right:8px;z-index:6;padding:6px 14px;border:none;border-radius:8px;background:#ef4444;color:#fff;font-weight:bold;display:none">종료</button><div id="hsCards" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;gap:16px;z-index:4;background:rgba(255,255,255,.92);pointer-events:none"></div><div id="hsPaint" style="position:absolute;inset:0;z-index:5;overflow:hidden;display:none;pointer-events:none"></div>';
+document.body.appendChild(hsEl);
+$('hsEnd').onclick = teacherEndGame;
+$('voteStage3').innerHTML = [2, 3, 4, 5, 6, 7].map(n => `<button class="mode-btn" id="hb${n}" style="width:120px"><span>${n}명</span><span class="vote-count" id="hc${n}">0표</span></button>`).join('');
+[2, 3, 4, 5, 6, 7].forEach(n => { $('hb' + n).onclick = () => { if (!curStage) return; myVote = curStage + ':n' + n; updatePresence(); }; });
+const hsRole = () => !hsState ? '' : !hsState.players.includes(myId) ? 'w' : hsState.seekers.includes(myId) ? 's' : 'h';
+const hsPhase = () => { const e = hostNow() - hsState.t0; return e < HS.card ? 0 : e < HS_REL ? 1 : e < HS_END ? 2 : 3; };
+const hsBlocks = i => seeded((hsState.session + i * 7919) >>> 0, () => generateValidBlocks(20, 27));   // 3x3x3 안이라 최대 27개
+function hsModel(i, s) {
+  const g = new THREE.Group(), geo = new THREE.BoxGeometry(1, 1, 1), eg = new THREE.EdgesGeometry(geo), mat = new THREE.MeshStandardMaterial({ color: S.blockCol }), lm = new THREE.LineBasicMaterial({ color: 0x1e3a8a });
+  hsBlocks(i).forEach(b => { const m = new THREE.Mesh(geo, mat); m.position.set(b.x - 1, b.z + .5, b.y - 1); g.add(m); const l = new THREE.LineSegments(eg, lm); l.position.copy(m.position); g.add(l); });
+  g.scale.setScalar(s); return g;
+}
+function hsPlayer(id) {
+  const g = new THREE.Group(), f = new THREE.MeshBasicMaterial({ color: 0xffffff }), sd = new THREE.MeshBasicMaterial({ color: 0x94a3b8 });
+  const av = new THREE.Mesh(new THREE.BoxGeometry(.9, .9, .18), [sd, sd, sd, sd, f, f]); av.position.y = .45; g.add(av);
+  const u = activeUsers.find(x => x.id === id), url = id === myId ? selectedImage : (u && u.avatarUrl);
+  if (url) new THREE.TextureLoader().setCrossOrigin('anonymous').load(url, t => { f.map = t; f.needsUpdate = true; });
+  g.userData.pid = id; hsT.sc.add(g);
+  return hsT.players[id] = { g, av, tm: [], x: 0, z: 0, ry: 0, tf: false, ti: 0, rot: 0 };
+}
+function hsInit() {
+  if (hsT) return;
+  const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(50, 1, .1, 200), rd = new THREE.WebGLRenderer({ antialias: true });
+  sc.background = new THREE.Color(0xffffff); $('hsC').appendChild(rd.domElement);
+  sc.add(new THREE.AmbientLight(0xffffff, .85)); const dl = new THREE.DirectionalLight(0xffffff, .5); dl.position.set(8, 20, 10); sc.add(dl);
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshBasicMaterial({ color: 0xf1f5f9 })); fl.rotation.x = -Math.PI / 2; sc.add(fl);
+  const deco = new THREE.Group(); sc.add(deco);
+  hsT = { sc, cam, rd, deco, players: {}, sent: 0, w: 0, h: 0 };
+  const cv = rd.domElement; let dn = null;   // 드래그는 시점 회전, 짧게 클릭만 잡기로 인정
+  cv.addEventListener('pointerdown', e => { dn = { x: e.clientX, y: e.clientY, lx: e.clientX, t: performance.now() }; });
+  cv.addEventListener('pointermove', e => { if (!dn) return; hsYaw -= (e.clientX - dn.lx) * .01; dn.lx = e.clientX; });
+  cv.addEventListener('pointerup', e => { if (dn && Math.hypot(e.clientX - dn.x, e.clientY - dn.y) < 6 && performance.now() - dn.t < 500) hsClick(e); dn = null; });
+  cv.addEventListener('pointercancel', () => { dn = null; });
+}
+function hsClick(ev) {
+  if (hsRole() !== 's' || hsPhase() !== 2 || isDead || hsCatch >= 4) return;
+  const T = hsT, r = T.rd.domElement.getBoundingClientRect(), rc = new THREE.Raycaster();
+  rc.setFromCamera(new THREE.Vector2((ev.clientX - r.left) / r.width * 2 - 1, -((ev.clientY - r.top) / r.height * 2 - 1)), T.cam);
+  const vis = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+  const gs = hsState.players.filter(i => !hsState.seekers.includes(i) && T.players[i]).map(i => T.players[i].g);
+  const hit = rc.intersectObjects([...gs, T.deco], true).filter(x => vis(x.object))[0];   // 가장 앞에 보이는 것만
+  if (!hit) return;
+  let o = hit.object; while (o && !o.userData.pid) o = o.parent;
+  if (!o) return;
+  const id = o.userData.pid, u = activeUsers.find(x => x.id === id);
+  if (!u || u.dead) return;
+  hsCatch++; myScore += 1; SFX.correct(); updatePresence();
+  try { room.send({ type: 'broadcast', event: 'hscatch', payload: { to: id, s: currentSession } }); } catch (er) {}
+  showToast(u.avatarUrl, u.nickname || '익명', '🎯 잡았다! (' + hsCatch + '/4)', '#22c55e');
+}
+function hsCaught(p) {
+  if (!p || p.to !== myId || p.s !== currentSession || isDead || hsRole() !== 'h' || hsPhase() !== 2) return;
+  isDead = true; diedAt = Date.now(); SFX.die(); sendSoon();
+}
+function hsRecv(p) { if (p && p.id !== myId && p.s === currentSession) hsPeers[p.id] = p; }
+function hsCards() {
+  const box = $('hsCards'); box.innerHTML = '';
+  const go = tex => {
+    const rd = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }), sc = new THREE.Scene(), cam = new THREE.OrthographicCamera(-3, 3, 3, -3, .1, 60);
+    rd.setSize(110, 110); sc.background = new THREE.Color(0xffffff); sc.add(new THREE.AmbientLight(0xffffff, .95));
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshBasicMaterial({ color: 0xf1f5f9 })); fl.rotation.x = -Math.PI / 2; sc.add(fl);
+    const ch = new THREE.Mesh(new THREE.BoxGeometry(.9, .9, .18), new THREE.MeshBasicMaterial(tex ? { map: tex } : { color: 0x94a3b8 })); ch.position.set(2.1, .45, 2.1); sc.add(ch);
+    [0, 1, 2].forEach(i => {
+      const m = hsModel(i, 1); sc.add(m);
+      const imgs = [['옆', [10, 1.5, 0], 0, 1], ['앞', [0, 1.5, 10], 0, 1], ['위', [0, 12, 0], 1, 0]].map(([n, p, top]) => {
+        cam.position.set(...p); cam.up.set(0, top ? 0 : 1, top ? -1 : 0); cam.lookAt(0, top ? 0 : 1.5, 0); rd.render(sc, cam);
+        let u = ''; try { u = rd.domElement.toDataURL(); } catch (e) {}
+        return `<div style="font-size:11px;color:#475569"><img src="${u}" width="90" height="90" style="border:1px solid #e2e8f0;display:block"><b>${n}</b></div>`;
+      }).join('');
+      sc.remove(m);
+      box.insertAdjacentHTML('beforeend', `<div style="background:#fff;border:2px solid #e2e8f0;border-radius:14px;padding:10px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,.15)"><b>모델 ${i + 1}</b>${imgs}</div>`);
+    });
+    try { rd.forceContextLoss(); } catch (e) {} rd.dispose();
+  };
+  new THREE.TextureLoader().setCrossOrigin('anonymous').load(selectedImage, go, undefined, () => go(null));
+}
+function hsStart() {
+  hsInit(); const T = hsT, role = hsRole();
+  hsCatch = 0; hsStill = 0; hsPeers = {}; hsEnded = false; hsKeys = {};
+  Object.values(T.players).forEach(p => T.sc.remove(p.g)); T.players = {};
+  while (T.deco.children.length) T.deco.remove(T.deco.children[0]);
+  seeded((hsState.session + 99) >>> 0, () => { for (let i = 0; i < 12; i++) { const m = hsModel(i % 3, .3); m.position.set(Math.random() * 30 - 15, 0, Math.random() * 30 - 15); m.rotation.y = Math.floor(Math.random() * 4) * Math.PI / 2; T.deco.add(m); } });
+  hsMe = { x: Math.random() * 24 - 12, z: Math.random() * 24 - 12, ry: 0, tf: false, ti: 0, rot: 0 };
+  hsState.players.forEach(hsPlayer);
+  const P = $('hsPaint'); P.innerHTML = ''; P.style.background = '';
+  if (role === 's') {   // 술래 시야: 배경색 페인트가 번져 화면을 덮음
+    for (let i = 0; i < 50; i++) { const d = document.createElement('div'), s = 30 + Math.random() * 40, rr = () => 40 + Math.random() * 20; d.style.cssText = `position:absolute;left:${Math.random() * 110 - 5}%;top:${Math.random() * 110 - 5}%;width:${s}vmax;height:${s}vmax;margin:-${s / 2}vmax 0 0 -${s / 2}vmax;border-radius:${rr()}% ${rr()}% ${rr()}% ${rr()}%;background:#f1f5f9;transform:scale(0);transition:transform .5s ${i * .03}s`; P.appendChild(d); }
+    requestAnimationFrame(() => requestAnimationFrame(() => P.childNodes.forEach(d => { d.style.transform = 'scale(1)'; })));
+    setTimeout(() => { P.style.background = '#f1f5f9'; }, 2000);
+  }
+  if (role === 'h') hsCards();
+  if (!hsLoop) { hsLast = performance.now(); hsLoop = requestAnimationFrame(hsFrame); }
+}
+function hsFrame() {
+  if (!gameStarted || gameMode !== 'hide' || !hsState || !hsT) { hsEl.style.display = 'none'; hsLoop = 0; return; }
+  hsLoop = requestAnimationFrame(hsFrame);
+  const T = hsT, now = performance.now(), dt = Math.min(.05, (now - hsLast) / 1000), role = hsRole(), e = hostNow() - hsState.t0, ph = hsPhase(), me = hsMe, k = hsKeys;
+  hsLast = now; hsEl.style.display = 'block'; $('hsEnd').style.display = isTeacher ? 'block' : 'none';
+  const c = $('hsC'), w = c.clientWidth, h = c.clientHeight;
+  if (T.w !== w || T.h !== h) { T.w = w; T.h = h; T.rd.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); T.rd.setSize(w, h); T.cam.aspect = w / h; T.cam.updateProjectionMatrix(); }
+  $('hsCards').style.display = (role === 'h' && ph === 0) ? 'flex' : 'none';
+  $('hsPaint').style.display = (role === 's' && ph < 2) ? 'block' : 'none';
+  if (role === 'h' || role === 's') {
+    const can = !isDead && ((role === 'h' && ph >= 1 && ph < 3) || (role === 's' && ph === 2));
+    const a = (k.w ? 1 : 0) - (k.s ? 1 : 0), b = (k.d ? 1 : 0) - (k.a ? 1 : 0);
+    let dx = -Math.sin(hsYaw) * a + Math.cos(hsYaw) * b, dz = -Math.cos(hsYaw) * a - Math.sin(hsYaw) * b; const L = Math.hypot(dx, dz);
+    if (can && !me.tf && L) { dx /= L; dz /= L; me.x = Math.max(-17, Math.min(17, me.x + dx * 5 * dt)); me.z = Math.max(-17, Math.min(17, me.z + dz * 5 * dt)); me.ry = Math.atan2(dx, dz); hsStill = 0; }
+    else if (can && !me.tf && role === 'h') { hsStill += dt; if (hsStill >= 1.5) { me.tf = true; me.ti = Math.floor(Math.random() * 3); me.rot = 0; SFX.pop(); } }   // 1.5초 멈추면 쌓기나무로 변신
+    if (now - T.sent > 100) { T.sent = now; try { if (room && isSubscribed) Promise.resolve(room.send({ type: 'broadcast', event: 'hspos', payload: { id: myId, x: me.x, z: me.z, ry: me.ry, tf: me.tf, ti: me.ti, rot: me.rot, s: currentSession } })).catch(() => {}); } catch (er) {} }
+  }
+  let first = null;
+  hsState.players.forEach(id => {
+    const p = T.players[id] || hsPlayer(id), mine = id === myId, u = activeUsers.find(x => x.id === id), pe = hsPeers[id];
+    if (mine) Object.assign(p, { x: me.x, z: me.z, ry: me.ry, tf: me.tf, ti: me.ti, rot: me.rot });
+    else if (pe) { p.x += (pe.x - p.x) * .3; p.z += (pe.z - p.z) * .3; p.ry = pe.ry; p.tf = pe.tf; p.ti = pe.ti; p.rot = pe.rot; }
+    const gone = mine ? isDead : (!u || u.dead);
+    p.g.visible = !gone; p.g.position.set(p.x, 0, p.z); p.av.visible = !p.tf; p.av.rotation.y = p.ry;
+    if (p.tf && !p.tm[p.ti]) { p.tm[p.ti] = hsModel(p.ti, .3); p.g.add(p.tm[p.ti]); }
+    p.tm.forEach((m, i) => { if (m) { m.visible = p.tf && i === p.ti; m.rotation.y = p.rot * Math.PI / 2; } });
+    if (!gone && !first) first = p;
+  });
+  const tp = (role !== 'w' && !isDead) ? T.players[myId] : first;   // 잡히면 다른 사람 화면 관전
+  if (tp) { T.cam.position.set(tp.x + Math.sin(hsYaw) * 9, 7, tp.z + Math.cos(hsYaw) * 9); T.cam.lookAt(tp.x, .5, tp.z); }
+  if (ph === 3 && !hsEnded) { hsEnded = true; if (role === 'h' && !isDead) { myScore += hsState.n >= 5 ? 2 : 1; sendSoon(); } }   // 끝까지 살아남으면 1점 (5명부터 2점)
+  const sec = t => Math.max(0, Math.ceil(t / 1000));
+  $('hsHud').textContent = role === 'w' ? '👀 관전 중' : isDead ? '💀 잡혔어요! 관전 중'
+    : ph === 0 ? (role === 'h' ? '카드를 확인하세요 · ' + sec(HS.card - e) + '초' : '🎨 도망자가 숨는 중…')
+    : ph === 1 ? (role === 'h' ? '숨으세요! 1.5초 멈추면 변신 (Q/E 회전 · Space 해제) · ' + sec(HS_REL - e) + '초' : '🎨 시야 해제까지 ' + sec(HS_REL - e) + '초')
+    : ph === 2 ? (role === 's' ? '🔍 클릭으로 잡기 ' + hsCatch + '/4' : '🏃 도망치세요!') + ' · 남은 ' + sec(HS_END - e) + '초' : '끝!';
+  T.rd.render(T.sc, T.cam);
+}
+addEventListener('keydown', e => {
+  if (!gameStarted || gameMode !== 'hide' || /INPUT|TEXTAREA/.test(e.target.tagName || '')) return;
+  const k = e.key.toLowerCase(); hsKeys[k] = true;
+  if (!hsMe || !hsMe.tf) return;
+  if (k === ' ') { hsMe.tf = false; hsStill = 0; e.preventDefault(); } else if (k === 'q') hsMe.rot--; else if (k === 'e') hsMe.rot++;
+});
+addEventListener('keyup', e => { hsKeys[e.key.toLowerCase()] = false; });
 applyUIState(false); syncNickname(); fitScreen(); connect();
 
 
