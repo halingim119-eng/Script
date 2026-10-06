@@ -27,7 +27,9 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .btn-red{background:#ef4444}.btn-red:hover{background:#dc2626}
 .btn-outline{background:#f8fafc;color:#475569;border:1px solid #cbd5e1}.btn-outline:hover{background:#f1f5f9;color:#1e293b}
 .teacher-btn-group{width:100%;display:flex;gap:8px;flex:none}
-.right-card-container{flex:1;height:490px;display:flex;flex-direction:column}
+.right-card-container{flex:1 1 0;min-width:0;height:490px;max-height:490px;display:flex;flex-direction:column}
+.right-card-container>.card{min-width:0;max-width:100%}
+.cfg-body{overflow-x:hidden}
 .right-card{width:100%;height:100%;position:relative}
 .board-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f1f5f9}
 .board-title{font-size:16px;font-weight:bold;color:#1e293b}
@@ -37,6 +39,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .cfg-open-btn{display:none;border:none;background:transparent;color:#b91c1c;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;padding:0 2px}
 .cfg-open-btn.on{text-decoration:underline}
 .right-card-container.split{gap:10px}
+.right-card-container.split>.card{min-height:0;min-width:0;overflow:hidden}
 .right-card-container.split #defaultUserListUI{height:auto;flex:0 0 36%;min-height:0;padding:14px 16px}
 .right-card-container.split #settingsUI{height:auto;flex:1;min-height:0;padding:12px 14px}
 .right-card-container.split #settingsUI .board-header{margin-bottom:6px;padding-bottom:4px}
@@ -48,12 +51,12 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .fk-row input[type=text]{padding:2px 4px;border:1px solid #cbd5e1;border-radius:5px;font-size:11px}
 #resBanner{color:#7c3aed;text-shadow:0 2px 0 #fde68a}
 #resBanner.on.c3{background:linear-gradient(90deg,#f43f5e,#f59e0b,#22c55e,#06b6d4,#8b5cf6,#f43f5e);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;animation:bnr .25s ease-in-out infinite alternate,rbs .8s linear infinite}
-.troll-pod.tfx-a .pod-block{animation:tBlk .3s ease-in-out infinite alternate}
+.troll-pod.tfx-a .pod-block{filter:brightness(1.15)}
 @keyframes tBlk{from{filter:brightness(1) saturate(1)}to{filter:brightness(1.4) saturate(1.8)}}
-.troll-pod.tfx-b .pod-col.on .pod-avatar{animation:tBounce .45s ease-in-out infinite alternate,tGlow 1s linear infinite}
-.troll-pod.tfx-c .pod-col.on .pod-avatar{animation:tBounce .3s ease-in-out infinite alternate,tGlow .6s linear infinite,tHue 1s linear infinite}
+.troll-pod.tfx-b .pod-col.on .pod-avatar{animation:tBounce .45s ease-in-out infinite alternate;will-change:transform}
+.troll-pod.tfx-c .pod-col.on .pod-avatar{animation:tBounce .3s ease-in-out infinite alternate;will-change:transform}
 @keyframes tHue{to{filter:hue-rotate(360deg)}}
-#trollPodium.show.tfx-c{animation:tZoom .35s ease-in-out infinite alternate}
+#trollPodium.show.tfx-c{animation:tZoom .6s ease-in-out infinite alternate;will-change:transform}
 @keyframes tZoom{from{transform:scale(1)}to{transform:scale(1.07) rotate(.6deg)}}
 .user-list-container{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:4px}
 .user-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-radius:10px;border:1px solid #f1f5f9}
@@ -1653,7 +1656,7 @@ const SFX = (() => {
     hit: () => { Z(.14, .38, 0, 'lowpass', 4500, 180); T(200, .16, 'square', .2, 0, 40); T(1100, .05, 'sawtooth', .1, 0, 300); },
     boom: () => { Z(.9, .4, 0, 'lowpass', 1600, 50); T(90, .6, 'sine', .4, 0, 28); T(55, .8, 'sawtooth', .08, .02, 25); },
     sparkle: () => { for (let i = 0; i < 5; i++) T(1800 + Math.random() * 2400, .12, 'sine', .05, i * .035); },
-    fw: () => { const n = performance.now(); if (n - (X._fw || 0) < 90) return; X._fw = n; Z(.4, .18, 0, 'lowpass', 4000, 250); for (let i = 0; i < 5; i++) Z(.03, .07, .08 + i * .04 + Math.random() * .03, 'highpass', 5000 + Math.random() * 3000); T(1200 + Math.random() * 1500, .1, 'sine', .04, .05); },
+    fw: () => { const n = performance.now(); if (n - (X._fw || 0) < 180) return; X._fw = n; Z(.4, .18, 0, 'lowpass', 4000, 250); for (let i = 0; i < 5; i++) Z(.03, .07, .08 + i * .04 + Math.random() * .03, 'highpass', 5000 + Math.random() * 3000); T(1200 + Math.random() * 1500, .1, 'sine', .04, .05); },
     fwUp: () => T(300, .5, 'sine', .05, 0, 2200),
     cardOpen: () => { Z(.3, .12, 0, 'highpass', 700, 6000); [659, 784, 1047].forEach((f, i) => T(f, .14, 'triangle', .08, .05 + i * .07)); },
     cardPick: t => {
@@ -1696,7 +1699,7 @@ const SFX = (() => {
     hit: () => { Z(.1, .4, 0, 'bandpass', 2500, 400); K(0, .5, 260, 50, .12); T(1400, .04, 'square', .08, 0, 500); },
     boom: () => { Z(1, .45, 0, 'lowpass', 2200, 60); K(0, .8, 120, 25, .6); T(70, .7, 'sawtooth', .1, 0, 25); },
     sparkle: () => { for (let i = 0; i < 4; i++) BL(1500 + Math.random() * 2000, i * .04, .03, .2); },
-    fw: () => { const n = performance.now(); if (n - (X._fw || 0) < 90) return; X._fw = n; Z(.35, .2, 0, 'lowpass', 4500, 300); K(0, .2, 200, 60, .1); for (let i = 0; i < 4; i++) Z(.03, .06, .08 + i * .04 + Math.random() * .03, 'highpass', 5000 + Math.random() * 3000); },
+    fw: () => { const n = performance.now(); if (n - (X._fw || 0) < 180) return; X._fw = n; Z(.35, .2, 0, 'lowpass', 4500, 300); K(0, .2, 200, 60, .1); for (let i = 0; i < 4; i++) Z(.03, .06, .08 + i * .04 + Math.random() * .03, 'highpass', 5000 + Math.random() * 3000); },
     fwUp: () => T(500, .45, 'sine', .05, 0, 2400),
     whoosh: () => Z(.45, .16, 0, 'bandpass', 300, 3500),
     heart: () => { K(0, .5, 90, 35, .12); K(.2, .4, 80, 32, .12); },
@@ -1724,6 +1727,10 @@ const SFX = (() => {
     bass: () => K(0, .8, 70, 28, .3),
     laser: () => T(3000, .3, 'sawtooth', .05, 0, 300),
     siren: n => { for (let i = 0; i < n; i++) { T(700, .3, 'sawtooth', .06, i * .6, 1300); T(1300, .3, 'sawtooth', .06, i * .6 + .3, 700); } }
+  });
+  Object.assign(X, {
+    podRise: () => { V(150, .5, 0, .09, 'sawtooth', 3200, 700); T(300, .45, 'triangle', .07, 0, 1400); Z(.5, .1, 0, 'highpass', 1500, 8000); },
+    podHit: r => { K(0, .8, 180, 32, .35); Z(.3, .32, 0, 'lowpass', 4000, 200); CH(r === 0 ? [523, 659, 784, 1047] : r === 1 ? [440, 554, 659] : [392, 494, 587], .55, 0, .09, 'sawtooth', 3400); BL(r === 0 ? 2093 : r === 1 ? 1760 : 1568, .04, .07, .7); BL(r === 0 ? 2637 : 2093, .11, .05, .7); Z(.5, .1, .03, 'highpass', 5000, 9500); }
   });
   return X;
 })();
@@ -1798,10 +1805,10 @@ function fxRocket() { parts.push({ k: 'r', x: innerWidth * (.1 + Math.random() *
 function barrage(n) { for (let k = 0; k < n; k++) rt(fxRocket, k * 180); }
 function revealPod(el, l, tr, T) {   // T[i]: i등(0=1등)이 공개되는 시각
   [2, 1, 0].filter(i => l[i]).forEach(i => rt(() => {
-    const c = el.querySelector('.r' + (i + 1)); if (!c) return; c.classList.add('on'); SFX.whoosh();
-    rt(() => { SFX.boom(); SFX.sparkle(); if (tr) parts.push({ k: 'ring', x: innerWidth / 2, y: innerHeight * .6, r: 10, life: 30, c: ['#facc15', '#60a5fa', '#fb923c'][i] }); }, 500);
+    const c = el.querySelector('.r' + (i + 1)); if (!c) return; c.classList.add('on'); SFX.podRise();
+    rt(() => { SFX.podHit(i); if (tr) parts.push({ k: 'ring', x: innerWidth / 2, y: innerHeight * .6, r: 10, life: 30, c: ['#facc15', '#60a5fa', '#fb923c'][i] }); }, 500);
     if (tr) { el.classList.add('shaking'); rt(() => el.classList.remove('shaking'), i === 0 ? 2200 : 1000); }
-    if (i === 0) { SFX.bigFanfare(); SFX.applause(3); barrage(tr ? 14 : 7); }
+    if (i === 0) { SFX.bigFanfare(); SFX.applause(2); barrage(tr ? 8 : 6); }
   }, T[i]));
 }
 function showResult(res) {
@@ -1823,7 +1830,7 @@ function showResult(res) {
     [3200, 3600, 4000].forEach(d => rt(SFX.heart, B + d));
     [5800, 6400, 6900].forEach(d => rt(SFX.heart, B + d));
     rt(() => { tp.classList.add('shaking'); SFX.drumroll(2.4); }, B + 7000);
-    rt(() => { trollInt = setInterval(trollTick, Math.max(170, 600 - trollLv * 140)); }, B + 5000);
+    rt(() => { trollInt = setInterval(trollTick, Math.max(380, 700 - trollLv * 80)); }, B + 5000);
     rt(unlock, B + 12500); trollFxStart(res.troll.fx, B);
   }
   if (!fxOn) { fxOn = true; fxLoop(); }
@@ -1838,8 +1845,8 @@ function fxBoom(x, y, n) { for (let i = 0; i < n; i++) { const a = Math.random()
 /* ===== 트롤 시상식 초화려 효과 (배경은 그대로) ===== */
 let trollLv = 0, trollFl = [0, 0, 0], deco = [];
 function fxStrobe() { const s = $('strobe'); s.style.background = trollFl[2] ? `hsl(${Math.random() * 360},100%,60%)` : ''; s.classList.remove('f'); void s.offsetWidth; s.classList.add('f'); }
-function pushLaser(l) { deco.push({ k: 'laser', ox: Math.random(), a0: -Math.PI / 2, am: .7 + Math.random() * .6, sp: 1.5 + Math.random() * 3, h: Math.random() * 360, b: performance.now(), l: l || 3500 }); }
-function pushEmo() { deco.push({ k: 'emo', t: ['😈', '🔥', '💥', '💀', '🎉', '👑', '⚡', '🌈'][Math.floor(Math.random() * 8)], x: .1 + Math.random() * .8, y: .25 + Math.random() * .55, b: performance.now(), l: 1100 }); }
+function pushLaser(l) { if (deco.filter(d => d.k === 'laser').length >= 4) return; deco.push({ k: 'laser', ox: Math.random(), a0: -Math.PI / 2, am: .7 + Math.random() * .6, sp: 1.5 + Math.random() * 3, h: Math.random() * 360, b: performance.now(), l: l || 3500 }); }
+function pushEmo() { if (deco.filter(d => d.k === 'emo').length >= 3) return; deco.push({ k: 'emo', t: ['😈', '🔥', '💥', '💀', '🎉', '👑', '⚡', '🌈'][Math.floor(Math.random() * 8)], x: .1 + Math.random() * .8, y: .25 + Math.random() * .55, b: performance.now(), l: 1100 }); }
 function fxCannon(side, n) {   // 화면 양쪽 아래에서 색종이 대포
   const W = innerWidth, H = innerHeight;
   for (let i = 0; i < n; i++) {
@@ -1857,10 +1864,10 @@ function fxDeco(x, cv) {   // 레이저 · 거대 이모지 (캔버스 위에 �
       const a = d.a0 + Math.sin(age * d.sp) * d.am, ox = d.ox * cv.width, oy = cv.height + 10, L = Math.max(cv.width, cv.height) * 1.3;
       x.strokeStyle = `hsl(${(d.h + age * 140) % 360},100%,55%)`; x.lineCap = 'round';
       x.beginPath(); x.moveTo(ox, oy); x.lineTo(ox + Math.cos(a) * L, oy + Math.sin(a) * L);
-      x.globalAlpha = .2 * fade; x.lineWidth = 30; x.stroke();
-      x.globalAlpha = .9 * fade; x.lineWidth = 5; x.stroke();
+      /* 레이저 글로우 제거 */
+      x.globalAlpha = .85 * fade; x.lineWidth = 8; x.stroke();
     } else if (d.k === 'emo') {
-      x.globalAlpha = fade; x.font = (70 + age * 260) + 'px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.globalAlpha = fade; x.font = (60 + age * 110) + 'px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
       x.fillText(d.t, d.x * cv.width, d.y * cv.height - age * 60); x.textAlign = 'start'; x.textBaseline = 'alphabetic';
     }
   });
@@ -1870,7 +1877,7 @@ function trollBlast(big) {   // 3등 · 2등 · 1등이 공개되는 순간마�
   const W = innerWidth, H = innerHeight, n = trollLv * (big ? 2 : 1), fl = trollFl;
   SFX.crash(); SFX.boom();
   for (let k = 0; k < 2 + n; k++) rt(() => parts.push({ k: 'ring', x: W / 2, y: H * .55, r: 10, life: 34, c: ['#facc15', '#f43f5e', '#22d3ee', '#a855f7'][k % 4] }), k * 110);
-  if (fl[0]) { for (let k = 0; k < 5 + n * 4; k++) rt(fxRocket, k * 70); fxCannon(0, 40 + n * 25); fxCannon(1, 40 + n * 25); }
+  if (fl[0]) { for (let k = 0; k < 4 + n; k++) rt(fxRocket, k * 120); fxCannon(0, 30 + n * 6); fxCannon(1, 30 + n * 6); }
   if (fl[1]) { fxStrobe(); rt(fxStrobe, 160); for (let k = 0; k < 2 + n; k++) pushLaser(big ? 6000 : 3500); SFX.laser(); }
   if (fl[2]) { for (let k = 0; k < 3 + n; k++) pushEmo(); SFX.airhorn(); rt(fxStrobe, 320); }
 }
@@ -1878,8 +1885,8 @@ function trollFxStart(fl, B) {
   fl = Array.isArray(fl) ? fl : [0, 0, 0]; trollFl = fl; trollLv = fl.filter(Boolean).length; if (!trollLv) return;
   const tp = $('trollPodium'), bn = $('resBanner');
   rt(() => {
-    bn.textContent = fl[2] ? '💥 트롤 시상식 · 완전 폭주 💥' : fl[1] ? '🔥 트롤 시상식 🔥' : '😈 트롤 시상식 😈';
-    bn.style.display = 'block'; bn.className = 'on' + (fl[2] ? ' c3' : ''); SFX.crash();
+    /* 배너 글자 제거 */
+    ; SFX.crash();
     if (fl[1]) for (let i = 0; i < 2 + trollLv * 2; i++) pushLaser(9000);
   }, B);
   rt(() => ['a', 'b', 'c'].forEach((k, i) => tp.classList.toggle('tfx-' + k, !!fl[i])), B + 1000);
@@ -1889,23 +1896,23 @@ function trollFxStart(fl, B) {
 }
 function trollExtra() {   // 불꽃놀이 틱마다 켜둔 토글 만큼 추가
   const L = trollLv, fl = trollFl, W = innerWidth;
-  if (fl[0]) { fxCannon(Math.random() < .5 ? 0 : 1, 12 + L * 8); fxRocket(); if (L > 1) fxRocket(); }
+  if (fl[0]) { fxCannon(Math.random() < .5 ? 0 : 1, 8 + L * 2); fxRocket(); }
   if (fl[1]) {
-    if (Math.random() < .25 + L * .1) fxStrobe();
+    if (Math.random() < .08) fxStrobe();
     if (deco.filter(d => d.k === 'laser').length < 3 + L * 2) pushLaser(4000);
-    for (let i = 0; i < L; i++) parts.push({ t: ['⭐', '🌟', '✨', '💫', '🪙'][Math.floor(Math.random() * 5)], x: Math.random() * W, y: -30, vy: 4 + Math.random() * 4, life: 280 });
+    if (Math.random() < .4) parts.push({ t: ['⭐', '🌟', '✨', '💫', '🪙'][Math.floor(Math.random() * 5)], x: Math.random() * W, y: -30, vy: 4 + Math.random() * 4, life: 280 });
     if (Math.random() < .3) SFX.laser();
   }
   if (fl[2]) {
-    if (Math.random() < .6) pushEmo(); fxRocket();
+    if (Math.random() < .25) pushEmo();
     parts.push({ k: 'ring', x: Math.random() * W, y: innerHeight * (.2 + Math.random() * .5), r: 5, life: 26, c: `hsl(${Math.random() * 360},100%,55%)` });
     if (Math.random() < .25) SFX.bass();
   }
 }
 function trollTick() {
-  const w = innerWidth; fxRocket(); if (Math.random() < .5) fxRocket(); trollExtra();
-  for (let i = 0; i < 2; i++) parts.push({ t: ['😈', '🔥', '💥', '⭐', '🎉'][Math.floor(Math.random() * 5)], x: Math.random() * w, y: -30, vy: 3 + Math.random() * 3, life: 300 });
-  for (let i = 0; i < 3; i++) parts.push({ x: Math.random() * w, y: -20, vx: (Math.random() - .5) * 3, vy: 2 + Math.random() * 3, life: 200, c: `hsl(${Math.random() * 360},90%,60%)`, g: 0 });
+  const w = innerWidth; if (Math.random() < .6) fxRocket(); trollExtra();
+  for (let i = 0; i < 1; i++) parts.push({ t: ['😈', '🔥', '💥', '⭐', '🎉'][Math.floor(Math.random() * 5)], x: Math.random() * w, y: -30, vy: 3 + Math.random() * 3, life: 300 });
+  for (let i = 0; i < 2; i++) parts.push({ x: Math.random() * w, y: -20, vx: (Math.random() - .5) * 3, vy: 2 + Math.random() * 3, life: 200, c: `hsl(${Math.random() * 360},90%,60%)`, g: 0 });
   if (Math.random() < .4) SFX.sparkle();
 }
 function fxLoop() {
@@ -1917,11 +1924,11 @@ function fxLoop() {
     if (p.k === 'ring') { p.r += 14; x.globalAlpha = Math.max(0, p.life / 30); x.strokeStyle = p.c; x.lineWidth = 5; x.beginPath(); x.arc(p.x, p.y, p.r, 0, 6.28); x.stroke(); x.globalAlpha = 1; return; }
     if (p.t) { p.y += p.vy; p.x += Math.sin(p.y / 30) * 1.5; x.font = '28px sans-serif'; x.fillText(p.t, p.x, p.y); return; }
     p.x += p.vx; p.y += p.vy; p.vy += p.g;
-    if (p.k === 'r') { parts.push({ x: p.x, y: p.y, vx: 0, vy: 0, life: 10, c: '#fde68a', g: 0 }); if (p.vy >= -1) { p.life = 0; fxBoom(p.x, p.y, 40 + trollLv * 25); SFX.fw(); if (Math.random() < .4) parts.push({ k: 'ring', x: p.x, y: p.y, r: 5, life: 20, c: '#fff' }); } }
+    if (p.k === 'r') { parts.push({ x: p.x, y: p.y, vx: 0, vy: 0, life: 6, c: '#fde68a', g: 0 }); if (p.vy >= -1) { p.life = 0; fxBoom(p.x, p.y, 26 + trollLv * 6); SFX.fw(); if (Math.random() < .4) parts.push({ k: 'ring', x: p.x, y: p.y, r: 5, life: 20, c: '#fff' }); } }
     x.fillStyle = p.c; x.fillRect(p.x, p.y, p.k === 'r' ? 4 : 5, p.k === 'r' ? 4 : 5);
   });
   parts = parts.filter(p => p.life > 0 && p.y < cv.height + 30);
-  { const mx = 600 + trollLv * 600; if (parts.length > mx) parts.splice(0, parts.length - mx); }
+  { const mx = 450 + trollLv * 100; if (parts.length > mx) parts.splice(0, parts.length - mx); }
   if ($('resultOverlay').classList.contains('active')) requestAnimationFrame(fxLoop); else fxOn = false;
 }
 
@@ -1986,9 +1993,9 @@ document.addEventListener('keydown', e => {
 document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
 @keyframes shk{0%,100%{transform:translate(0,0)}25%{transform:translate(-5px,3px)}50%{transform:translate(4px,-4px)}75%{transform:translate(-3px,-2px)}}
 @keyframes rbs{to{background-position:200% center}}
-.shaking .pod-col{animation:shk .1s linear infinite}
+.shaking .pod-col{animation:shk .1s linear infinite;will-change:transform}
 .res-lobby:disabled{background:#94a3b8;cursor:not-allowed}
-.troll-pod .pod-name{background:linear-gradient(90deg,#f43f5e,#f59e0b,#22c55e,#06b6d4,#8b5cf6,#f43f5e);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important;animation:rbs 1s linear infinite}
+.troll-pod .pod-name{background:linear-gradient(90deg,#f43f5e,#f59e0b,#22c55e,#06b6d4,#8b5cf6,#f43f5e);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important}
 .troll-pod .pod-col.on .pod-avatar{box-shadow:0 0 30px 10px rgba(244,63,94,.55)}` }));
 document.addEventListener('click', e => { const b = e.target.closest('button,.choice-btn,.reward-card,.mode-btn,.profile-thumb-card,.rank-item.selectable'); if (b && !b.disabled) SFX.click(); }, true);
 let lastHov = null; document.addEventListener('mouseover', e => { const b = e.target.closest('button,.reward-card,.mode-btn,.profile-thumb-card,.choice-btn'); if (b && b !== lastHov && !b.disabled) { lastHov = b; if (S.sfxHover !== false) SFX.hover(); } });
