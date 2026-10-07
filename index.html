@@ -546,7 +546,7 @@ const hostTeacher = us => us.filter(u => u.isTeacher && u.host).sort((a, b) => (
 const spMs = () => S.spSec * 1000;                                   // 스피드런 제한시간(90초)
 const maxLives = () => gameMode === 'onehit' ? 1 : S.koLives;     // 한방 모드는 목숨 1개
 let stackH = [], stackT = [], stackCur = { x: 1, y: 1 };
-let hsState = null, hsN = 4, hsCell = -1, hsForce = false;
+let hsState = null, hsN = 4, hsCell = -1, hsForce = false, hsBlock = false;
 
 /* ---------- 라이어 모드 ---------- */
 let liarState = null, myLV = '', chat = [];
@@ -684,7 +684,7 @@ function liarResolve(users) {
 const FK = { mark: ',', vote: true, play: true, rate: 20, pts: 0, trRate: 10, seq: 0, last: 0, log: [] };
 let fakes = [];
 const FK_NAMES = ['민준','서연','지호','하은','도윤','서윤','시우','지우','예준','수아','주원','하윤','건우','지민','현우','다은','유준','채원','선우','지안'];
-const fakePub = f => ({ id: f.id, nickname: f.nickname, avatarUrl: f.avatarUrl, score: f.score, isTeacher: false, lives: f.lives, dead: f.dead, diedAt: f.diedAt, tr: f.tr || 0, vote: f.vote, lv: f.lv, cr: 0, cs: 0, joinedAt: f.joinedAt, hb: Date.now(), fk: 1, hc: f.hc == null ? -1 : f.hc });
+const fakePub = f => ({ id: f.id, nickname: f.nickname, avatarUrl: f.avatarUrl, score: f.score, isTeacher: false, lives: f.lives, dead: f.dead, diedAt: f.diedAt, tr: f.tr || 0, vote: f.vote, lv: f.lv, cr: 0, cs: 0, joinedAt: f.joinedAt, hb: Date.now(), fk: 1, hc: f.hc == null ? -1 : f.hc, hk: f.hc >= 0 });
 const fakeLabel = us => isTeacher ? us.map(u => u.fk ? { ...u, nickname: (u.nickname || '익명') + FK.mark } : u) : us;   // 표시 기호는 선생님 화면에만
 function fkSet(n) {
   n = Math.max(0, Math.min(60, n | 0));
@@ -831,7 +831,7 @@ function getMyPayload() {
     phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
     mode: isTeacher ? gameMode : '', teams: isTeacher ? teams : null, result: isTeacher ? resultData : null,
     lives: myLives, dead: isDead, diedAt, tr: myTroll, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
-    runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, hs: isTeacher ? hsState : null, hc: hsCell, lv: myLV, ko: isTeacher ? koState : null,
+    runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, hs: isTeacher ? hsState : null, hc: hsCell, hk: hsBlock, lv: myLV, ko: isTeacher ? koState : null,
     vote: myVote,
     host: isTeacher && iAmHost, hostAt: isTeacher ? hostAt : 0, cfg: isTeacher ? cfgDiff() : null, coop: isTeacher ? coopState : null, cr: coopRound, cs: currentSession,
     joinedAt, hb: Date.now()
@@ -2020,7 +2020,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 .troll-pod .pod-col.on .pod-avatar{animation:tBounce .6s ease-in-out infinite alternate,tGlow 1.2s linear infinite}` }));
 document.addEventListener('click', e => { const b = e.target.closest('button,.choice-btn,.reward-card,.mode-btn,.profile-thumb-card,.rank-item.selectable'); if (b && !b.disabled) SFX.click(); }, true);
 let lastHov = null; document.addEventListener('mouseover', e => { const b = e.target.closest('button,.reward-card,.mode-btn,.profile-thumb-card,.choice-btn'); if (b && b !== lastHov && !b.disabled) { lastHov = b; if (S.sfxHover !== false) SFX.hover(); } });
-{ const o = stackAct; stackAct = k => { if (['w', 'a', 's', 'd'].includes(k)) SFX.move(); else if (k === 'add') SFX.place(); else if (k === 'del') SFX.remove(); return o(k); }; }
+{ const o = stackAct; stackAct = k => { if (!stackish()) return; if (['w', 'a', 's', 'd'].includes(k)) SFX.move(); else if (k === 'add') SFX.place(); else if (k === 'del') SFX.remove(); return o(k); }; }
 { const o = setupChoices; setupChoices = n => { SFX.newq(); return o(n); }; }
 let lastN = 0; setInterval(() => { const n = activeUsers.length; if (lastN && n > lastN) SFX.join(); else if (lastN && n < lastN) SFX.leave(); lastN = n; }, 1000);
 setInterval(() => { if (gameStarted && $('resultOverlay').classList.contains('active')) closeResult(); }, 500);   // 게임이 시작되면 결과 화면 자동 닫기
@@ -2028,20 +2028,23 @@ setInterval(() => { if (gameStarted && $('resultOverlay').classList.contains('ac
 $('cfgBtn').onclick = () => { if (settingsOpen) closeSettings(); else openSettings(); };
 $('cfgTabs').addEventListener('wheel', e => { e.currentTarget.scrollLeft += e.deltaY; e.preventDefault(); }, { passive: false });
 setInterval(() => { if (isTeacher && settingsOpen) dbgFkRender(); }, 1000);
-/* ===== 숨바꼭질 모드: 바닥 격자를 눌러 이동해서 3D 쌓기나무 속에 숨기 ===== */
+/* ===== 숨바꼭질 모드: 바닥 격자 위를 W A S D 로 한 칸씩 걸어 다니다가 1.5초 멈추면 블록이 됨 ===== */
 const HS = { card: 10000, hide: 10000, hunt: 60000 }, HS_REL = HS.card + HS.hide, HS_END = HS_REL + HS.hunt;
-let hsBl = [], hsCells = [], hsAtt = 0, hsCatch = 0, hsEnded = false, hsG = null, hsGrid = null, hsMk = '', hsInfoKey = '', hsBound = false, hsOpa = false;
+const HS_STEP = 280;   // 한 칸 이동 간격(ms). 추격이 시작되면 속도 40% 감소 (간격 ÷ 0.6)
+let hsBl = [], hsCells = [], hsAtt = 0, hsCatch = 0, hsEnded = false, hsG = null, hsDyn = null, hsGrid = null, hsMk = '', hsDynKey = '', hsInfoKey = '', hsBound = false, hsMoveAt = 0, hsBox = null, hsEdge = null, hsPlane = null;
+const hsMats = {};
 $('voteStage3').innerHTML = [2, 3, 4, 5, 6, 7].map(n => `<button class="mode-btn" id="hb${n}" style="width:120px"><span>${n}명</span><span class="vote-count" id="hc${n}">0표</span></button>`).join('');
 [2, 3, 4, 5, 6, 7].forEach(n => { $('hb' + n).onclick = () => { if (!curStage) return; myVote = curStage + ':n' + n; updatePresence(); }; });
 const hsRole = () => !hsState ? '' : !hsState.players.includes(myId) ? 'w' : hsState.seekers.includes(myId) ? 's' : 'h';
-const hsPhase = () => { const e = hostNow() - hsState.t0; return e < HS.card ? 0 : e < HS_REL ? 1 : e < HS_END ? 2 : 3; };   // 0 도면 · 1 숨기(이동 가능) · 2 추격(이동 불가) · 3 끝
-const hsFree = () => { const occ = new Set(activeUsers.filter(u => u.hc >= 0).map(u => u.hc)), c = hsCells.filter(i => !occ.has(i)); return c.length ? c[Math.floor(Math.random() * c.length)] : hsCells[0]; };
+const hsPhase = () => { const e = hostNow() - hsState.t0; return e < HS.card ? 0 : e < HS_REL ? 1 : e < HS_END ? 2 : 3; };   // 0 도면 · 1 숨기 · 2 추격 · 3 끝
+const hsFree = () => { const occ = new Set(activeUsers.filter(u => u.hc >= 0).map(u => u.hc)), c = hsCells.filter(i => !occ.has(i)); return c.length ? c[Math.floor(Math.random() * c.length)] : hsCells[0]; };   // (가짜 유저용) 블록 속 빈 칸
+const hsFloor = () => { const occ = new Set(activeUsers.filter(u => u.hc >= 0 && !u.dead).map(u => u.hc)), c = [0, 3, 6, 9, 12, 15, 18, 21, 24].filter(i => !occ.has(i)); return c.length ? c[Math.floor(Math.random() * c.length)] : 0; };   // 바닥(1층) 빈 칸
 function hsRecv() {}
 function hsCaught(p) {
   if (!p || p.to !== myId || p.s !== currentSession || isDead || hsRole() !== 'h' || hsPhase() !== 2) return;
-  isDead = true; diedAt = Date.now(); SFX.die(); sendSoon();
+  isDead = true; hsBlock = false; diedAt = Date.now(); SFX.die(); sendSoon();
 }
-function hsBind() {   // 드래그는 화면 회전, 짧은 클릭만 이동/잡기
+function hsBind() {   // 드래그는 화면 회전, 짧은 클릭만 잡기
   if (hsBound || !renderer) return; hsBound = true;
   const cv = renderer.domElement; let dn = null;
   cv.addEventListener('pointerdown', e => { dn = { x: e.clientX, y: e.clientY, t: performance.now() }; });
@@ -2052,19 +2055,20 @@ function hsStart() {
   hsBind(); const H = hsState; if (!H) return;
   hsBl = seeded(H.session >>> 0, () => generateValidBlocks(20, 27));   // 3x3x3 안이라 최대 27개
   hsCells = hsBl.map(b => b.x * 9 + b.y * 3 + b.z);
-  hsCell = -1; hsAtt = 0; hsCatch = 0; hsEnded = false; hsMk = ''; hsInfoKey = ''; hsOpa = false; cameraAngle = Math.PI / 2;
+  hsAtt = 0; hsCatch = 0; hsEnded = false; hsMoveAt = 0; cameraAngle = Math.PI / 2;
   activeShiningEyesRound = false; hasShiningEyesBuff = false;
+  if (!hsBox) { hsBox = new THREE.BoxGeometry(1, 1, 1); hsEdge = new THREE.EdgesGeometry(hsBox); hsPlane = new THREE.PlaneGeometry(.8, .8); }
   if (!hsGrid) {   // 바닥 격자 (3x3, 칸마다 좌표 x,y)
     hsGrid = new THREE.Group(); scene.add(hsGrid); const tile = new THREE.PlaneGeometry(.94, .94);
     for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) { const m = new THREE.Mesh(tile, new THREE.MeshBasicMaterial({ color: 0xcbd5e1, side: THREE.DoubleSide })); m.rotation.x = -Math.PI / 2; m.position.set(x, -.49, y); m.userData = { x, y }; hsGrid.add(m); }
   }
-  hsGrid.visible = false;
+  if (!hsDyn) { hsDyn = new THREE.Group(); scene.add(hsDyn); }
   rebuildBlocks(hsBl); drawBlueprint(hsBl); hsClear(); sendSoon();
 }
 function hsClear() {
-  if (hsG) while (hsG.children.length) hsG.remove(hsG.children[0]);
+  [hsG, hsDyn].forEach(g => { if (g) while (g.children.length) g.remove(g.children[0]); });
   if (hsGrid) hsGrid.visible = false;
-  hsMk = ''; hsInfoKey = ''; hsCell = -1; hsOpa = false;
+  hsMk = ''; hsDynKey = ''; hsInfoKey = ''; hsCell = -1; hsBlock = false;
   const p = $('hsPaint'); if (p) p.remove();
   const i = $('hsInfo'); if (i) i.style.display = 'none';
 }
@@ -2080,82 +2084,117 @@ function hsPaint(on) {   // 술래 시야: 배경색 페인트가 번져 3D 화�
   }
   p.style.display = on ? 'block' : 'none';
 }
-function hsMoveTo(x, y, zp) {   // 격자 좌표 (x,y)로 이동. 그 칸에 블록이 있는 높이 중 가장 가까운 곳
-  const zs = [0, 1, 2].filter(k => hsCells.includes(x * 9 + y * 3 + k));
-  if (!zs.length) { showToast(null, '블록이 없는 칸', '블록이 있는 칸을 고르세요', '#94a3b8'); return; }
-  const z = zs.reduce((a, b) => Math.abs(b - zp) < Math.abs(a - zp) ? b : a), cell = x * 9 + y * 3 + z;
-  if (cell === hsCell) return;
-  if (activeUsers.some(u => u.id !== myId && !u.dead && u.hc === cell)) { showToast(null, '이미 누가 있어요', '다른 칸을 고르세요', '#94a3b8'); return; }
-  hsCell = cell; SFX.place(); updatePresence();
+/* ---------- 도망자 이동 (격자 1칸씩) ---------- */
+function hsDir() {   // 화면(카메라) 기준 W 앞 · S 뒤 · A 왼쪽 · D 오른쪽
+  const k = hsDown, fx = -Math.cos(cameraAngle), fz = -Math.sin(cameraAngle);
+  const f = Math.abs(fx) > Math.abs(fz) ? [Math.sign(fx), 0] : [0, Math.sign(fz)], r = [-f[1], f[0]];
+  if (k.w) return f; if (k.s) return [-f[0], -f[1]]; if (k.d) return r; if (k.a) return [-r[0], -r[1]];
+  return [0, 0];
 }
-function hsStep(d) {   // Q 내려가기 / E 올라가기
-  if (!gameStarted || gameMode !== 'hide' || hsRole() !== 'h' || isDead || hsPhase() !== 1 || hsCell < 0) return;
-  const x = Math.floor(hsCell / 9), y = Math.floor(hsCell / 3) % 3;
-  for (let z = hsCell % 3 + d; z >= 0 && z <= 2; z += d) if (hsCells.includes(x * 9 + y * 3 + z)) { hsMoveTo(x, y, z); return; }
+function hsMove(dx, dy, dz) {
+  const x = Math.floor(hsCell / 9), y = Math.floor(hsCell / 3) % 3, z = hsCell % 3, nx = x + dx, ny = y + dy, nz = z + dz;
+  if (nx < 0 || nx > 2 || ny < 0 || ny > 2 || nz < 0 || nz > 2) return false;   // 격자 밖으로 안 나감
+  const c = nx * 9 + ny * 3 + nz; if (c === hsCell) return false;
+  if (activeUsers.some(u => u.id !== myId && !u.dead && u.hc === c)) return false;   // 다른 도망자가 있는 칸
+  hsCell = c; hsMoveAt = Date.now(); hsBlock = false; SFX.move(); updatePresence(); return true;
 }
+function hsAct() {   // W A S D 한 칸 · E 위 · Q 아래 · W+E / W+Q 는 앞으로 가며 오르내림
+  if (!gameStarted || gameMode !== 'hide' || !hsState || hsRole() !== 'h' || isDead) return;
+  const ph = hsPhase(); if (ph < 1 || ph > 2 || hsCell < 0 || hsBlock) return;
+  const [dx, dy] = hsDir(), dz = (hsDown.e ? 1 : 0) - (hsDown.q ? 1 : 0);
+  if (!dx && !dy && !dz) return;
+  if (Date.now() - hsMoveAt < (ph === 2 ? HS_STEP / .6 : HS_STEP)) return;   // 추격 중엔 40% 느리게
+  hsMove(dx, dy, dz) || hsMove(dx, dy, 0) || hsMove(0, 0, dz);
+}
+function hsRelease() {   // 블록이 된 상태에서 Space 로 풀기
+  if (!hsBlock || hsRole() !== 'h' || isDead) return;
+  hsBlock = false; hsMoveAt = Date.now(); SFX.pop(); updatePresence();
+}
+/* ---------- 술래 잡기 ---------- */
 function hsClick(ev) {
-  const H = hsState, role = hsRole(); if (!gameStarted || gameMode !== 'hide' || !H || isDead || (role !== 's' && role !== 'h')) return;
-  const ph = hsPhase(); if ((role === 'h' && ph !== 1) || (role === 's' && ph !== 2)) return;   // 도망자는 숨는 시간에만, 술래는 추격 시간에만
+  const H = hsState, role = hsRole(); if (!gameStarted || gameMode !== 'hide' || !H || isDead || role !== 's' || hsPhase() !== 2 || hsAtt >= 4) return;
   const r = renderer.domElement.getBoundingClientRect(), rc = new THREE.Raycaster();
   rc.setFromCamera(new THREE.Vector2((ev.clientX - r.left) / r.width * 2 - 1, -((ev.clientY - r.top) / r.height * 2 - 1)), camera);
-  if (role === 'h') {   // 도망자: 바닥 격자 칸을 누르면 그 좌표로 이동
-    const t = hsGrid && rc.intersectObjects(hsGrid.children, false)[0]; if (!t) return;
-    hsMoveTo(t.object.userData.x, t.object.userData.y, hsCell >= 0 ? hsCell % 3 : 0); return;
-  }
-  const hit = rc.intersectObjects(blockGroup.children, false)[0]; if (!hit) return;   // 술래: 블록이 아닌 곳은 무시
-  if (hsAtt >= 4) return; hsAtt++;   // 블록을 누를 때마다 기회 1번 사용 (최대 4번)
-  const q = hit.object.position, cell = Math.round(q.x) * 9 + Math.round(q.z) * 3 + Math.round(q.y);
+  const hit = rc.intersectObjects([...blockGroup.children, ...(hsDyn ? hsDyn.children : [])], false)[0]; if (!hit) return;   // 블록/도망자가 아닌 곳은 무시
+  const o = hit.object, q = o.position, cell = o.userData.cell != null ? o.userData.cell : Math.round(q.x) * 9 + Math.round(q.z) * 3 + Math.round(q.y);
   const u = activeUsers.find(x => H.players.includes(x.id) && !H.seekers.includes(x.id) && !x.dead && x.hc === cell);
-  if (!u) { SFX.wrong(); showToast(null, '아쉬워요', '빈 블록이었어요 (기회 ' + (4 - hsAtt) + '번 남음)', '#94a3b8'); return; }
-  hsCatch++; myScore += 1; SFX.correct(); updatePresence();
+  if (!u) { hsAtt++; SFX.wrong(); showToast(null, '아쉬워요', '아무도 없어요 (기회 ' + (4 - hsAtt) + '번 남음)', '#94a3b8'); return; }   // 빗나가면 기회 1번 소모
+  hsCatch++; myScore += 1; SFX.correct(); updatePresence();   // 잡으면 기회는 그대로
   const f = fakes.find(x => x.id === u.id); if (f) { f.dead = true; f.diedAt = Date.now(); }
   try { room.send({ type: 'broadcast', event: 'hscatch', payload: { to: u.id, s: currentSession } }); } catch (er) {}
-  showToast(u.avatarUrl, u.nickname || '익명', '🎯 잡았다! (기회 ' + (4 - hsAtt) + '번 남음)', '#22c55e');
+  showToast(u.avatarUrl, u.nickname || '익명', '🎯 잡았다! (기회 ' + (4 - hsAtt) + '번 그대로)', '#22c55e');
+}
+/* ---------- 화면 그리기 ---------- */
+function hsAvMat(url) {
+  if (hsMats[url]) return hsMats[url];
+  const m = new THREE.MeshBasicMaterial({ color: 0x94a3b8, transparent: true, side: THREE.DoubleSide }); hsMats[url] = m;
+  try { new THREE.TextureLoader().setCrossOrigin('anonymous').load(url, t => { m.map = t; m.color.set(0xffffff); m.needsUpdate = true; }); } catch (er) {}
+  return m;
+}
+function hsDynRender() {   // 걸어 다니는 도망자는 프로필 사진판, 1.5초 멈춘 도망자는 블록(구조물 안이면 티 안 남)
+  const H = hsState, hid = activeUsers.filter(u => H.players.includes(u.id) && !H.seekers.includes(u.id) && !u.dead && u.hc >= 0);
+  const key = hid.map(u => u.id + ':' + u.hc + ':' + (u.hk ? 1 : 0)).join(',');
+  if (key !== hsDynKey) {
+    hsDynKey = key; while (hsDyn.children.length) hsDyn.remove(hsDyn.children[0]);
+    hid.forEach(u => {
+      const c = u.hc, x = Math.floor(c / 9), y = Math.floor(c / 3) % 3, z = c % 3;
+      if (u.hk) {
+        if (hsCells.includes(c)) return;
+        const m = new THREE.Mesh(hsBox, new THREE.MeshStandardMaterial({ color: S.blockCol })); m.position.set(x, z, y); m.userData = { cell: c, pid: u.id };
+        m.add(new THREE.LineSegments(hsEdge, new THREE.LineBasicMaterial({ color: 0x1e3a8a }))); hsDyn.add(m);
+      } else {
+        const m = new THREE.Mesh(hsPlane, hsAvMat(u.avatarUrl || characterImages[0])); m.position.set(x, z, y); m.userData = { cell: c, pid: u.id, bb: 1 }; hsDyn.add(m);
+      }
+    });
+  }
+  hsDyn.children.forEach(m => { if (m.userData.bb) m.quaternion.copy(camera.quaternion); });   // 사진판은 항상 화면을 보게
 }
 function hsTick() {
-  const H = hsState; if (!H || !blockGroup || !hsCells.length) return;
-  const role = hsRole(), ph = hsPhase(), e = hostNow() - H.t0, sec = t => Math.max(0, Math.ceil(t / 1000));
+  const H = hsState; if (!H || !blockGroup || !hsCells.length || !hsDyn) return;
+  const role = hsRole(), ph = hsPhase(), e = hostNow() - H.t0, now = Date.now(), sec = t => Math.max(0, Math.ceil(t / 1000));
   const left = ph === 0 ? sec(HS.card - e) : ph === 1 ? sec(HS_REL - e) : sec(HS_END - e);
   $('bpView').style.display = (role === 'h' && ph === 0) ? 'flex' : 'none';   // 처음 10초: 도망자만 도면 확인
   hsPaint(role === 's' && ph < 2);
-  if (role === 'h' && ph === 2 && !isDead && hsCell < 0) { hsCell = hsFree(); updatePresence(); }   // 못 골랐으면 자동 배정
-  if (ph === 3 && !hsEnded) { hsEnded = true; if (role === 'h' && !isDead) { myScore += H.n >= 5 ? 2 : 1; sendSoon(); } }   // 끝까지 생존: 1점 (5명부터 2점)
-  const canMove = role === 'h' && ph === 1 && !isDead;
-  if (canMove !== hsOpa) { hsOpa = canMove; blockGroup.children.forEach(m => { m.material.transparent = canMove; m.material.opacity = canMove ? .3 : 1; m.material.needsUpdate = true; }); }   // 이동 중엔 블록을 반투명하게
-  if (hsGrid) {
-    hsGrid.visible = canMove;
-    const mx = hsCell >= 0 ? Math.floor(hsCell / 9) : -1, my = hsCell >= 0 ? Math.floor(hsCell / 3) % 3 : -1;
-    hsGrid.children.forEach(t => { const { x, y } = t.userData, has = hsCells.some(c => Math.floor(c / 3) === x * 3 + y); t.material.color.set(x === mx && y === my ? 0xfacc15 : has ? 0xcbd5e1 : 0xfecaca); });
+  if (role === 'h' && !isDead && ph >= 1 && ph <= 2) {
+    if (hsCell < 0) { hsCell = hsFloor(); hsMoveAt = now; hsBlock = false; updatePresence(); }   // 바닥(1층)에서 시작
+    else if (!hsBlock) { hsAct(); if (now - hsMoveAt >= 1500) { hsBlock = true; SFX.place(); updatePresence(); } }   // 1.5초 가만히 있으면 블록
   }
+  if (ph === 3 && !hsEnded) { hsEnded = true; if (role === 'h' && !isDead) { myScore += H.n >= 5 ? 2 : 1; sendSoon(); } }   // 끝까지 생존: 1점 (5명부터 2점)
+  if (hsGrid) {
+    hsGrid.visible = ph >= 1 && ph <= 2 && !(role === 's' && ph < 2);
+    const mx = role === 'h' && hsCell >= 0 ? Math.floor(hsCell / 9) : -1, my = role === 'h' && hsCell >= 0 ? Math.floor(hsCell / 3) % 3 : -1;
+    hsGrid.children.forEach(t => t.material.color.set(t.userData.x === mx && t.userData.y === my ? 0xfacc15 : 0xcbd5e1));
+  }
+  hsDynRender();
   const side = H.players.filter(id => id !== myId && (H.seekers.includes(id) === (role === 's')));
   const names = side.map(id => { const u = activeUsers.find(x => x.id === id); return u ? `<img src="${esc(u.avatarUrl || characterImages[0])}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle"> ${esc(u.nickname || '익명')}${u.dead ? '💀' : ''}` : ''; }).join(' · ');
-  const pos = role === 'h' && hsCell >= 0 ? `<br>내 좌표: (${Math.floor(hsCell / 9) + 1}, ${Math.floor(hsCell / 3) % 3 + 1}) · ${hsCell % 3 + 1}층` : '';
+  const pos = role === 'h' && hsCell >= 0 ? `<br>내 좌표: (${Math.floor(hsCell / 9) + 1}, ${Math.floor(hsCell / 3) % 3 + 1}) · ${hsCell % 3 + 1}층 · ${hsBlock ? '🧱 블록' : '🚶 이동 중'}` : '';
   const info = `<b style="font-size:14px;color:${role === 's' ? '#ef4444' : '#2563eb'}">${role === 's' ? '🔍 당신은 술래' : role === 'h' ? '🏃 당신은 도망자' : '👀 관전'}</b><br>${role === 'w' ? '' : '아군: ' + (names || '없음')}${pos}`;
   if (info !== hsInfoKey) { hsInfoKey = info; $('hsInfo').innerHTML = info; } $('hsInfo').style.display = 'block';
-  const mk = [];   // 도망자 화면에만: 내 위치(노랑), 아군 위치(초록)
+  const mk = [];   // 도망자 화면에만: 내 위치(노랑), 아군 위치(초록) — 블록 뒤에 가려도 보임
   if (role === 'h') { if (!isDead && hsCell >= 0) mk.push([hsCell, 0xfacc15]); side.forEach(id => { const u = activeUsers.find(x => x.id === id); if (u && !u.dead && u.hc >= 0) mk.push([u.hc, 0x22c55e]); }); }
   const key = mk.map(m => m.join(':')).join(',');
   if (key !== hsMk) {
     hsMk = key; if (!hsG) { hsG = new THREE.Group(); scene.add(hsG); }
     while (hsG.children.length) hsG.remove(hsG.children[0]);
-    const geo = new THREE.BoxGeometry(1.03, 1.03, 1.03), eg = new THREE.EdgesGeometry(geo);
+    const geo = new THREE.BoxGeometry(1.06, 1.06, 1.06), eg = new THREE.EdgesGeometry(geo);
     mk.forEach(([c, col]) => {
-      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .5, depthWrite: false }));
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .35, depthWrite: false, depthTest: false })); m.renderOrder = 10;
       m.position.set(Math.floor(c / 9), c % 3, Math.floor(c / 3) % 3); hsG.add(m);
-      const l = new THREE.LineSegments(eg, new THREE.LineBasicMaterial({ color: col })); l.position.copy(m.position); hsG.add(l);
+      const l = new THREE.LineSegments(eg, new THREE.LineBasicMaterial({ color: col, depthTest: false })); l.renderOrder = 11; l.position.copy(m.position); hsG.add(l);
     });
   }
   $('cameraStatusBadge').innerText = role === 'w' ? '👀 관전 중' : isDead ? '💀 잡혔어요 · 관전 중' : ph === 3 ? '끝!'
     : role === 's' ? (ph < 2 ? '🎨 시야 차단 ' + left + '초' : '🔍 술래 · 남은 ' + left + '초')
-    : ph === 0 ? '📋 도면 확인 ' + left + '초' : ph === 1 ? '🧱 숨는 중 ' + left + '초' : '🏃 도망자 · 이동 불가 · 남은 ' + left + '초';
-  $('quizTitle').innerText = role === 's' ? (ph < 2 ? '잠시 눈이 가려져요' : '의심되는 블록을 클릭! (기회 ' + (4 - hsAtt) + '번)')
-    : role === 'h' ? (ph === 0 ? '도면을 보고 숨을 곳을 생각하세요' : ph === 1 ? '바닥 격자를 클릭해 이동 · Q 내려가기 · E 올라가기' : '들키지 않게 가만히 있으세요!') : '관전 중';
+    : ph === 0 ? '📋 도면 확인 ' + left + '초' : ph === 1 ? '🧱 숨는 중 ' + left + '초' : '🏃 추격 중 (속도 -40%) · 남은 ' + left + '초';
+  $('quizTitle').innerText = role === 's' ? (ph < 2 ? '잠시 눈이 가려져요' : '의심되는 곳을 클릭! 못 찾으면 기회 소모 (' + (4 - hsAtt) + '번 남음)')
+    : role === 'h' ? (ph === 0 ? '도면을 보고 숨을 곳을 생각하세요' : 'WASD 이동 · E 위 · Q 아래 · 1.5초 멈추면 블록 · Space 해제') : '관전 중';
   $('feedbackMessage').innerText = '';
 }
 function hsSetRole(seeker) {   // 선생님 단축키: A+F 술래, A+G 도망자
   const H = hsState, ps = H.players.includes(myId) ? H.players : [...H.players, myId], sk = H.seekers.filter(i => i !== myId);
   if (seeker) sk.push(myId);
-  hsState = { ...H, players: ps, seekers: sk }; hsCell = -1; hsAtt = 0; isDead = false; hsMk = ''; hsInfoKey = '';
+  hsState = { ...H, players: ps, seekers: sk }; hsCell = -1; hsBlock = false; hsAtt = 0; isDead = false; hsMk = ''; hsInfoKey = ''; hsDynKey = '';
   updatePresence(); showToast(null, '역할 변경', seeker ? '🔍 술래가 되었어요' : '🏃 도망자가 되었어요', '#f59e0b');
 }
 const hsDown = {};
@@ -2166,9 +2205,10 @@ addEventListener('keydown', e => {
     e.preventDefault(); hsForce = !hsForce; showToast(null, '술래 확정', hsForce ? '✅ 숨바꼭질이 되면 내가 술래예요' : '❌ 해제했어요', '#f59e0b'); return;
   }
   if (isTeacher && iAmHost && gameStarted && gameMode === 'hide' && hsState && hsDown.a && (k === 'f' || k === 'g')) { hsSetRole(k === 'f'); return; }
-  if (gameStarted && gameMode === 'hide') { if (k === 'q') hsStep(-1); else if (k === 'e') hsStep(1); }
+  if (gameStarted && gameMode === 'hide') { if (k === ' ') hsRelease(); else if (['w', 'a', 's', 'd', 'e', 'q'].includes(k)) hsAct(); }
 });
 addEventListener('keyup', e => { hsDown[e.key.toLowerCase()] = false; });
+addEventListener('blur', () => { for (const k in hsDown) hsDown[k] = false; });
 
 /* ===== 모드 선택 연출: 버튼들이 사라지고 고른 모드만 커지며 가운데로 ===== */
 const MODE_INFO = [['showdown', '쇼다운', 'jMsj2Hr31RAw62EHKQQn'], ['hide', '숨바꼭질', 'g9QYVzuSVxq372RUXLte'], ['speedrun', '스피드런', 'Q9NfQk57PnnpP9SVvyUR'], ['onehit', '한방', 'ZvRjhpftKDfgK4zcyvLQ'], ['stack', '쌓기', 'PQVbThjT3zxxtSMb2Ji8'], ['blueprint', '도면보고 맞추기', 'qRCHU9udC89wwbegbVKw'], ['liar', '라이어', 'y46nReaY9L9cZkjd5x2m'], ['coop', '협동 쌓기', 'v889UjVZ57DW1nNmHPZK']];
@@ -2201,14 +2241,13 @@ function showModeReveal(mode) {
 }
 
 /* ===== 디버그: 모든 변수 표시 ===== */
-const DBG_VARS = ['myId', 'myNickname', 'isTeacher', 'iAmHost', 'hostAt', 'myScore', 'myTroll', 'myLives', 'isDead', 'diedAt', 'myVote', 'myLV', 'gameStarted', 'gameMode', 'phase', 'curStage', 'voteEnd', 'currentSession', 'endedSession', 'endedAt', 'resClosed', 'runEnd', 'teams', 'resultData', 'currentBlocks', 'hasGuessed', 'koState', 'koDeadline', 'koEndAt', 'specId', 'invincible', 'liarState', 'coopState', 'coopRound', 'coopReveal', 'stackH', 'stackT', 'stackCur', 'hsState', 'hsN', 'hsCell', 'hsForce', 'hsAtt', 'hsCatch', 'hsEnded', 'hsOpa', 'hsRole()', 'hsPhase()', 'isTargetSelectMode', 'pendingAttackType', 'isCameraFrozen', 'hasTripleScoreMultiplier', 'hasShiningEyesBuff', 'activeShiningEyesRound', 'hackMiss', 'cameraAngle', 'uiScale', 'clockOff', 'hostNow()', 'lastHostId', 'noTeacherSince', 'isSubscribed', 'settingsOpen', 'cfgTab', 'selectedImage', 'fakes.length', 'activeUsers.length', 'activeUsers', 'FK', 'S'];
+const DBG_VARS = ['myId', 'myNickname', 'isTeacher', 'iAmHost', 'hostAt', 'myScore', 'myTroll', 'myLives', 'isDead', 'diedAt', 'myVote', 'myLV', 'gameStarted', 'gameMode', 'phase', 'curStage', 'voteEnd', 'currentSession', 'endedSession', 'endedAt', 'resClosed', 'runEnd', 'teams', 'resultData', 'currentBlocks', 'hasGuessed', 'koState', 'koDeadline', 'koEndAt', 'specId', 'invincible', 'liarState', 'coopState', 'coopRound', 'coopReveal', 'stackH', 'stackT', 'stackCur', 'hsState', 'hsN', 'hsCell', 'hsForce', 'hsAtt', 'hsCatch', 'hsEnded', 'hsBlock', 'hsMoveAt', 'hsRole()', 'hsPhase()', 'isTargetSelectMode', 'pendingAttackType', 'isCameraFrozen', 'hasTripleScoreMultiplier', 'hasShiningEyesBuff', 'activeShiningEyesRound', 'hackMiss', 'cameraAngle', 'uiScale', 'clockOff', 'hostNow()', 'lastHostId', 'noTeacherSince', 'isSubscribed', 'settingsOpen', 'cfgTab', 'selectedImage', 'fakes.length', 'activeUsers.length', 'activeUsers', 'FK', 'S'];
 function dbgVarsRender() {
   const el = $('dbgVars'); if (!el) return;
   const fmt = v => { try { if (v === undefined) return 'undefined'; if (typeof v === 'function') return 'ƒ'; const s = typeof v === 'object' ? JSON.stringify(v) : String(v); return s.length > 300 ? s.slice(0, 300) + '…(' + s.length + '자)' : s; } catch (er) { return String(v); } };
   el.innerHTML = DBG_VARS.map(n => { let v; try { v = eval(n); } catch (er) { v = '(없음)'; } return `<div><b>${esc(n)}</b> = ${esc(fmt(v))}</div>`; }).join('');
 }
 setInterval(() => { if (isTeacher && settingsOpen) dbgVarsRender(); }, 500);
-applyUIState(false); syncNickname(); fitScreen(); connect();
 applyUIState(false); syncNickname(); fitScreen(); connect();
 
 
