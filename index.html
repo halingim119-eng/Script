@@ -309,7 +309,7 @@ body.bshake{animation:shk .08s linear 14}
 @keyframes tutPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.65)}100%{box-shadow:0 0 0 16px rgba(34,197,94,0)}}
 @keyframes tcb{50%{opacity:0}}
 .tut-c1{flex:0 0 40%;min-height:0;padding:10px 16px;gap:6px;overflow:hidden;animation:tutIn .55s cubic-bezier(.2,1.3,.4,1) both}
-.tut-c2{flex:1;min-height:0;width:80%;align-self:center;padding:8px 14px;gap:5px;overflow:hidden;animation:tutIn .55s .18s cubic-bezier(.2,1.3,.4,1) both}
+.tut-c2{flex:1;min-height:0;width:100%;padding:10px 12px;gap:5px;overflow:hidden;animation:tutIn .55s .18s cubic-bezier(.2,1.3,.4,1) both}
 .tut-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;font-size:14px;font-weight:bold;color:#1e293b}
 .tut-kg{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,1fr);grid-auto-flow:column;gap:0 20px}
 .tut-k{display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;color:#334155;border-bottom:1px solid #f1f5f9;white-space:nowrap;overflow:hidden}
@@ -325,8 +325,8 @@ body.bshake{animation:shk .08s linear 14}
 .tdot.on{width:18px;background:#2563eb}
 .tut-pg{height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;flex:none}
 #tutProgF{display:block;height:100%;width:0;background:#2563eb;border-radius:2px}
-.tut-st{position:relative;flex:none;height:126px;border-radius:10px;background:#eef2f7;border:1px solid #e2e8f0;overflow:hidden}
-.tut-con{position:absolute;inset:6px;background:#fff;border:1px solid #cbd5e1;border-radius:9px;display:flex;flex-direction:column;gap:3px;padding:5px 8px;transition:opacity .35s,transform .45s cubic-bezier(.2,1.4,.4,1)}
+.tut-st{position:relative;flex:none;height:126px;border-radius:10px;background:transparent;border:none;overflow:hidden}
+.tut-con{position:absolute;inset:0;background:#fff;border:1px solid #cbd5e1;border-radius:9px;display:flex;flex-direction:column;gap:3px;padding:5px 8px;transition:opacity .35s,transform .45s cubic-bezier(.2,1.4,.4,1)}
 .tut-con.off{opacity:0;transform:scale(.8) translateY(14px)}
 .tc-bar{display:flex;justify-content:space-between;flex:none;font-size:10px;font-weight:bold;color:#475569}
 .tc-bar span:last-child{font-weight:normal;color:#94a3b8}
@@ -2466,6 +2466,7 @@ function bombRank(users) {
 function forceDie() { if (!gameStarted || isDead) return; forceKill = true; myLives = 0; try { die(); } finally { forceKill = false; } renderHud(); updatePresence(); }
 const N1 = a => parseFloat(a[0]);
 const cmdLoops = {};
+let cmdHelped = false;
 let cmdHi = 0, cmdSugList = [];
 const quizN = () => gameMode === 'bomb' ? currentBlocks.length - 1 : currentBlocks.length;
 const cmdBtn = ok => {   // 정답/오답 버튼 자동 클릭
@@ -2628,12 +2629,17 @@ function cmdPick(label, fn) {   // 콘솔 윗부분에 접속자 카드가 나�
 function cmdOpen(on) {   // 설정창처럼 카드가 위/아래로 분리됨
   if (!isTeacher) return; cmdOn = on === undefined ? !cmdOn : on;
   document.querySelector('.right-card-container').classList.toggle('cmd-split', cmdOn);
-  if (cmdOn) { cmdRender(); setTimeout(() => $('cmdIn').focus(), 30); } else { $('cmdPick').style.display = 'none'; $('cmdSug').style.display = 'none'; }
+  if (cmdOn) { cmdRender(); if (!cmdHelped) { cmdHelped = true; cmdLog('> /help', 'me'); runCmd('help', [], null); } setTimeout(() => $('cmdIn').focus(), 30); } else { $('cmdPick').style.display = 'none'; $('cmdSug').style.display = 'none'; }
 }
-function cmdSug(v) {   // 입력 중인 글자로 명령어 3개 추천
+function cmdSug(v, max = 9) {   // 입력 중인 글자로 명령어 3개 추천
   const raw = v.replace(/^\//, ''); if (!raw.trim()) return [];
   const sp = raw.search(/\s/), tok = (sp < 0 ? raw : raw.slice(0, sp)).toLowerCase(), done = sp >= 0, names = Object.keys(CMDS);
   const T = '[me|all|닉네임]';
+  if (done && tok === 'mode') {   // /mode 뒤: 시작할 수 있는 모드들 미리보기
+    const MD = [['solo', '솔로 쇼다운 — 개인전 개수 맞히기'], ['duo', '듀오 쇼다운 — 레드/블루 팀 대결'], ['speedrun', '스피드런 — 15문제 먼저 풀기'], ['onehit', '한방 — 틀리면 즉시 탈락'], ['stack', '쌓기 — 위에서 본 모양대로 쌓기'], ['blueprint', '도면 — 도면 보고 개수 맞추기'], ['liar', '라이어 — 다른 모양 보는 라이어 찾기'], ['coop', '협동 쌓기 — 설명하는 사람 + 쌓는 사람'], ['bomb', '폭탄 — 넘기다 터지면 탈락']];
+    const arg = (raw.slice(sp).trim().split(/\s+/)[0] || '').toLowerCase();
+    return MD.filter(m => m[0].startsWith(arg)).slice(0, max).map(m => ({ fill: '/mode ' + m[0], usage: '/mode ' + m[0], desc: m[1] }));
+  }
   const ent = (pre, n) => { const c = CMDS[n]; return { fill: '/' + pre + n + ' ', usage: '/' + pre + n + (c[1] === 'G' ? '' : ' ' + T) + (pre === 'loop' ? ' <초>' : '') + (pre !== 'unloop' && c[3] ? ' ' + c[3] : ''), desc: (pre === 'loop' ? '🔁 반복: ' : pre === 'unloop' ? '⏹ 반복 중지: ' : '') + c[0] }; };
   const pre = tok.startsWith('unloop') ? 'unloop' : tok.startsWith('loop') ? 'loop' : '';
   if (pre && (tok.length > pre.length || done)) {
@@ -2677,7 +2683,7 @@ const cmdGo = () => {
   addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { e.preventDefault(); if (!TUT.on) cmdOpen(); } }, true);
 }
 /* ===== 선생님 튜토리얼 ===== */
-const TUT_WAIT = 10000;
+const TUT_WAIT = 20000;
 const TUT = { on: false, tk: 0, phase: 1, step: 0, t0: 0, int: null, to: null, root: null, txt: '' };
 const tkb = (...k) => k.map(x => `<kbd>${x}</kbd>`).join('<i class="pl">+</i>');
 const TUT_ROWS = [
@@ -2695,28 +2701,17 @@ const TUT_ROWS = [
 const tutSleep = ms => new Promise(r => setTimeout(r, ms));
 const tR = open => ({ a: 'reset', open }), tY = x => ({ a: 'type', x }), tE = { a: 'enter' }, tW = ms => ({ a: 'wait', ms });
 const tO = (x, k, ms) => ({ a: 'out', x, k, ms }), tKEYS = k => ({ a: 'keys', k }), tOPEN = { a: 'open' }, tPICK = i => ({ a: 'pick', i }), tTAB = { a: 'tab' };
-const TUT_INTRO = {
-  t: '이렇게 쓰는 거예요',
-  d: '<kbd>Ctrl</kbd> + <kbd>1</kbd> 로 콘솔을 열고 명령어를 치면, 접속자와 게임을 바로 조작할 수 있어요.',
-  s: [tR(0), tW(400), tKEYS(['Ctrl', '1']), tOPEN, tW(300), tY('/addscore 50 me'), tW(300), tE, tO('✔ /addscore 50 → 나', 'ok', 500), tY('/lives 5 all'), tW(300), tE, tO('✔ /lives 5 → 모두', 'ok', 900)]
-};
 const TUT_STEPS = [
-  { t: '1. 열고 닫기', d: '<kbd>Ctrl</kbd> + <kbd>1</kbd> 로 열고 닫아요. 열리면 접속자 카드가 위, 콘솔이 아래로 나뉘어요. 막히면 <code>/help</code>.',
-    s: [tR(0), tW(400), tKEYS(['Ctrl', '1']), tOPEN, tW(300), tY('/help'), tE, tO('반복: /loop<명령> [me|all|닉네임] <초> [인자]', 'ch', 250), tO('/kill — 즉시 탈락 [me|all|닉네임]', '', 250), tO('/addscore [n] — 점수 +n (기본 10)', '', 900)] },
+  { t: '1. 열고 닫기', d: '<kbd>Ctrl</kbd> + <kbd>1</kbd> 로 열면 <code>/help</code> 가 자동으로 쳐져서 명령어 목록이 떠요. 다시 누르면 닫혀요.',
+    s: [tR(0), tW(150), tKEYS(['Ctrl', '1']), tOPEN, tY('/help'), tE, tO('반복: /loop<명령> [me|all|닉네임] <초> [인자]', 'ch', 150), tO('/kill — 즉시 탈락 [me|all|닉네임]', '', 150), tO('/addscore [n] — 점수 +n (기본 10)', '', 300)] },
   { t: '2. 대상 정하기', d: '개인 명령어는 끝에 <code>me</code>(나) · <code>all</code>(모두) · 닉네임을 붙여요. 그 사람 화면에서 바로 실행돼요.',
-    s: [tR(1), tY('/addscore 50 all'), tE, tO('✔ /addscore 50 → 모두', 'ok', 500), tY('/lives 5 서연'), tE, tO('✔ /lives 5 → 서연', 'ok', 1100)] },
+    s: [tR(1), tY('/addscore 50 all'), tE, tO('✔ /addscore 50 → 모두', 'ok', 250), tY('/lives 5 서연'), tE, tO('✔ /lives 5 → 서연', 'ok', 500)] },
   { t: '3. 대상 고르기', d: '대상을 안 쓰면 접속자 카드가 떠서 직접 골라요. <code>/bomb</code> <code>/steal</code> <code>/gift</code> 도 같은 방식이에요.',
-    s: [tR(1), tY('/kill'), tE, tPICK(2), tO('✔ /kill → 서연', 'ok', 1100)] },
-  { t: '4. 자동완성', d: '앞글자만 쳐도 추천이 떠요. <kbd>Tab</kbd> 자동완성 · <kbd>↑</kbd><kbd>↓</kbd> 지난 명령어. 추천을 클릭해도 돼요.',
-    s: [tR(1), tY('/fa'), tW(1100), tTAB, tW(200), tY('8'), tW(300), tE, tO('✔ /fake', 'ok', 1200)] },
-  { t: '5. 반복 실행', d: '<code>/loop명령</code> 뒤에 대상·초·값을 쓰면 n초마다 반복해요. 끄기는 <code>/unloop명령</code>, 전부 끄기는 <code>/stoploops</code>.',
-    s: [tR(1), tY('/loopaddscore all 2 5'), tE, tO('🔁 /loopaddscore 모두 2초마다 (끄기: /unloopaddscore)', '', 1400), tY('/unloopaddscore all'), tE, tO('⏹ /unloopaddscore — 1개 중지', '', 1000)] },
-  { t: '6. 게임 제어', d: '대상이 필요 없는 명령은 바로 실행돼요. <code>/mode</code> 모드 시작 · <code>/cfg</code> 설정 변경 · <code>/skipvote</code> <code>/end</code> 등.',
-    s: [tR(1), tY('/mode bomb'), tE, tO('✔ /mode', 'ok', 500), tY('/cfg score 20'), tE, tO('✔ /cfg → score=20', 'ok', 1100)] },
-  { t: '7. 혼자 연습', d: '<code>/fake</code> 로 가짜 유저를 만들 수 있어요. <code>/fakescore</code> <code>/fakekill</code> 로 상황을 만들고 <code>/users</code> 로 확인해요.',
-    s: [tR(1), tY('/fakescore 30'), tE, tO('✔ /fakescore', 'ok', 350), tY('/fakekill 2'), tE, tO('✔ /fakekill', 'ok', 350), tY('/users'), tE, tO('✔ /users → 나(0점), 익명(30점), 익명(30점,탈락)', 'ok', 1100)] },
-  { t: '8. 채팅과 마무리', d: '<code>/</code> 없이 치면 다른 선생님에게 채팅이 가요. 이 안내는 <code>/tutorial</code> 로 다시 볼 수 있어요.',
-    s: [tR(1), tY('수업 시작할게요'), tE, tO('(선생님) 김쌤: 확인했어요', 'ch', 1500)] }
+    s: [tR(1), tY('/kill'), tE, tPICK(2), tO('✔ /kill → 서연', 'ok', 500)] },
+  { t: '4. 자동완성 · 모드 미리보기', d: '앞글자만 쳐도 추천이 떠요. <code>/mode </code> 를 치면 시작할 수 있는 모드들이 미리보기로 나와요. <kbd>Tab</kbd> 으로 완성.',
+    s: [tR(1), tY('/mo'), tW(450), tTAB, tW(350), tY('b'), tW(600), tY('omb'), tE, tO('✔ /mode', 'ok', 500)] },
+  { t: '5. 반복 실행', d: '<code>/loop명령</code> 뒤에 대상·초·값을 쓰면 n초마다 반복해요. 끄기는 <code>/unloop명령</code>, 전부 끄기는 <code>/stoploops</code>. 이 안내는 <code>/tutorial</code> 로 다시 볼 수 있어요.',
+    s: [tR(1), tY('/loopaddscore all 2 5'), tE, tO('🔁 /loopaddscore 모두 2초마다', '', 500), tY('/unloopaddscore all'), tE, tO('⏹ /unloopaddscore — 1개 중지', '', 500)] }
 ];
 function tutBuild() {
   if (TUT.root) return;
@@ -2725,7 +2720,7 @@ function tutBuild() {
   const dots = TUT_STEPS.map((_, i) => `<span class="tdot" data-i="${i}"></span>`).join('');
   r.innerHTML = `<div class="card tut-c1"><div class="tut-h"><span>선생님 단축키</span></div><div class="tut-kg">${rows}</div></div>
 <div class="card tut-c2">
-  <div class="tut-h"><span>콘솔 사용법</span><span id="tutTag" class="tut-tag">맛보기</span><span id="tutDots" class="tut-dots" style="display:none">${dots}</span></div>
+  <div class="tut-h"><span>콘솔 사용법</span><span id="tutDots" class="tut-dots">${dots}</span></div>
   <div class="tut-pg"><i id="tutProgF"></i></div>
   <div class="tut-st">
     <div id="tcCon" class="tut-con off">
@@ -2736,7 +2731,7 @@ function tutBuild() {
     <div id="tcPick"></div><div id="tcCaps"></div>
   </div>
   <div class="tut-d" id="tutDW"><div id="tutDT"></div><div id="tutDD"></div></div>
-  <div class="tut-f"><div class="tut-nav"><span id="tutNav" style="display:none"><button id="tutPrev">◀</button> <span id="tutNo"></span> <button id="tutNext">▶</button></span><span id="tutHint">콘솔 맛보기 재생 중…</span></div><button id="tutOk" class="tut-ok" disabled>알겠습니다</button></div>
+  <div class="tut-f"><div class="tut-nav"><span id="tutNav"><button id="tutPrev">◀</button> <span id="tutNo"></span> <button id="tutNext">▶</button></span><span id="tutHint"></span></div><button id="tutOk" class="tut-ok" disabled>알겠습니다</button></div>
 </div>`;
   document.querySelector('.right-card-container').appendChild(r); TUT.root = r;
   $('tutOk').onclick = () => { if (!$('tutOk').disabled) tutClose(); };
@@ -2746,7 +2741,7 @@ function tutBuild() {
 }
 function tutTxt(t) {
   TUT.txt = t; $('tcTxt').textContent = t; $('tcPh').style.display = t ? 'none' : '';
-  const l = t ? cmdSug(t) : [], s = $('tcSug'); s.style.display = l.length ? 'flex' : 'none';
+  const l = t ? cmdSug(t, 5) : [], s = $('tcSug'); s.style.display = l.length ? 'flex' : 'none';
   s.innerHTML = l.map(x => `<div class="sg"><b>${esc(x.usage)}</b><span>${esc(x.desc)}</span></div>`).join('');
 }
 function tutLog(t, k) {
@@ -2762,49 +2757,48 @@ async function tutAct(a, tk) {
   const live = () => TUT.tk === tk && TUT.on;
   if (a.a === 'reset') {
     $('tcLog').innerHTML = ''; tutTxt(''); $('tcPick').style.display = 'none'; $('tcCaps').className = '';
-    $('tcCon').classList.toggle('off', !a.open); await tutSleep(a.open ? 350 : 150);
+    $('tcCon').classList.toggle('off', !a.open); await tutSleep(a.open ? 150 : 80);
   } else if (a.a === 'keys') {
     const c = $('tcCaps'); c.innerHTML = a.k.map(x => `<kbd class="cap">${x}</kbd>`).join('<i>+</i>'); c.classList.add('on');
-    await tutSleep(700); if (!live()) return;
-    c.querySelectorAll('.cap').forEach(e => e.classList.add('dn')); SFX.move(); await tutSleep(500); c.classList.remove('on');
+    await tutSleep(350); if (!live()) return;
+    c.querySelectorAll('.cap').forEach(e => e.classList.add('dn')); SFX.move(); await tutSleep(250); c.classList.remove('on');
   } else if (a.a === 'open') {
-    $('tcCon').classList.remove('off'); SFX.pop(); await tutSleep(500);
+    $('tcCon').classList.remove('off'); SFX.pop(); await tutSleep(300);
   } else if (a.a === 'type') {
     let t = TUT.txt;
-    for (const ch of a.x) { if (!live()) return; t += ch; tutTxt(t); SFX.hover(); await tutSleep(55 + Math.random() * 55); }
+    for (const ch of a.x) { if (!live()) return; t += ch; tutTxt(t); SFX.hover(); await tutSleep(22 + Math.random() * 22); }
     await tutSleep(250);
   } else if (a.a === 'tab') {
-    const l = cmdSug(TUT.txt); if (l[0]) tutTxt(l[0].fill); SFX.move(); await tutSleep(450);
+    const l = cmdSug(TUT.txt); if (l[0]) tutTxt(l[0].fill); SFX.move(); await tutSleep(250);
   } else if (a.a === 'enter') {
-    const t = TUT.txt; tutTxt(''); tutLog('> ' + t, 'me'); SFX.send(); await tutSleep(350);
+    const t = TUT.txt; tutTxt(''); tutLog('> ' + t, 'me'); SFX.send(); await tutSleep(180);
   } else if (a.a === 'out') {
     tutLog(a.x, a.k); await tutSleep(a.ms || 500);
   } else if (a.a === 'pick') {
     const p = $('tcPick'), U = [['나', selectedImage], ['민준', characterImages[1]], ['서연', characterImages[2]]];
     p.innerHTML = '<div class="pt">/kill — 대상을 고르세요</div>' + U.map(u => `<div class="pr"><img src="${esc(u[1])}" alt=""><span>${u[0]}</span></div>`).join('');
-    p.style.display = 'flex'; SFX.cardOpen(); await tutSleep(1100); if (!live()) return;
-    p.children[a.i + 1].classList.add('hl'); SFX.click(); await tutSleep(650); p.style.display = 'none';
+    p.style.display = 'flex'; SFX.cardOpen(); await tutSleep(600); if (!live()) return;
+    p.children[a.i + 1].classList.add('hl'); SFX.click(); await tutSleep(350); p.style.display = 'none';
   } else if (a.a === 'wait') await tutSleep(a.ms);
 }
 async function tutRun(s, tk) {
   for (const a of s) { if (TUT.tk !== tk || !TUT.on) return false; await tutAct(a, tk); }
   return TUT.tk === tk && TUT.on;
 }
-async function tutLoopIntro(tk) {
-  while (TUT.tk === tk && TUT.on) { if (!(await tutRun(TUT_INTRO.s, tk))) return; await tutSleep(1200); }
-}
-function tutGo(i) {
+function tutGo(i, auto) {
   if (!TUT.on) return;
   const n = TUT_STEPS.length; i = (i + n) % n; TUT.step = i; const tk = ++TUT.tk, st = TUT_STEPS[i];
   document.querySelectorAll('#tutDots .tdot').forEach((d, j) => d.classList.toggle('on', j === i));
-  $('tutNo').textContent = (i + 1) + ' / ' + n; tutDesc(st.t, st.d); tutProg(((i + 1) / n * 100) + '%', 400);
-  tutRun(st.s, tk).then(async ok => { if (!ok) return; await tutSleep(3800); if (TUT.on && TUT.tk === tk) tutGo(i + 1); });
+  $('tutNo').textContent = (i + 1) + ' / ' + n; tutDesc(st.t, st.d);
+  tutRun(st.s, tk).then(async ok => {
+    if (!ok || !auto || i >= n - 1) return;
+    await tutSleep(Math.max(0, TUT.t0 + (i + 1) * TUT_WAIT / n - Date.now()));   // 단계마다 같은 시간씩 → 전체 20초
+    if (TUT.on && TUT.tk === tk) tutGo(i + 1, true);
+  });
 }
 function tutPhase2() {
   if (!TUT.on) return;
   TUT.phase = 2; const ok = $('tutOk'); ok.disabled = false; ok.textContent = '알겠습니다'; ok.classList.add('pulse'); SFX.unlock();
-  $('tutTag').style.display = 'none'; $('tutDots').style.display = 'flex'; $('tutNav').style.display = 'inline'; $('tutHint').style.display = 'none';
-  tutGo(0);
 }
 function tutTick() {
   if (!TUT.on) return;
@@ -2814,16 +2808,14 @@ function tutTick() {
 function tutOpen() {
   if (TUT.on || gameStarted || curStage) return;
   tutBuild(); closeSettings(); cmdOpen(false);
-  TUT.on = true; TUT.phase = 1; TUT.step = 0; TUT.t0 = Date.now(); const tk = ++TUT.tk;
+  TUT.on = true; TUT.phase = 1; TUT.step = 0; TUT.t0 = Date.now(); ++TUT.tk;
   clearInterval(TUT.int); clearTimeout(TUT.to);
   document.querySelector('.right-card-container').classList.add('tut-open');
-  const ok = $('tutOk'); ok.disabled = true; ok.classList.remove('pulse'); ok.textContent = '알겠습니다 (10)';
-  $('tutTag').style.display = ''; $('tutDots').style.display = 'none'; $('tutNav').style.display = 'none'; $('tutHint').style.display = '';
+  const ok = $('tutOk'); ok.disabled = true; ok.classList.remove('pulse'); ok.textContent = '알겠습니다 (' + TUT_WAIT / 1000 + ')';
   $('tcLog').innerHTML = ''; tutTxt(''); $('tcCon').classList.add('off'); $('tcPick').style.display = 'none'; $('tcCaps').className = '';
-  tutDesc(TUT_INTRO.t, TUT_INTRO.d);
   tutProg('0%', 0); void $('tutProgF').offsetWidth; tutProg('100%', TUT_WAIT);
   TUT.int = setInterval(tutTick, 250); TUT.to = setTimeout(tutPhase2, TUT_WAIT);
-  SFX.cardOpen(); tutLoopIntro(tk);
+  SFX.cardOpen(); tutGo(0, true);
 }
 function tutClose(silent) {
   if (!TUT.on) return;
