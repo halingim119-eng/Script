@@ -365,6 +365,21 @@ body.bshake{animation:shk .08s linear 14}
 .tut-ok:disabled{background:#cbd5e1;cursor:not-allowed}
 .tut-ok:not(:disabled):hover{background:#16a34a;transform:scale(1.04)}
 .tut-ok.pulse{animation:tutPulse .9s ease-out 2}
+/* 학생용 모드 설명창 */
+#infoUI{display:none;flex-direction:column}
+.right-card-container.info-split{gap:10px}
+.right-card-container.info-split>#defaultUserListUI{height:auto;flex:0 0 38%;min-height:0;padding:14px 16px;overflow:hidden}
+.right-card-container.info-split>#settingsUI,.right-card-container.info-split>#profilePickerUI{display:none!important}
+.right-card-container.info-split>#gameRankingUI{height:auto;flex:0 0 42%;min-height:0;max-height:none;overflow:hidden}
+.right-card-container.info-split #gameRankingUI .tall-card{display:none}
+.right-card-container.info-split #gameRankingUI .short-card{height:100%!important;flex:1;min-height:0}
+.right-card-container.info-split>#infoUI{display:flex;flex:1;min-height:0;height:auto;padding:10px 12px;gap:6px}
+#infoList{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:4px}
+.info-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:8px;flex:none}
+.info-item img{width:34px;height:34px;object-fit:contain;flex:none}
+.info-item div{display:flex;flex-direction:column;min-width:0}
+.info-item b{font-size:12px;color:#1e293b}
+.info-item span{font-size:11px;color:#64748b;line-height:1.4;word-break:keep-all}
 </style>
 </head>
 <body>
@@ -376,13 +391,13 @@ body.bshake{animation:shk .08s linear 14}
     <div id="normalUI" class="card-section">
       <div class="nickname-section">
         <label for="nickname" class="nickname-label">닉네임</label>
-        <input type="text" id="nickname" class="nickname-input" placeholder="이름을 입력하세요" maxlength="12" autocomplete="off">
-        <button id="changeProfileBtn" class="btn btn-outline">📸 프로필 사진 변경</button>
+        <input type="text" id="nickname" class="nickname-input" placeholder="이름" maxlength="12" autocomplete="off">
+        <button id="changeProfileBtn" class="btn btn-outline">📸 프로필 바꾸기</button>
       </div>
     </div>
 
     <div id="gameUI" class="card-section" style="display:none;">
-      <div class="game-title-badge" id="cameraStatusBadge">3D 관찰 카메라 회전 중</div>
+      <div class="game-title-badge" id="cameraStatusBadge">블록 관찰 중</div>
       <div id="koHud" class="ko-hud" style="display:none;"><div class="ko-lives" id="koLives">❤️❤️❤️</div><div class="ko-bar" id="koBar"><div id="koBarFill"></div></div></div>
       <div id="threeContainer"></div>
       <div id="hsInfo" style="display:none;width:100%;flex:none;font-size:12px;text-align:center;line-height:1.5;color:#334155;margin-bottom:6px"></div>
@@ -404,14 +419,14 @@ body.bshake{animation:shk .08s linear 14}
   <div class="right-card-container">
     <div id="defaultUserListUI" class="card right-card">
       <div class="board-header">
-        <div class="board-title">실시간 실제 접속자 현황</div>
+        <div class="board-title">플레이어들</div>
         <div class="online-count-badge">
           <div class="live-dot"></div>
-          <span id="onlineCountText">접속중 0명</span>
+          <span id="onlineCountText">0명</span>
           <input type="password" id="teacherCode" class="transparent-code-input" placeholder="코드" autocomplete="new-password"><button type="button" id="cfgBtn" class="cfg-open-btn">⚙ 설정</button>
         </div>
       </div>
-      <div class="user-list-container" id="userListContainer"><div class="empty-state">접속자를 감지하는 중...</div></div>
+      <div class="user-list-container" id="userListContainer"><div class="empty-state">불러오는 중...</div></div>
 
       <div class="vote-overlay" id="voteOverlay">
         <div class="vote-title">게임 모드 투표 ⏱ <span id="voteTimer">10</span>초</div>
@@ -459,7 +474,7 @@ body.bshake{animation:shk .08s linear 14}
 
     <div id="profilePickerUI" class="card right-card" style="display:none;">
       <div class="board-header">
-        <div class="board-title">📸 프로필 사진 선택</div>
+        <div class="board-title">📸 프로필 고르기</div>
         <button id="closeProfilePickerBtn" style="border:none;background:none;cursor:pointer;font-size:13px;color:#64748b;font-weight:bold;">닫기 ✕</button>
       </div>
       <div class="profile-grid-container" id="profileGrid"></div>
@@ -467,11 +482,11 @@ body.bshake{animation:shk .08s linear 14}
 
     <div id="gameRankingUI" class="game-right-layout" style="display:none;">
       <div class="card tall-card">
-        <div class="board-title" id="rankingTitle">🏆 실시간 랭킹</div>
+        <div class="board-title" id="rankingTitle">🏆 랭킹</div>
         <div class="rank-list" id="rankingList"></div><div id="chatBox"><div id="chatMsgs"></div><div class="chat-in"><input id="chatInput" maxlength="60" placeholder="메시지 입력" autocomplete="off"><button id="chatSend">전송</button></div></div>
       </div>
       <div class="card short-card">
-        <div class="quiz-title" id="quizTitle">쌓기나무는 모두 몇 개일까요?</div>
+        <div class="quiz-title" id="quizTitle">쌓기나무는 모두 몇 개?</div>
         <div class="choice-grid" id="choiceButtons"></div>
         <div id="stackView"><div id="topView"></div></div>
         <div id="feedbackMessage" class="feedback-msg"></div>
@@ -676,7 +691,7 @@ function nextCoopProblem() {
     drawBlueprint(bl);
     $('topView').innerHTML = '<div class="tv-title">위에서 본 모양</div><div class="tv-grid">' + [0, 1, 2].map(y => [0, 1, 2].map(x => `<div class="tv-cell">${stackT[x][y] || ''}</div>`).join('')).join('') + '</div>';
     $('quizTitle').innerText = '화면의 모양을 말로 설명해 주세요';
-  } else { renderStack(); $('quizTitle').innerText = '설명을 듣고 똑같이 쌓은 뒤 제출하세요'; }
+  } else { renderStack(); $('quizTitle').innerText = '설명 듣고 똑같이 쌓아서 제출!'; }
   addChat({ sys: 1, text: role === 'd' ? '쌓는 사람은 도면을 못 봐요. 가끔 다른 팀 채팅이 섞여요!' : '가끔 설명이 다른 팀 채팅으로 바뀌어요. 틀리면 알려줄게요!' });
   $('cameraStatusBadge').innerText = defaultBadge();
 }
@@ -1297,8 +1312,8 @@ function applyUIState(started) {
 }
 
 function renderUserList(users) {
-  $('onlineCountText').innerText = `접속중 ${users.length}명`;
-  const html = users.length === 0 ? `<div class="empty-state">접속자가 없습니다.</div>` : users.map(u => `
+  $('onlineCountText').innerText = `${users.length}명`;
+  const html = users.length === 0 ? `<div class="empty-state">아무도 없어요.</div>` : users.map(u => `
     <div class="user-item">
       <div class="user-info">
         <img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" alt="프로필">
@@ -1318,7 +1333,7 @@ function renderRankingList(users) {
   const duo = gameMode === 'duo' || gameMode === 'knockout', ko = gameMode === 'knockout' || gameMode === 'onehit' || gameMode === 'bomb';
   const av = u => `<img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필">`;
   if (isTargetSelectMode) {
-    $('rankingTitle').innerHTML = `<span style="color:#ef4444;">🎯 공격할 상대방을 클릭하세요!</span>`;
+    $('rankingTitle').innerHTML = `<span style="color:#ef4444;">🎯 공격할 사람을 고르세요</span>`;
     const pool = (duo ? users.filter(u => teams[u.id] !== teams[myId]) : users).filter(u => !(ko && u.dead));   // 듀오: 상대 팀만
     html = pool.map(u => {
       const me = u.id === myId;
@@ -1340,7 +1355,7 @@ function renderRankingList(users) {
         <span style="color:#334155;font-size:14px;">${gameMode === 'knockout' ? '🏆' + t.score + '승' : t.score + '점'}</span>
       </div>`).join('');
   } else {
-    $('rankingTitle').innerHTML = `🏆 실시간 랭킹`;
+    $('rankingTitle').innerHTML = `🏆 랭킹`;
     html = [...users].sort((a, b) => (ko ? (a.dead ? 1 : 0) - (b.dead ? 1 : 0) : 0) || (b.score || 0) - (a.score || 0)).map((u, i) => {
       const cls = ['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc';
       return `<div class="rank-item">
@@ -1379,7 +1394,7 @@ function generateValidBlocks(lo = S.blkLo, hi = S.blkHi) {
 function setupChoices(correct) {
   const box = $('choiceButtons'), fb = $('feedbackMessage');
   box.innerHTML = ''; fb.innerText = ''; hasGuessed = false; box.style.maxHeight = ''; box.style.overflowY = '';
-  box.style.gridTemplateColumns = ''; $('quizTitle').innerText = '쌓기나무는 모두 몇 개일까요?'; specPanelKey = '';
+  box.style.gridTemplateColumns = ''; $('quizTitle').innerText = '쌓기나무는 모두 몇 개?'; specPanelKey = '';
   toggleOutline(activeShiningEyesRound);
   const set = new Set([correct]);
   while (set.size < S.choices) {
@@ -1397,15 +1412,15 @@ function setupChoices(correct) {
       if (num === correct) {
         btn.classList.add('correct'); SFX.correct();
         let gain = S.score;
-        if (hasTripleScoreMultiplier) { gain = S.score * S.triple; hasTripleScoreMultiplier = false; fb.innerText = '정답입니다! ⚡벼락치기 발동 (+' + gain + '점)!'; }
-        else fb.innerText = gameMode === 'speedrun' ? '정답! ⚡' : '정답입니다! 카드 보상을 선택하세요.';
+        if (hasTripleScoreMultiplier) { gain = S.score * S.triple; hasTripleScoreMultiplier = false; fb.innerText = '정답! ⚡벼락치기 (+' + gain + '점)'; }
+        else fb.innerText = gameMode === 'speedrun' ? '정답! ⚡' : '정답! 카드를 고르세요';
         fb.style.color = '#22c55e';
         myScore += gain; updatePresence();
         if (gameMode === 'speedrun') setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, 350);   // 스피드런: 카드 없이 바로 다음 문제
         else setTimeout(openCardModal, S.cardDelay);   // 카드를 고르면 다음 문제로 넘어감
       } else {
         btn.classList.add('wrong'); SFX.wrong();
-        fb.innerText = `틀렸습니다! (정답: ${correct}개)`; fb.style.color = '#ef4444';
+        fb.innerText = `땡! 정답은 ${correct}개`; fb.style.color = '#ef4444';
         if (gameMode === 'onehit' || gameMode === 'bomb') { myLives = 0; renderHud(); die(); updatePresence(); return; }
         if (gameMode === 'knockout' && S.koWrongLife > 0) { myLives -= S.koWrongLife; renderHud(); if (myLives <= 0) { myLives = 0; die(); updatePresence(); return; } updatePresence(); }   // 한방: 틀리면 즉시 탈락
         if (gameMode === 'blueprint') revealBlueprint(correct);                                  // 도면: 틀리면 3D로 정답 공개
@@ -1421,12 +1436,12 @@ function generateCardOptions() {
   const ci = Math.floor(Math.random() * 3), coin = [S.coinA, S.coinB, S.coinC][ci];
   const coinImg = ['XMEic2GRdS2qq7GJaEiB', 'TGQBtafzmsdeiJwZSmpo', 'ET4DYhvXCLzJPiw96NtX'][ci];
   const pool = [
-    { type: 'coin', title: `코인 ${coin}개`, img: SC(coinImg), desc: `점수 +${coin}점을 즉시 획득합니다.`, val: coin },
-    { type: 'confusion', title: '혼란 카드', img: 'https://media1.tenor.com/m/ZINlqqwHYQ4AAAAC/brawl-stars-brawl-stars-emoji.gif', desc: '상대방을 지목하여 4초간 화면에 글리치 블록을 잔뜩 생성합니다.' },
-    { type: 'taunt', title: '괴롭히기 카드', img: 'https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif', desc: '상대방 화면을 2.5초 동안 거대한 이미지로 가립니다.' },
-    { type: 'freeze', title: '얼음 카드', img: SC('6UFbyzBNqp1V5z9EASqM'), desc: '상대방을 지목하여 3초간 쌓기나무 회전을 멈춥니다.' },
-    { type: 'lightning', title: '벼락 치기 카드', img: SC('Cz9rD81f7Qrva9kzgZvA'), desc: '다음 문제를 맞히면 얻는 점수가 3배(30점)로 폭증합니다.' },
-    { type: 'shining_eyes', title: '빛나는 눈 카드', img: SC('Y7xeUH3uBvNkQBzSXkA6'), desc: '다음 라운드에 쌓기나무가 반투명해지고 윤곽선이 빛나고 정답 버튼 하나가 빛납니다.' }
+    { type: 'coin', title: `코인 ${coin}개`, img: SC(coinImg), desc: `바로 +${coin}점`, val: coin },
+    { type: 'confusion', title: '혼란 카드', img: 'https://media1.tenor.com/m/ZINlqqwHYQ4AAAAC/brawl-stars-brawl-stars-emoji.gif', desc: '상대 화면에 이상한 블록을 뿌려요.' },
+    { type: 'taunt', title: '괴롭히기 카드', img: 'https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif', desc: '상대 화면을 큰 그림으로 가려요.' },
+    { type: 'freeze', title: '얼음 카드', img: SC('6UFbyzBNqp1V5z9EASqM'), desc: '상대 블록 회전을 멈춰요.' },
+    { type: 'lightning', title: '벼락 치기 카드', img: SC('Cz9rD81f7Qrva9kzgZvA'), desc: '다음 문제 점수가 3배!' },
+    { type: 'shining_eyes', title: '빛나는 눈 카드', img: SC('Y7xeUH3uBvNkQBzSXkA6'), desc: '다음 문제에서 정답 버튼이 빛나요.' }
   ];
   return pool.filter(c => !(gameMode === 'stack' && c.type === 'shining_eyes') && (c.type === 'coin' || S['c_' + c.type] !== false)).sort(() => Math.random() - 0.5).slice(0, S.cardCount);
 }
@@ -1458,7 +1473,7 @@ function handleCardSelect(card) {
 }
 
 /* ---------- 모드별 화면 구성 ---------- */
-const defaultBadge = () => !gameStarted ? '3D 관찰 카메라 회전 중' : gameMode === 'coop' ? (coopRole() === 'd' ? '설명하는 사람 · 도면과 3D를 볼 수 있어요' : '쌓는 사람 · 설명을 듣고 쌓으세요') : gameMode === 'liar' ? (liarState && liarState.liarId === myId ? '🕵️ 당신은 라이어!' : '🙂 시민 · 모양을 기억하세요') : gameMode === 'stack' ? '🧱 쌓기 모드' : gameMode === 'blueprint' ? '📐 도면 보고 맞추기' : '3D 관찰 카메라 회전 중';
+const defaultBadge = () => !gameStarted ? '블록 관찰 중' : gameMode === 'coop' ? (coopRole() === 'd' ? '설명 담당 · 도면을 볼 수 있어요' : '쌓기 담당 · 설명 듣고 쌓기') : gameMode === 'liar' ? (liarState && liarState.liarId === myId ? '🕵️ 당신은 라이어!' : '🙂 시민 · 모양을 기억하세요!') : gameMode === 'stack' ? '🧱 쌓기 모드' : gameMode === 'blueprint' ? '📐 도면 보고 맞추기' : '블록 관찰 중';
 const modalOpen = () => $('cardModalOverlay').classList.contains('active') || $('pwModalOverlay').classList.contains('active');
 
 function setModeUI() {
@@ -1485,7 +1500,7 @@ function nextStackProblem() {
   stackT = emptyH(); generateValidBlocks().forEach(b => { stackT[b.x][b.y]++; });
   stackH = emptyH(); stackCur = { x: 1, y: 1 }; hasGuessed = false; currentBlocks = [];
   activeShiningEyesRound = false; hasShiningEyesBuff = false;
-  $('quizTitle').innerText = '위에서 본 모양과 똑같이 쌓아보세요!';
+  $('quizTitle').innerText = '위에서 본 모양대로 쌓으세요';
   $('feedbackMessage').innerText = ''; koDeadline = 0;
   renderStack();
 }
@@ -1526,7 +1541,7 @@ function stackAct(k) {
   if (gameMode === 'coop') { if (k === 'submit') coopSubmit(same); return; }
   if (!same) return;
   hasGuessed = true; SFX.correct(); myScore += S.score; updatePresence();
-  const fb = $('feedbackMessage'); fb.innerText = '완성! 카드 보상을 선택하세요.'; fb.style.color = '#22c55e';
+  const fb = $('feedbackMessage'); fb.innerText = '완성! 카드를 고르세요'; fb.style.color = '#22c55e';
   setTimeout(openCardModal, S.cardDelay);
 }
 
@@ -1615,7 +1630,7 @@ function notifyAttack(p) {   // 모든 모드 공통: 누가 방해했는지 작
 
 function generateHackCards() {   // 해킹 모드: 코인 카드만(양 2배), 30% 확률로 한 장은 해킹 카드
   const imgs = { 5: 'XMEic2GRdS2qq7GJaEiB', 7: 'TGQBtafzmsdeiJwZSmpo', 10: 'ET4DYhvXCLzJPiw96NtX' };
-  const cards = [5, 7, 10].map(b => ({ type: 'coin', title: `코인 ${b * S.hackMult}개`, img: SC(imgs[b]), desc: `점수 +${b * S.hackMult}점을 즉시 획득합니다.`, val: b * S.hackMult }));
+  const cards = [5, 7, 10].map(b => ({ type: 'coin', title: `코인 ${b * S.hackMult}개`, img: SC(imgs[b]), desc: `바로 +${b * S.hackMult}점`, val: b * S.hackMult }));
   const roll = hackMiss >= S.hackPity || Math.random() * 100 < S.hackProb;   // 해킹 카드 없이 2번 뜨면 3번째는 무조건 등장
   hackMiss = roll ? 0 : hackMiss + 1;
   if (roll) cards[Math.floor(Math.random() * 3)] = { type: 'hack', title: '해킹 카드', img: HACK_IMG, desc: '상대를 지목하고 비밀번호를 맞히면 상대 코인의 ' + S.hackMin + '~' + S.hackMax + '%를 뺏습니다.' };
@@ -2456,7 +2471,7 @@ function bombRank(users) {
     T.innerHTML = `<span style="color:#ef4444;">💣 넘길 사람을 고르세요! (${8 - B.passes}번 남음)</span>`;
     html = B.cand.map(id => { const u = users.find(x => x.id === id); return u ? `<div class="rank-item selectable" data-bomb="${esc(id)}"><div class="user-info">${av(u)}<span>${esc(u.nickname || '익명')}</span></div><span style="color:#ef4444;font-size:11px;font-weight:bold;">[넘기기]</span></div>` : ''; }).join('') || '<div class="empty-state">더 못 넘겨요! 곧 터져요 💥</div>';
   } else {
-    T.innerHTML = '🏆 실시간 랭킹';
+    T.innerHTML = '🏆 랭킹';
     html = [...users].sort((a, b) => (a.dead ? 1 : 0) - (b.dead ? 1 : 0) || (b.score || 0) - (a.score || 0)).map((u, i) => `<div class="rank-item"><div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc'}">${i + 1}등</span>${av(u)}<span>${esc(u.nickname || '익명')}</span></div><span style="color:#64748b;font-size:12px;">${u.dead ? '💀 ' : (u.id === B.holder ? '💣 ' : '')}${u.score || 0}점</span></div>`).join('');
   }
   const key = 'B' + html; if (key !== lastRankHtml) { $('rankingList').innerHTML = html; lastRankHtml = key; }
@@ -2680,7 +2695,7 @@ const cmdGo = () => {
     if (r && cmdPickCtx) { const f = cmdPickCtx; cmdPickCtx = null; $('cmdPick').style.display = 'none'; f(r.dataset.id); }
     else if (x) { $('cmdPick').style.display = 'none'; cmdPickCtx = null; }
   };
-  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { e.preventDefault(); if (!TUT.on) cmdOpen(); } }, true);
+  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { e.preventDefault(); if (!TUT.on) { if (isTeacher) { infoOpen(false); cmdOpen(); } else infoOpen(); } } }, true);
 }
 /* ===== 선생님 튜토리얼 ===== */
 const TUT_WAIT = 20000;
@@ -2689,9 +2704,9 @@ const tkb = (...k) => k.map(x => `<kbd>${x}</kbd>`).join('<i class="pl">+</i>');
 const TUT_ROWS = [
   ['', tkb('Ctrl', '1'), '콘솔'],
   ['', tkb('Ctrl', '2'), '튜토리얼 넘기기'],
-  ['투표 중', tkb('A', 'Tab'), '숨바꼭질 술래 확정'],
-  ['숨바꼭질', tkb('A', 'F'), '술래 되기'],
-  ['숨바꼭질', tkb('A', 'G'), '도망자 되기'],
+  ['투표 중', '/skipvote', '투표 바로 끝내기'],
+  ['게임 중', '/end', '게임 바로 종료'],
+  ['로비', '/mode', '모드 바로 시작'],
   ['로비', '접속자 제목 클릭', '설정'],
   ['콘솔', tkb('Tab'), '자동완성'],
   ['콘솔', tkb('↑', '↓'), '지난 명령어'],
@@ -2702,15 +2717,15 @@ const tutSleep = ms => new Promise(r => setTimeout(r, ms));
 const tR = open => ({ a: 'reset', open }), tY = x => ({ a: 'type', x }), tE = { a: 'enter' }, tW = ms => ({ a: 'wait', ms });
 const tO = (x, k, ms) => ({ a: 'out', x, k, ms }), tKEYS = k => ({ a: 'keys', k }), tOPEN = { a: 'open' }, tPICK = i => ({ a: 'pick', i }), tTAB = { a: 'tab' };
 const TUT_STEPS = [
-  { t: '1. 열고 닫기', d: '<kbd>Ctrl</kbd> + <kbd>1</kbd> 로 열면 <code>/help</code> 가 자동으로 쳐져서 명령어 목록이 떠요. 다시 누르면 닫혀요.',
+  { t: '1. 열고 닫기', d: '<kbd>Ctrl</kbd> + <kbd>1</kbd> 으로 열면 명령어 목록이 떠요. 또 누르면 닫혀요.',
     s: [tR(0), tW(150), tKEYS(['Ctrl', '1']), tOPEN, tY('/help'), tE, tO('반복: /loop<명령> [me|all|닉네임] <초> [인자]', 'ch', 150), tO('/kill — 즉시 탈락 [me|all|닉네임]', '', 150), tO('/addscore [n] — 점수 +n (기본 10)', '', 300)] },
-  { t: '2. 대상 정하기', d: '개인 명령어는 끝에 <code>me</code>(나) · <code>all</code>(모두) · 닉네임을 붙여요. 그 사람 화면에서 바로 실행돼요.',
+  { t: '2. 대상 정하기', d: '끝에 <code>me</code>(나) <code>all</code>(전체) 닉네임 중 하나를 붙이세요.',
     s: [tR(1), tY('/addscore 50 all'), tE, tO('✔ /addscore 50 → 모두', 'ok', 250), tY('/lives 5 서연'), tE, tO('✔ /lives 5 → 서연', 'ok', 500)] },
-  { t: '3. 대상 고르기', d: '대상을 안 쓰면 접속자 카드가 떠서 직접 골라요. <code>/bomb</code> <code>/steal</code> <code>/gift</code> 도 같은 방식이에요.',
+  { t: '3. 대상 고르기', d: '대상을 안 쓰면 목록이 떠요. 거기서 고르면 돼요. <code>/bomb</code> <code>/steal</code> <code>/gift</code> 도 똑같아요.',
     s: [tR(1), tY('/kill'), tE, tPICK(2), tO('✔ /kill → 서연', 'ok', 500)] },
-  { t: '4. 자동완성 · 모드 미리보기', d: '앞글자만 쳐도 추천이 떠요. <code>/mode </code> 를 치면 시작할 수 있는 모드들이 미리보기로 나와요. <kbd>Tab</kbd> 으로 완성.',
+  { t: '4. 자동완성 · 모드 미리보기', d: '앞글자만 쳐도 추천이 떠요. <code>/mode </code> 뒤엔 모드 목록이 나와요. <kbd>Tab</kbd> 으로 완성.',
     s: [tR(1), tY('/mo'), tW(450), tTAB, tW(350), tY('b'), tW(600), tY('omb'), tE, tO('✔ /mode', 'ok', 500)] },
-  { t: '5. 반복 실행', d: '<code>/loop명령</code> 뒤에 대상·초·값을 쓰면 n초마다 반복해요. 끄기는 <code>/unloop명령</code>, 전부 끄기는 <code>/stoploops</code>. 이 안내는 <code>/tutorial</code> 로 다시 볼 수 있어요.',
+  { t: '5. 반복 실행', d: '<code>/loop명령</code> 뒤에 대상·초·값을 쓰면 반복해요. 끄기: <code>/unloop명령</code> · 전부 끄기: <code>/stoploops</code> · 다시 보기: <code>/tutorial</code>',
     s: [tR(1), tY('/loopaddscore all 2 5'), tE, tO('🔁 /loopaddscore 모두 2초마다', '', 500), tY('/unloopaddscore all'), tE, tO('⏹ /unloopaddscore — 1개 중지', '', 500)] }
 ];
 function tutBuild() {
@@ -2825,9 +2840,28 @@ function tutClose(silent) {
 }
 addEventListener('keydown', e => {
   if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') && isTeacher && TUT.on) {
-    e.preventDefault(); tutClose(); showToast(null, '튜토리얼', '건너뛰었어요 · 콘솔에서 /tutorial 로 다시 볼 수 있어요', '#22c55e');
+    e.preventDefault(); tutClose(); showToast(null, '튜토리얼', '넘겼어요 · /tutorial 로 다시 볼 수 있어요', '#22c55e');
   }
 }, true);
+/* ===== 학생용 모드 설명창 (Ctrl+1) ===== */
+const INFO_MODES = [
+  [SC('jMsj2Hr31RAw62EHKQQn'), '솔로 쇼다운', '블록 개수 맞히기. 맞히면 점수 + 카드!'],
+  ['https://gcdnb.pbrd.co/images/B1HRT4kn89U_.png', '듀오 쇼다운', '레드 vs 블루 팀 점수 대결. 같은 팀은 공격 못 해요.'],
+  [SC('HSFDVYouXjAjgw4uEs1i'), '폭탄', '폭탄을 넘기세요. 시간 끝나면 터져서 탈락! 빛나는 블록은 빼고 세요.'],
+  [SC('Q9NfQk57PnnpP9SVvyUR'), '스피드런', '블록이 많아요. 15문제 먼저 풀면 끝!'],
+  [SC('ZvRjhpftKDfgK4zcyvLQ'), '한방', '한 번 틀리면 바로 탈락. 끝까지 살아남기.'],
+  [SC('PQVbThjT3zxxtSMb2Ji8'), '쌓기', '위에서 본 모양대로 쌓기. WASD 이동 · Space 쌓기 · Q 빼기'],
+  [SC('qRCHU9udC89wwbegbVKw'), '도면보고 맞추기', '위·앞·옆 도면 보고 개수 맞히기. 틀리면 정답 공개.'],
+  [SC('y46nReaY9L9cZkjd5x2m'), '라이어', '한 명만 다른 모양을 봐요. 채팅으로 라이어를 찾아 투표!'],
+  [SC('v889UjVZ57DW1nNmHPZK'), '협동 쌓기', '2명이 한 팀. 한 명은 설명, 한 명은 쌓기. 다른 팀 채팅이 섞여요.']
+];
+let infoOn = false;
+{
+  const iu = document.createElement('div'); iu.id = 'infoUI'; iu.className = 'card right-card';
+  iu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">📖 모드 설명 <span style="font-size:11px;color:#94a3b8;font-weight:normal">Ctrl+1 로 닫기</span></div></div><div id="infoList">' + INFO_MODES.map(m => `<div class="info-item"><img src="${m[0]}" alt=""><div><b>${m[1]}</b><span>${m[2]}</span></div></div>`).join('') + '</div>';
+  document.querySelector('.right-card-container').appendChild(iu);
+}
+function infoOpen(on) { infoOn = on === undefined ? !infoOn : on; document.querySelector('.right-card-container').classList.toggle('info-split', infoOn); }
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
 
