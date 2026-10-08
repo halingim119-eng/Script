@@ -285,6 +285,21 @@ body.bshake{animation:shk .08s linear 14}
 #updSplash.in .upd-card{opacity:1;transform:none}
 .upd-card img{width:180px;height:180px;object-fit:contain}
 .upd-t{font-size:26px;font-weight:900;color:#1e293b}
+.right-card-container.cmd-split{gap:10px}
+.right-card-container.cmd-split>#defaultUserListUI{height:auto;flex:0 0 38%;min-height:0;padding:14px 16px;overflow:hidden}
+.right-card-container.cmd-split>#settingsUI,.right-card-container.cmd-split>#profilePickerUI{display:none!important}
+.right-card-container.cmd-split>#gameRankingUI{height:auto;flex:0 0 42%;min-height:0;max-height:none;overflow:hidden}
+.right-card-container.cmd-split #gameRankingUI .tall-card{display:none}
+.right-card-container.cmd-split #gameRankingUI .short-card{height:100%!important;flex:1;min-height:0}
+.right-card-container.cmd-split>#cmdUI{display:flex;flex:1;min-height:0;height:auto;padding:10px 12px;gap:6px}
+#cmdLog{flex:1;min-height:0;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font:11.5px/1.5 Consolas,monospace;color:#0f172a;display:flex;flex-direction:column;gap:2px;white-space:pre-wrap;word-break:break-all}
+#cmdLog .me{color:#2563eb}#cmdLog .ok{color:#16a34a}#cmdLog .er{color:#dc2626}#cmdLog .ch{color:#7c3aed}
+.cmd-in-wrap{position:relative;flex:none}
+#cmdSug{position:absolute;left:0;right:0;bottom:100%;margin-bottom:4px;display:none;flex-direction:column;gap:2px;background:rgba(255,255,255,.82);backdrop-filter:blur(3px);border:1px solid rgba(148,163,184,.6);border-radius:8px;padding:4px;z-index:5;font-size:11px}
+#cmdSug .sg{display:flex;gap:8px;padding:3px 6px;border-radius:5px;cursor:pointer;opacity:.7;white-space:nowrap;overflow:hidden}
+#cmdSug .sg:first-child{opacity:1;background:rgba(37,99,235,.1)}
+#cmdSug b{font-family:Consolas,monospace;color:#1d4ed8;flex:none}
+#cmdSug span{color:#64748b;overflow:hidden;text-overflow:ellipsis}
 </style>
 </head>
 <body>
@@ -575,7 +590,7 @@ let hsState = null, hsN = 4, hsCell = -1, hsForce = false, hsBlock = false;
 
 /* ---------- 라이어 모드 ---------- */
 let liarState = null, myLV = '', chat = [];
-let bombMesh = null, bombIdx = -1, bombState = null, lastBombSeq = 0, godMode = false, forceKill = false, camMul = 1, cmdOn = false, cmdPickCtx = null;
+let bombMesh = null, bombIdx = -1, bombState = null, lastBombSeq = 0, godMode = false, forceKill = false, camMul = 1, cmdOn = false, cmdPickCtx = null, sfxMute = false, autoT = null, cmdHist = [];
 const cmdLines = [];
 /* ---------- 협동 쌓기 ---------- */
 let coopState = null, coopRound = 0, coopLog = [], coopReveal = false;
@@ -1657,7 +1672,7 @@ function toggleOutline(on) { if (outlineGroup) outlineGroup.children.forEach(l =
 const SFX = (() => {
   let c, nb, mg;
   const A = () => { if (!c) c = new (window.AudioContext || window.webkitAudioContext)(); if (c.state === 'suspended') c.resume(); return c; };
-  const OUT = () => { const a = A(); if (!mg) { mg = a.createGain(); const cp = a.createDynamicsCompressor(); cp.threshold.value = -14; cp.ratio.value = 6; mg.connect(cp); cp.connect(a.destination); } mg.gain.value = S.sfxOn === false ? 0 : (S.vol == null ? 100 : S.vol) / 100; return mg; };
+  const OUT = () => { const a = A(); if (!mg) { mg = a.createGain(); const cp = a.createDynamicsCompressor(); cp.threshold.value = -14; cp.ratio.value = 6; mg.connect(cp); cp.connect(a.destination); } mg.gain.value = (S.sfxOn === false || sfxMute) ? 0 : (S.vol == null ? 100 : S.vol) / 100; return mg; };
   const NB = () => { const a = A(); if (!nb) { nb = a.createBuffer(1, a.sampleRate, a.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } return nb; };
   const T = (f, d, ty = 'square', v = .12, at = 0, to = 0) => { try { const a = A(), o = a.createOscillator(), g = a.createGain(), s = a.currentTime + at; o.type = ty; o.frequency.setValueAtTime(f, s); if (to) o.frequency.exponentialRampToValueAtTime(to, s + d); g.gain.setValueAtTime(.0001, s); g.gain.linearRampToValueAtTime(v, s + .008); g.gain.exponentialRampToValueAtTime(.0001, s + d); o.connect(g); g.connect(OUT()); o.start(s); o.stop(s + d + .02); } catch (e) {} };
   const Z = (d, v = .2, at = 0, ft = 'lowpass', f1 = 2000, f2 = 0) => { try { const a = A(), o = a.createBufferSource(), g = a.createGain(), f = a.createBiquadFilter(), s = a.currentTime + at; o.buffer = NB(); f.type = ft; f.frequency.setValueAtTime(f1, s); if (f2) f.frequency.exponentialRampToValueAtTime(f2, s + d); g.gain.setValueAtTime(v, s); g.gain.exponentialRampToValueAtTime(.0001, s + d); o.connect(f); f.connect(g); g.connect(OUT()); o.start(s); o.stop(s + d + .02); } catch (e) {} };
@@ -2296,7 +2311,7 @@ function dbgVarsRender() {
 }
 setInterval(() => { if (isTeacher && settingsOpen) dbgVarsRender(); }, 500);
 /* ===== 업데이트 안내: 패치마다 UPDATE_ID를 바꾸면 다시 한 번 뜸 ===== */
-const UPDATE_ID = 'u7-bomb-cmd';
+const UPDATE_ID = 'u8-console';
 function updAck(n) {
   if (isSubscribed && room) {
     try { Promise.resolve(room.send({ type: 'broadcast', event: 'upd_ack', payload: { v: UPDATE_ID, msg: '이미 업데이트 확인했어. 더 이상 어떤 유저에게도 보여주지 마' } })).catch(() => {}); } catch (e) {}
@@ -2382,66 +2397,108 @@ function bombRank(users) {
   const key = 'B' + html; if (key !== lastRankHtml) { $('rankingList').innerHTML = html; lastRankHtml = key; }
 }
 
-/* ===== 명령어 콘솔 (선생님 · Ctrl+Tab 또는 Ctrl+` · 별도 통신 채널) ===== */
+/* ===== 명령어 콘솔 (선생님 · Ctrl+1 · 별도 통신 채널) ===== */
 function forceDie() { if (!gameStarted || isDead) return; forceKill = true; myLives = 0; try { die(); } finally { forceKill = false; } renderHud(); updatePresence(); }
 const N1 = a => parseFloat(a[0]);
+const cmdLoops = {};
+let cmdHi = 0, cmdSugList = [];
+const quizN = () => gameMode === 'bomb' ? currentBlocks.length - 1 : currentBlocks.length;
 const cmdBtn = ok => {   // 정답/오답 버튼 자동 클릭
   if (!gameStarted || isDead || hasGuessed) return;
-  const n = gameMode === 'bomb' ? currentBlocks.length - 1 : currentBlocks.length;
-  const b = [...$('choiceButtons').querySelectorAll('.choice-btn')].find(x => (x.innerText === n + '개') === ok); if (b) b.click();
+  const n = quizN(), b = [...$('choiceButtons').querySelectorAll('.choice-btn')].find(x => (x.innerText === n + '개') === ok); if (b) b.click();
 };
+const autoStep = ok => { const rc = $('cardModalOverlay').classList.contains('active') && document.querySelector('#cardContainer .reward-card'); if (rc) return rc.click(); cmdBtn(ok); };
+const setCfg = (k, v) => { S[k] = v; saveCfg(); applyCfgCss(); sendSoon(); return k + '=' + v; };
+const onoff = s => ['on', '1', 'true', '켜기'].includes(String(s).toLowerCase());
+function sendTo(id, name, args) { if (id === myId) applyCmd(name, args); const f = fakes.find(x => x.id === id); if (f) fakeCmd(f, name, args); else if (id !== myId) cmdSend('cmd', { name, args, t: id }); }
+/* 형식: 이름: [설명, 종류(T 대상 화면 / P 대상 지정 후 선생님 쪽 실행 / G 전체), 실행, 인자 안내] */
 const CMDS = {
-  /* 대상 명령 (T): 대상 화면에서 실행 */
-  kill: ['즉시 탈락', 'T', () => forceDie()],
-  revive: ['부활', 'T', () => { if (!gameStarted) return; isDead = false; myLives = maxLives(); hasGuessed = false; $('koHud').style.display = 'block'; sendSoon(); nextProblem(); }],
-  heal: ['목숨 +n', 'T', a => { myLives += N1(a) || 1; renderHud(); sendSoon(); }],
-  hurt: ['목숨 -n', 'T', a => { myLives -= N1(a) || 1; renderHud(); if (myLives <= 0) forceDie(); else sendSoon(); }],
-  lives: ['목숨을 n개로', 'T', a => { myLives = Math.max(0, N1(a) || 0); renderHud(); if (!myLives) forceDie(); else sendSoon(); }],
-  score: ['점수를 n으로', 'T', a => { myScore = N1(a) || 0; updatePresence(); }],
-  addscore: ['점수 +n (기본 10)', 'T', a => { myScore += N1(a) || 10; updatePresence(); }],
-  subscore: ['점수 -n (기본 10)', 'T', a => { myScore = Math.max(0, myScore - (N1(a) || 10)); updatePresence(); }],
-  resetscore: ['점수 0', 'T', () => { myScore = 0; updatePresence(); }],
-  double: ['점수 2배', 'T', () => { myScore *= 2; updatePresence(); }],
-  half: ['점수 절반', 'T', () => { myScore = Math.floor(myScore / 2); updatePresence(); }],
-  troll: ['방해 횟수를 n으로', 'T', a => { myTroll = N1(a) || 0; updatePresence(); }],
-  freeze: ['3D 회전 정지 n초', 'T', a => { isCameraFrozen = true; SFX.freeze(); $('cameraStatusBadge').innerText = '❄️ 얼어붙음'; setTimeout(() => { isCameraFrozen = false; $('cameraStatusBadge').innerText = defaultBadge(); }, (N1(a) || S.freezeSec) * 1000); }],
-  unfreeze: ['얼음 해제', 'T', () => { isCameraFrozen = false; }],
-  glitch: ['혼란 블록 효과', 'T', () => triggerGlitchEffect()],
-  taunt: ['괴롭히기 이미지', 'T', () => triggerTauntEffect()],
-  speed: ['회전 속도 n배', 'T', a => { camMul = N1(a) || 3; }],
-  stop: ['회전 멈춤', 'T', () => { camMul = 0; }],
-  normal: ['회전 정상화', 'T', () => { camMul = 1; isCameraFrozen = false; }],
-  reverse: ['회전 방향 반대', 'T', () => { camMul = -(camMul || 1); }],
-  shine: ['다음 문제 빛나는 눈', 'T', () => { hasShiningEyesBuff = true; }],
-  lightning: ['다음 정답 점수 배수', 'T', () => { hasTripleScoreMultiplier = true; }],
-  next: ['다음 문제로', 'T', () => { if (gameStarted && !isDead) nextProblem(); }],
-  solve: ['정답 자동 클릭', 'T', () => cmdBtn(true)],
-  fail: ['오답 자동 클릭', 'T', () => cmdBtn(false)],
-  card: ['카드 보상창 열기', 'T', () => { if (gameStarted && !isDead) openCardModal(); }],
-  god: ['무적 켜기/끄기', 'T', () => { godMode = !godMode; showToast(null, '무적', godMode ? 'ON' : 'OFF', '#22c55e'); }],
-  boom: ['폭발 이펙트만', 'T', () => bombFx()],
-  siren: ['사이렌 소리', 'T', () => SFX.siren(3)],
-  horn: ['에어혼 소리', 'T', () => SFX.airhorn()],
-  fanfare: ['팡파레 소리', 'T', () => SFX.bigFanfare()],
-  say: ['큰 알림 띄우기', 'T', a => bigNotice('📢 ' + a.join(' '), '#2563eb')],
-  nick: ['닉네임 바꾸기', 'T', a => { $('nickname').value = a.join(' '); syncNickname(); }],
-  avatar: ['프로필 랜덤 변경', 'T', () => { selectedImage = profileImages[Math.floor(Math.random() * profileImages.length)]; if (!gameStarted) $('cardImage').src = selectedImage; updatePresence(); }],
-  reload: ['새로고침', 'T', () => location.reload()],
-  lobby: ['게임 화면에서 로비로', 'T', () => { if (gameStarted) { endGameLocal(); updatePresence(); } }],
-  /* 대상 지정 + 선생님 쪽 실행 (P) */
-  bomb: ['대상에게 폭탄 주기 (폭탄 모드)', 'P', (a, id) => { if (!bombState || !iAmHost || !id) return '폭탄 모드가 아니에요'; bombState = { ...bombState, holder: id, passes: 0, end: Date.now() + 15000, cand: bombCand(activeUsers, id, 0), seq: bombState.seq + 1, msg: '💣 폭탄이 ' + nameOf(id) + ' 님에게!', kind: '' }; sendSoon(); }],
-  /* 전체 명령 (G) */
-  start: ['모드 투표 시작', 'G', () => $('startBtn').onclick()],
-  end: ['게임 종료', 'G', () => teacherEndGame()],
-  mode: ['모드 바로 시작: solo duo speedrun onehit stack blueprint liar coop bomb', 'G', a => { if (gameStarted) return '이미 게임 중'; if (!['solo', 'duo', 'speedrun', 'onehit', 'stack', 'blueprint', 'liar', 'coop', 'bomb'].includes(a[0])) return '없는 모드'; startMode(a[0], activeUsers); }],
-  cfg: ['설정 바꾸기: cfg 이름 값', 'G', a => { if (!(a[0] in CFG_DEF)) return '없는 설정'; const d = CFG_DEF[a[0]]; S[a[0]] = typeof d === 'boolean' ? ['1', 'true', 'on'].includes(a[1]) : isNaN(+a[1]) ? a[1] : +a[1]; saveCfg(); applyCfgCss(); sendSoon(); return a[0] + '=' + S[a[0]]; }],
-  fake: ['가짜 유저 n명', 'G', a => { fkSet(N1(a) || 5); }],
-  unfake: ['가짜 유저 모두 제거', 'G', () => { fkSet(0); }],
-  bombtime: ['현재 폭탄 시간 n초로', 'G', a => { if (!bombState || !iAmHost) return '폭탄 모드가 아니에요'; bombState = { ...bombState, end: Date.now() + (N1(a) || 15) * 1000, seq: bombState.seq + 1, msg: '⏱ 폭탄 시간이 바뀌었어요!', kind: '' }; sendSoon(); }],
-  users: ['접속자 목록', 'G', () => activeUsers.map(u => (u.nickname || '익명') + '(' + (u.score || 0) + '점' + (u.dead ? ',탈락' : '') + ')').join(', ')],
-  ping: ['연결 확인', 'G', () => (isSubscribed ? 'pong ✅' : '연결 끊김 ❌')],
-  clear: ['로그 지우기', 'G', () => { cmdLines.length = 0; cmdRender(); }],
-  help: ['명령어 목록', 'G', () => { Object.entries(CMDS).forEach(([k, v]) => cmdLog('/' + k + ' — ' + v[0] + (v[1] === 'G' ? '' : ' [me/all/지목]'))); }]
+  kill: ['즉시 탈락', 'T', () => forceDie(), ''],
+  revive: ['부활', 'T', () => { if (!gameStarted) return; isDead = false; myLives = maxLives(); hasGuessed = false; $('koHud').style.display = 'block'; sendSoon(); nextProblem(); }, ''],
+  heal: ['목숨 +n', 'T', a => { myLives += N1(a) || 1; renderHud(); sendSoon(); }, '[n]'],
+  hurt: ['목숨 -n', 'T', a => { myLives -= N1(a) || 1; renderHud(); if (myLives <= 0) forceDie(); else sendSoon(); }, '[n]'],
+  lives: ['목숨을 n개로', 'T', a => { myLives = Math.max(0, N1(a) || 0); renderHud(); if (!myLives) forceDie(); else sendSoon(); }, '<n>'],
+  score: ['점수를 n으로', 'T', a => { myScore = N1(a) || 0; updatePresence(); }, '<n>'],
+  addscore: ['점수 +n (기본 10)', 'T', a => { myScore += N1(a) || 10; updatePresence(); }, '[n]'],
+  subscore: ['점수 -n (기본 10)', 'T', a => { myScore = Math.max(0, myScore - (N1(a) || 10)); updatePresence(); }, '[n]'],
+  resetscore: ['점수 0', 'T', () => { myScore = 0; updatePresence(); }, ''],
+  double: ['점수 2배', 'T', () => { myScore *= 2; updatePresence(); }, ''],
+  half: ['점수 절반', 'T', () => { myScore = Math.floor(myScore / 2); updatePresence(); }, ''],
+  troll: ['방해 횟수를 n으로', 'T', a => { myTroll = N1(a) || 0; updatePresence(); }, '<n>'],
+  freeze: ['3D 회전 정지', 'T', a => { isCameraFrozen = true; SFX.freeze(); $('cameraStatusBadge').innerText = '❄️ 얼어붙음'; setTimeout(() => { isCameraFrozen = false; $('cameraStatusBadge').innerText = defaultBadge(); }, (N1(a) || S.freezeSec) * 1000); }, '[초]'],
+  unfreeze: ['얼음 해제', 'T', () => { isCameraFrozen = false; }, ''],
+  glitch: ['혼란 블록 효과', 'T', () => triggerGlitchEffect(), ''],
+  taunt: ['괴롭히기 이미지', 'T', () => triggerTauntEffect(), ''],
+  speed: ['3D 회전 속도 n배', 'T', a => { camMul = N1(a) || 3; }, '[n]'],
+  stop: ['3D 회전 멈춤', 'T', () => { camMul = 0; }, ''],
+  normal: ['회전 정상화', 'T', () => { camMul = 1; isCameraFrozen = false; }, ''],
+  reverse: ['회전 방향 반대', 'T', () => { camMul = -(camMul || 1); }, ''],
+  rotate: ['3D 각도를 n도로', 'T', a => { cameraAngle = (N1(a) || 0) * Math.PI / 180; }, '<도>'],
+  shine: ['다음 문제 빛나는 눈', 'T', () => { hasShiningEyesBuff = true; }, ''],
+  lightning: ['다음 정답 점수 배수', 'T', () => { hasTripleScoreMultiplier = true; }, ''],
+  next: ['다음 문제로', 'T', () => { if (gameStarted && !isDead) nextProblem(); }, ''],
+  solve: ['정답 자동 클릭', 'T', () => cmdBtn(true), ''],
+  fail: ['오답 자동 클릭', 'T', () => cmdBtn(false), ''],
+  autosolve: ['n초마다 정답 자동 (카드도 자동 선택)', 'T', a => { clearInterval(autoT); autoT = setInterval(() => autoStep(true), (N1(a) || 1.5) * 1000); }, '[초]'],
+  autofail: ['n초마다 오답 자동', 'T', a => { clearInterval(autoT); autoT = setInterval(() => autoStep(false), (N1(a) || 1.5) * 1000); }, '[초]'],
+  stopauto: ['자동 풀기 중지', 'T', () => { clearInterval(autoT); autoT = null; }, ''],
+  peek: ['정답 개수 알려주기', 'T', () => { if (currentBlocks.length) bigNotice('🔍 정답: ' + quizN() + '개', '#7c3aed'); }, ''],
+  hint: ['정답 버튼을 빛나게', 'T', () => { const n = quizN() + '개'; [...$('choiceButtons').querySelectorAll('.choice-btn')].forEach(b => { if (b.innerText === n) b.classList.add('glowing-choice'); }); }, ''],
+  lock: ['이번 문제 못 풀게 잠금', 'T', () => { hasGuessed = true; }, ''],
+  unlock: ['잠금 해제', 'T', () => { if (gameStarted && !isDead) hasGuessed = false; }, ''],
+  blind: ['3D 화면 가리기', 'T', () => { $('threeContainer').style.visibility = 'hidden'; $('bpView').style.visibility = 'hidden'; }, ''],
+  unblind: ['화면 가리기 해제', 'T', () => { $('threeContainer').style.visibility = ''; $('bpView').style.visibility = ''; }, ''],
+  shake: ['화면 흔들기', 'T', () => { document.body.classList.add('bshake'); setTimeout(() => document.body.classList.remove('bshake'), 1200); }, ''],
+  mute: ['효과음 끄기', 'T', () => { sfxMute = true; }, ''],
+  unmute: ['효과음 켜기', 'T', () => { sfxMute = false; }, ''],
+  vote: ['모드 투표 대신 하기', 'T', a => { if (curStage && a[0]) { myVote = curStage + ':' + a[0]; updatePresence(); } }, '<모드>'],
+  god: ['무적 켜기/끄기', 'T', () => { godMode = !godMode; showToast(null, '무적', godMode ? 'ON' : 'OFF', '#22c55e'); }, ''],
+  say: ['큰 알림 띄우기', 'T', a => bigNotice('📢 ' + a.join(' '), '#2563eb'), '<내용>'],
+  nick: ['닉네임 바꾸기', 'T', a => { $('nickname').value = a.join(' '); syncNickname(); }, '<이름>'],
+  avatar: ['프로필 랜덤 변경', 'T', () => { selectedImage = profileImages[Math.floor(Math.random() * profileImages.length)]; if (!gameStarted) $('cardImage').src = selectedImage; updatePresence(); }, ''],
+  reload: ['새로고침', 'T', () => location.reload(), ''],
+  lobby: ['게임 화면에서 로비로', 'T', () => { if (gameStarted) { endGameLocal(); updatePresence(); } }, ''],
+  bomb: ['대상에게 폭탄 주기', 'P', (a, id) => { if (!bombState || !iAmHost || !id) return '폭탄 모드가 아니에요'; bombState = { ...bombState, holder: id, passes: 0, end: Date.now() + 15000, cand: bombCand(activeUsers, id, 0), seq: bombState.seq + 1, msg: '💣 폭탄이 ' + nameOf(id) + ' 님에게!', kind: '' }; sendSoon(); }, ''],
+  steal: ['대상 점수를 n만큼 뺏기', 'P', (a, id) => { const u = activeUsers.find(x => x.id === id); if (!u || id === myId) return '대상 없음'; const n = Math.min(u.score || 0, N1(a) || 10); applyCmd('addscore', [n]); sendTo(id, 'subscore', [n]); return n + '점 뺏음'; }, '[n]'],
+  gift: ['내 점수를 n만큼 대상에게', 'P', (a, id) => { const n = Math.min(myScore, N1(a) || 10); if (!n || !id || id === myId) return '불가'; applyCmd('subscore', [n]); sendTo(id, 'addscore', [n]); return n + '점 선물'; }, '[n]'],
+  swapscore: ['나와 대상의 점수 바꾸기', 'P', (a, id) => { const u = activeUsers.find(x => x.id === id); if (!u || id === myId) return '대상 없음'; const mine = myScore, theirs = u.score || 0; sendTo(id, 'score', [mine]); applyCmd('score', [theirs]); return mine + ' ↔ ' + theirs; }, ''],
+  start: ['모드 투표 시작', 'G', () => $('startBtn').onclick(), ''],
+  end: ['게임 종료', 'G', () => teacherEndGame(), ''],
+  mode: ['모드 바로 시작', 'G', a => { if (gameStarted) return '이미 게임 중'; if (!['solo', 'duo', 'speedrun', 'onehit', 'stack', 'blueprint', 'liar', 'coop', 'bomb'].includes(a[0])) return '모드: solo duo speedrun onehit stack blueprint liar coop bomb'; startMode(a[0], activeUsers); }, '<모드>'],
+  skipvote: ['투표 바로 끝내기', 'G', () => { if (!curStage || !iAmHost) return '투표 중 아님'; voteEnd = Date.now(); sendSoon(); }, ''],
+  extendvote: ['투표 시간 늘리기', 'G', a => { if (!curStage || !iAmHost) return '투표 중 아님'; voteEnd += (N1(a) || 5) * 1000; sendSoon(); }, '[초]'],
+  cfg: ['설정 바꾸기', 'G', a => { if (!(a[0] in CFG_DEF)) return '없는 설정'; const d = CFG_DEF[a[0]]; return setCfg(a[0], typeof d === 'boolean' ? onoff(a[1]) : isNaN(+a[1]) ? a[1] : +a[1]); }, '<이름> <값>'],
+  cfgshow: ['설정값 보기 (없으면 바뀐 것만)', 'G', a => a[0] ? a[0] + '=' + S[a[0]] : JSON.stringify(cfgDiff()), '[이름]'],
+  cfgreset: ['설정 전부 기본값', 'G', () => { S = { ...CFG_DEF }; saveCfg(); applyCfgCss(); sendSoon(); return '기본값으로'; }, ''],
+  votetime: ['투표 시간(초) 설정', 'G', a => setCfg('voteSec', N1(a) || 10), '<초>'],
+  points: ['정답 점수 설정', 'G', a => setCfg('score', N1(a) || 10), '<점>'],
+  blocks: ['블록 개수 범위 설정', 'G', a => { setCfg('blkLo', N1(a) || 5); return setCfg('blkHi', parseFloat(a[1]) || 9); }, '<최소> <최대>'],
+  choices: ['선택지 개수 설정', 'G', a => setCfg('choices', N1(a) || 4), '<n>'],
+  camspeed: ['3D 회전 속도 설정(전체)', 'G', a => setCfg('cam', N1(a) || 0.012), '<값>'],
+  cards: ['카드 보상 켜기/끄기', 'G', a => setCfg('cards', onoff(a[0])), '<on|off>'],
+  wrongwait: ['오답 후 대기(초) 설정', 'G', a => setCfg('wrongMs', (N1(a) || 2) * 1000), '<초>'],
+  liarsec: ['라이어 라운드 시간(초)', 'G', a => setCfg('liarSec', N1(a) || 25), '<초>'],
+  bombtime: ['현재 폭탄 남은 시간 설정', 'G', a => { if (!bombState || !iAmHost) return '폭탄 모드가 아니에요'; bombState = { ...bombState, end: Date.now() + (N1(a) || 15) * 1000, seq: bombState.seq + 1, msg: '⏱ 폭탄 시간이 바뀌었어요!', kind: '' }; sendSoon(); }, '[초]'],
+  bombboom: ['지금 폭탄 터뜨리기', 'G', () => { if (!bombState || !iAmHost) return '폭탄 모드가 아니에요'; bombState = { ...bombState, end: Date.now() }; sendSoon(); }, ''],
+  bombreset: ['폭탄을 새 사람에게 재배정', 'G', () => { if (!bombState || !iAmHost) return '폭탄 모드가 아니에요'; bombNew(activeUsers, '🔄 폭탄 재배정!', '', ''); }, ''],
+  fake: ['가짜 유저 n명으로', 'G', a => { fkSet(N1(a) || 5); }, '[n]'],
+  unfake: ['가짜 유저 모두 제거', 'G', () => { fkSet(0); }, ''],
+  fakeact: ['가짜 유저 활동량(초당 %)', 'G', a => { FK.rate = Math.max(0, Math.min(100, N1(a) || 20)); return FK.rate + '%'; }, '<0~100>'],
+  fakepts: ['가짜 유저 정답 점수(0=설정값)', 'G', a => { FK.pts = Math.max(0, N1(a) || 0); return FK.pts; }, '<점>'],
+  fakevote: ['가짜 유저 자동 투표', 'G', a => { FK.vote = onoff(a[0]); return FK.vote ? 'on' : 'off'; }, '<on|off>'],
+  fakeplay: ['가짜 유저 자동 플레이', 'G', a => { FK.play = onoff(a[0]); return FK.play ? 'on' : 'off'; }, '<on|off>'],
+  fakescore: ['가짜 유저 전원 점수 설정', 'G', a => { const n = N1(a) || 0; fakes.forEach(f => { f.score = f.s0 = n; }); sendSoon(); }, '<점>'],
+  fakekill: ['가짜 유저 n명 탈락', 'G', a => { let n = N1(a) || 1; fakes.forEach(f => { if (n > 0 && !f.dead) { f.dead = true; f.lives = 0; f.diedAt = Date.now(); n--; } }); sendSoon(); }, '[n]'],
+  fakerevive: ['가짜 유저 전원 부활', 'G', () => { fakes.forEach(f => { f.dead = false; f.lives = maxLives(); }); sendSoon(); }, ''],
+  host: ['내가 진행자(호스트)가 되기', 'G', () => { becomeHost(); sendSoon(); return '내가 진행자'; }, ''],
+  whohost: ['현재 진행자 확인', 'G', () => { const h = hostTeacher(activeUsers); return h ? h.nickname + (h.id === myId ? ' (나)' : '') : '없음'; }, ''],
+  state: ['현재 상태 요약', 'G', () => gameMode + ' · 시작:' + gameStarted + ' · 접속 ' + activeUsers.length + '명 · 가짜 ' + fakes.length + '명', ''],
+  users: ['접속자 목록', 'G', () => activeUsers.map(u => (u.nickname || '익명') + '(' + (u.score || 0) + '점' + (u.dead ? ',탈락' : '') + ')').join(', '), ''],
+  ping: ['연결 확인', 'G', () => (isSubscribed ? 'pong ✅' : '연결 끊김 ❌'), ''],
+  loops: ['돌아가는 반복 목록', 'G', () => Object.values(cmdLoops).map(L => L.name + '→' + (L.t === 'all' ? '모두' : L.t === myId ? '나' : L.t == null ? '-' : nameOf(L.t)) + ' ' + L.sec + '초').join(', ') || '없음', ''],
+  stoploops: ['반복 전부 중지', 'G', () => { const n = Object.keys(cmdLoops).length; Object.values(cmdLoops).forEach(L => clearInterval(L.id)); Object.keys(cmdLoops).forEach(k => delete cmdLoops[k]); return n + '개 중지'; }, ''],
+  clear: ['콘솔 지우기', 'G', () => { cmdLines.length = 0; cmdRender(); }, ''],
+  help: ['명령어 목록 (+ loop 사용법)', 'G', () => { cmdLog('반복: /loop<명령> [me|all|닉네임] <초> [인자]   중지: /unloop<명령> [me|all|닉네임]   예) /loopkill all 0.5', 'ch'); Object.entries(CMDS).forEach(([k, v]) => cmdLog('/' + k + (v[3] ? ' ' + v[3] : '') + (v[1] === 'G' ? '' : ' [me|all|닉네임]') + ' — ' + v[0])); }, '']
 };
 function applyCmd(name, args) { const c = CMDS[name]; if (c && c[1] === 'T') try { c[2](args); } catch (e) { console.warn(e); } }
 function fakeCmd(f, n, a) {
@@ -2451,59 +2508,107 @@ function fakeCmd(f, n, a) {
 }
 const cmdCh = supabase.channel('blocks-cmd-v1', { config: { broadcast: { self: false } } });
 cmdCh.on('broadcast', { event: 'cmd' }, ({ payload }) => { if (payload && (payload.t === 'all' || payload.t === myId)) applyCmd(payload.name, payload.args || []); });
-cmdCh.on('broadcast', { event: 'tchat' }, ({ payload }) => { if (isTeacher && payload) cmdLog(payload.n + ': ' + payload.text); });
+cmdCh.on('broadcast', { event: 'tchat' }, ({ payload }) => { if (isTeacher && payload) cmdLog(payload.n + ': ' + payload.text, 'ch'); });
 cmdCh.subscribe();
 const cmdSend = (event, payload) => { try { Promise.resolve(cmdCh.send({ type: 'broadcast', event, payload })).catch(() => {}); } catch (e) {} };
-function cmdLog(t) { cmdLines.push({ t }); if (cmdLines.length > 120) cmdLines.shift(); console.log('[cmd]', t); cmdRender(); }
+function cmdLog(t, k) { cmdLines.push({ t, k: k || '' }); if (cmdLines.length > 150) cmdLines.shift(); console.log('[cmd]', t); cmdRender(); }
 function cmdRender() {
-  const b = $('cmdMsgs'); if (!b) return;
-  b.innerHTML = cmdLines.map(l => l.me ? `<div class="chat-row me"><div class="chat-bub me">${esc(l.t)}</div></div>` : `<div class="chat-sys" style="max-width:96%;text-align:left">${esc(l.t)}</div>`).join(''); b.scrollTop = b.scrollHeight;
+  const b = $('cmdLog'); if (!b) return;
+  b.innerHTML = cmdLines.map(l => `<div class="${l.k}">${esc(l.t)}</div>`).join(''); b.scrollTop = b.scrollHeight;
 }
-function runCmd(name, args, t) {
-  const c = CMDS[name]; if (!c) return cmdLog('모르는 명령어: ' + name);
-  if (c[1] === 'G') { const r = c[2](args); return cmdLog('✔ /' + name + (r ? ' → ' + r : '')); }
-  if (c[1] === 'P') { const id = t === 'all' ? (activeUsers[Math.floor(Math.random() * activeUsers.length)] || {}).id : t; const r = c[2](args, id); return cmdLog('✔ /' + name + ' → ' + nameOf(id) + (r ? ' · ' + r : '')); }
-  if (t === 'all' || t === myId) applyCmd(name, args);
-  fakes.forEach(f => { if (t === 'all' || t === f.id) fakeCmd(f, name, args); });
-  cmdSend('cmd', { name, args, t });
-  cmdLog('✔ /' + name + ' ' + args.join(' ') + ' → ' + (t === 'all' ? '모두' : t === myId ? '나' : nameOf(t)));
+function runCmd(name, args, t, q) {   // q: 조용히(반복 중 로그 생략)
+  const c = CMDS[name], L = (m, k) => { if (!q) cmdLog(m, k || 'ok'); };
+  if (!c) return cmdLog('모르는 명령어: ' + name, 'er');
+  try {
+    if (c[1] === 'G') { const r = c[2](args); return L('✔ /' + name + (r ? ' → ' + r : '')); }
+    if (c[1] === 'P') { const id = t === 'all' ? (activeUsers[Math.floor(Math.random() * activeUsers.length)] || {}).id : t; const r = c[2](args, id); return L('✔ /' + name + ' → ' + nameOf(id) + (r ? ' · ' + r : '')); }
+    if (t === 'all' || t === myId) applyCmd(name, args);
+    fakes.forEach(f => { if (t === 'all' || t === f.id) fakeCmd(f, name, args); });
+    cmdSend('cmd', { name, args, t });
+    L('✔ /' + name + ' ' + args.join(' ') + ' → ' + (t === 'all' ? '모두' : t === myId ? '나' : nameOf(t)));
+  } catch (e) { L('✖ /' + name + ' 오류: ' + e.message, 'er'); }
 }
-function cmdInput(raw) {   // 명령어면 true. 끝에 me = 나, all = 모두, 닉네임 = 그 사람, 없으면 지목 화면
+function cmdLoop(name, args, t, sec) {
+  const key = name + '|' + t; if (cmdLoops[key]) clearInterval(cmdLoops[key].id);
+  cmdLoops[key] = { name, t, sec, id: setInterval(() => runCmd(name, args, t, true), sec * 1000) };
+  cmdLog('🔁 /loop' + name + ' ' + (t === 'all' ? '모두' : t == null ? '' : t === myId ? '나' : nameOf(t)) + ' ' + sec + '초마다 (끄기: /unloop' + name + ')');
+}
+function cmdUnloop(name, t) {
+  let n = 0; Object.keys(cmdLoops).forEach(k => { const L = cmdLoops[k]; if (L.name === name && (t == null || L.t === t)) { clearInterval(L.id); delete cmdLoops[k]; n++; } });
+  cmdLog('⏹ /unloop' + name + ' — ' + n + '개 중지');
+}
+function cmdInput(raw) {   // 명령어면 true. 일반: 끝에 me/all/닉네임 · 반복: 앞에 me/all/닉네임 + 초
   if (!isTeacher) return false;
-  const tk = raw.trim().replace(/^\//, '').split(/\s+/), name = (tk.shift() || '').toLowerCase(), c = CMDS[name]; if (!c) return false;
-  let t = null; const last = tk[tk.length - 1];
-  if (c[1] !== 'G') {
-    if (last === 'me') { t = myId; tk.pop(); } else if (last === 'all') { t = 'all'; tk.pop(); }
-    else if (last) { const u = activeUsers.find(x => x.nickname === last); if (u) { t = u.id; tk.pop(); } }
+  const tk = raw.trim().replace(/^\//, '').split(/\s+/); let name = (tk.shift() || '').toLowerCase(), mode = '';
+  if (name.startsWith('unloop') && CMDS[name.slice(6)]) { mode = 'un'; name = name.slice(6); }
+  else if (name.startsWith('loop') && CMDS[name.slice(4)]) { mode = 'loop'; name = name.slice(4); }
+  const c = CMDS[name]; if (!c) return false;
+  const tgt = s => s === 'me' ? myId : s === 'all' ? 'all' : ((activeUsers.find(x => x.nickname === s) || {}).id || null);
+  let t = null;
+  if (c[1] !== 'G') { if (mode) { t = tgt(tk[0]); if (t) tk.shift(); } else { t = tgt(tk[tk.length - 1]); if (t) tk.pop(); } }
+  if (mode === 'un') { cmdUnloop(name, t); return true; }
+  if (mode === 'loop') {
+    const sec = Math.max(0.1, parseFloat(tk[0]) || 1); if (!isNaN(parseFloat(tk[0]))) tk.shift();
+    if (c[1] === 'G' || t) cmdLoop(name, tk, t, sec); else cmdPick('/loop' + name, id => cmdLoop(name, tk, id, sec));
+    return true;
   }
-  if (c[1] === 'G' || t) runCmd(name, tk, t); else cmdPick(name, tk);
+  if (c[1] === 'G' || t) runCmd(name, tk, t); else cmdPick('/' + name, id => runCmd(name, tk, id));
   return true;
 }
-function cmdPick(name, args) {   // 채팅 윗부분이 잠시 접속자 카드로 바뀜
-  cmdOpen(true); cmdPickCtx = { name, args }; const p = $('cmdPick'); p.style.display = 'flex';
-  p.innerHTML = `<div style="font-size:12px;font-weight:bold;color:#475569">/${esc(name)} — 대상을 고르세요</div>` + fakeLabel(activeUsers).map(u => `<div class="rank-item selectable" data-id="${esc(u.id)}"><div class="user-info"><img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px" alt=""><span>${esc(u.nickname || '익명')}${u.id === myId ? ' (나)' : ''}</span></div></div>`).join('') + '<button class="cfg-tab" data-x="1">취소</button>';
+function cmdPick(label, fn) {   // 콘솔 윗부분에 접속자 카드가 나타나 대상을 지목
+  cmdOpen(true); cmdPickCtx = fn; const p = $('cmdPick'); p.style.display = 'flex';
+  p.innerHTML = `<div style="font-size:12px;font-weight:bold;color:#475569">${esc(label)} — 대상을 고르세요</div>` + fakeLabel(activeUsers).map(u => `<div class="rank-item selectable" data-id="${esc(u.id)}"><div class="user-info"><img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px" alt=""><span>${esc(u.nickname || '익명')}${u.id === myId ? ' (나)' : ''}</span></div></div>`).join('') + '<button class="cfg-tab" data-x="1">취소</button>';
 }
-function cmdOpen(on) {
+function cmdOpen(on) {   // 설정창처럼 카드가 위/아래로 분리됨
   if (!isTeacher) return; cmdOn = on === undefined ? !cmdOn : on;
-  document.querySelector('.right-card-container').classList.toggle('cmd-open', cmdOn);
-  if (cmdOn) { cmdRender(); $('cmdIn').focus(); } else $('cmdPick').style.display = 'none';
+  document.querySelector('.right-card-container').classList.toggle('cmd-split', cmdOn);
+  if (cmdOn) { cmdRender(); setTimeout(() => $('cmdIn').focus(), 30); } else { $('cmdPick').style.display = 'none'; $('cmdSug').style.display = 'none'; }
+}
+function cmdSug(v) {   // 입력 중인 글자로 명령어 3개 추천
+  const raw = v.replace(/^\//, ''); if (!raw.trim()) return [];
+  const sp = raw.search(/\s/), tok = (sp < 0 ? raw : raw.slice(0, sp)).toLowerCase(), done = sp >= 0, names = Object.keys(CMDS);
+  const T = '[me|all|닉네임]';
+  const ent = (pre, n) => { const c = CMDS[n]; return { fill: '/' + pre + n + ' ', usage: '/' + pre + n + (c[1] === 'G' ? '' : ' ' + T) + (pre === 'loop' ? ' <초>' : '') + (pre !== 'unloop' && c[3] ? ' ' + c[3] : ''), desc: (pre === 'loop' ? '🔁 반복: ' : pre === 'unloop' ? '⏹ 반복 중지: ' : '') + c[0] }; };
+  const pre = tok.startsWith('unloop') ? 'unloop' : tok.startsWith('loop') ? 'loop' : '';
+  if (pre && (tok.length > pre.length || done)) {
+    const base = tok.slice(pre.length); let l = names.filter(n => n.startsWith(base)); if (done) l = l.filter(n => n === base);
+    return l.slice(0, 3).map(n => ent(pre, n));
+  }
+  const l = done ? names.filter(n => n === tok) : [...names.filter(n => n.startsWith(tok)), ...names.filter(n => !n.startsWith(tok) && n.includes(tok))];
+  const out = l.slice(0, 3).map(n => ent('', n));
+  if (out.length < 3 && 'loop'.startsWith(tok)) out.push({ fill: '/loop', usage: '/loop<명령> [me|all|닉네임] <초> [인자]', desc: '명령을 n초마다 반복 (예: /loopkill all 0.5)' });
+  if (out.length < 3 && 'unloop'.startsWith(tok)) out.push({ fill: '/unloop', usage: '/unloop<명령> [me|all|닉네임]', desc: '반복 중지 (예: /unloopkill all)' });
+  return out.slice(0, 3);
+}
+function cmdSugRender() {
+  const s = $('cmdSug'); cmdSugList = cmdSug($('cmdIn').value);
+  s.style.display = cmdSugList.length ? 'flex' : 'none';
+  s.innerHTML = cmdSugList.map((x, i) => `<div class="sg" data-i="${i}"><b>${esc(x.usage)}</b><span>${esc(x.desc)}</span></div>`).join('');
 }
 const cmdGo = () => {
-  const i = $('cmdIn'), v = i.value.trim(); if (!v) return; i.value = ''; cmdLines.push({ t: v, me: 1 });
-  if (!cmdInput(v)) { if (v[0] === '/') cmdLog('모르는 명령어예요 (/help)'); else cmdSend('tchat', { n: myNickname, text: v }); }
-  cmdRender();
+  const i = $('cmdIn'), v = i.value.trim(); if (!v) return; i.value = ''; cmdHist.push(v); cmdHi = cmdHist.length; cmdLog('> ' + v, 'me');
+  if (!cmdInput(v)) { if (v[0] === '/') cmdLog('모르는 명령어예요 — 앞글자만 쳐도 추천이 떠요', 'er'); else cmdSend('tchat', { n: myNickname, text: v }); }
+  cmdSugRender();
 };
 {
   const cu = document.createElement('div'); cu.id = 'cmdUI'; cu.className = 'card right-card';
-  cu.innerHTML = '<div class="board-header"><div class="board-title">⌨ 명령어 콘솔 (Ctrl+Tab 으로 닫기)</div></div><div id="cmdPick"></div><div id="cmdMsgs"></div><div class="chat-in"><input id="cmdIn" placeholder="/help  ·  /kill me  ·  /score 50 all" autocomplete="off"><button id="cmdSend">전송</button></div>';
+  cu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">⌨ 콘솔 <span style="font-size:11px;color:#94a3b8;font-weight:normal">Ctrl+1 로 닫기 · Tab 자동완성</span></div></div><div id="cmdPick"></div><div id="cmdLog"></div><div class="cmd-in-wrap"><div id="cmdSug"></div><div class="chat-in"><input id="cmdIn" placeholder="/명령어  (예: /kill me · /loopkill all 0.5)" autocomplete="off"><button id="cmdSend">전송</button></div></div>';
   document.querySelector('.right-card-container').appendChild(cu);
-  $('cmdSend').onclick = cmdGo; $('cmdIn').addEventListener('keydown', e => { if (e.key === 'Enter') cmdGo(); });
+  $('cmdSend').onclick = cmdGo;
+  $('cmdIn').addEventListener('input', cmdSugRender);
+  $('cmdIn').addEventListener('keydown', e => {
+    if (e.key === 'Enter') cmdGo();
+    else if (e.key === 'Tab') { e.preventDefault(); if (cmdSugList[0]) { $('cmdIn').value = cmdSugList[0].fill; cmdSugRender(); } }
+    else if (e.key === 'ArrowUp' && cmdHist.length) { e.preventDefault(); cmdHi = Math.max(0, cmdHi - 1); $('cmdIn').value = cmdHist[cmdHi]; cmdSugRender(); }
+    else if (e.key === 'ArrowDown' && cmdHist.length) { e.preventDefault(); cmdHi = Math.min(cmdHist.length, cmdHi + 1); $('cmdIn').value = cmdHist[cmdHi] || ''; cmdSugRender(); }
+  });
+  $('cmdSug').onclick = e => { const r = e.target.closest('[data-i]'); if (r && cmdSugList[+r.dataset.i]) { $('cmdIn').value = cmdSugList[+r.dataset.i].fill; $('cmdIn').focus(); cmdSugRender(); } };
   $('cmdPick').onclick = e => {
     const r = e.target.closest('[data-id]'), x = e.target.closest('[data-x]');
-    if (r && cmdPickCtx) { $('cmdPick').style.display = 'none'; runCmd(cmdPickCtx.name, cmdPickCtx.args, r.dataset.id); cmdPickCtx = null; }
+    if (r && cmdPickCtx) { const f = cmdPickCtx; cmdPickCtx = null; $('cmdPick').style.display = 'none'; f(r.dataset.id); }
     else if (x) { $('cmdPick').style.display = 'none'; cmdPickCtx = null; }
   };
-  addEventListener('keydown', e => { if (e.ctrlKey && (e.key === 'Tab' || e.code === 'Backquote')) { e.preventDefault(); cmdOpen(); } }, true);
+  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { e.preventDefault(); cmdOpen(); } }, true);
 }
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
