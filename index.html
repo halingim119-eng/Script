@@ -300,6 +300,71 @@ body.bshake{animation:shk .08s linear 14}
 #cmdSug .sg:first-child{opacity:1;background:rgba(37,99,235,.1)}
 #cmdSug b{font-family:Consolas,monospace;color:#1d4ed8;flex:none}
 #cmdSug span{color:#64748b;overflow:hidden;text-overflow:ellipsis}
+/* ===== 선생님 튜토리얼 ===== */
+#tutRoot{display:none;position:absolute;inset:0;z-index:70;flex-direction:column;gap:10px}
+.right-card-container.tut-open>:not(#tutRoot):not(#bigBox){display:none!important}
+.right-card-container.tut-open>#tutRoot{display:flex}
+@keyframes tutIn{from{opacity:0;transform:translateY(26px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes tutF{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes tutPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.65)}100%{box-shadow:0 0 0 16px rgba(34,197,94,0)}}
+@keyframes tcb{50%{opacity:0}}
+.tut-c1{flex:0 0 40%;min-height:0;padding:10px 16px;gap:6px;overflow:hidden;animation:tutIn .55s cubic-bezier(.2,1.3,.4,1) both}
+.tut-c2{flex:1;min-height:0;width:80%;align-self:center;padding:8px 14px;gap:5px;overflow:hidden;animation:tutIn .55s .18s cubic-bezier(.2,1.3,.4,1) both}
+.tut-h{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;font-size:14px;font-weight:bold;color:#1e293b}
+.tut-kg{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(5,1fr);grid-auto-flow:column;gap:0 20px}
+.tut-k{display:flex;align-items:center;gap:6px;min-width:0;font-size:12px;color:#334155;border-bottom:1px solid #f1f5f9;white-space:nowrap;overflow:hidden}
+.tut-k .ctx{flex:none;width:46px;text-align:center;font-size:10px;color:#64748b;background:#f1f5f9;border-radius:4px;padding:1px 0}
+.tut-k .ctx.e{background:none}
+.tut-k .eq{flex:none;color:#94a3b8;font-style:normal}
+.tut-k .pl{color:#94a3b8;font-style:normal;font-size:11px;margin:0 2px}
+.tut-k .rs{overflow:hidden;text-overflow:ellipsis}
+#tutRoot kbd{display:inline-block;min-width:20px;padding:1px 6px;border:1px solid #cbd5e1;border-bottom-width:2px;border-radius:5px;background:#f8fafc;font:600 11px Consolas,monospace;color:#334155;text-align:center}
+.tut-tag{font-size:10px;font-weight:bold;color:#2563eb;background:#dbeafe;border-radius:8px;padding:1px 9px}
+.tut-dots{display:flex;gap:4px;align-items:center}
+.tdot{width:7px;height:7px;border-radius:4px;background:#e2e8f0;cursor:pointer;transition:all .25s}
+.tdot.on{width:18px;background:#2563eb}
+.tut-pg{height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;flex:none}
+#tutProgF{display:block;height:100%;width:0;background:#2563eb;border-radius:2px}
+.tut-st{position:relative;flex:none;height:126px;border-radius:10px;background:#eef2f7;border:1px solid #e2e8f0;overflow:hidden}
+.tut-con{position:absolute;inset:6px;background:#fff;border:1px solid #cbd5e1;border-radius:9px;display:flex;flex-direction:column;gap:3px;padding:5px 8px;transition:opacity .35s,transform .45s cubic-bezier(.2,1.4,.4,1)}
+.tut-con.off{opacity:0;transform:scale(.8) translateY(14px)}
+.tc-bar{display:flex;justify-content:space-between;flex:none;font-size:10px;font-weight:bold;color:#475569}
+.tc-bar span:last-child{font-weight:normal;color:#94a3b8}
+#tcLog{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;font:10.5px/1.45 Consolas,monospace;color:#0f172a}
+#tcLog div{flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-me{color:#2563eb}.tl-ok{color:#16a34a}.tl-ch{color:#7c3aed}
+.tc-in{position:relative;display:flex;gap:5px;flex:none}
+.tc-fi{flex:1;min-width:0;height:22px;border:1px solid #cbd5e1;border-radius:7px;padding:0 8px;display:flex;align-items:center;font:11px Consolas,monospace;color:#0f172a;overflow:hidden;white-space:pre;background:#fff}
+.tc-ph{color:#94a3b8}
+.tc-car{flex:none;width:1px;height:13px;background:#2563eb;margin-left:1px;animation:tcb 1s steps(1) infinite}
+.tc-bt{flex:none;padding:0 10px;height:22px;line-height:22px;border-radius:7px;background:#e4e6ea;color:#334155;font-size:11px;font-weight:bold}
+#tcSug{position:absolute;left:0;right:0;bottom:100%;margin-bottom:3px;display:none;flex-direction:column;gap:1px;background:rgba(255,255,255,.92);border:1px solid rgba(148,163,184,.7);border-radius:7px;padding:3px;z-index:3;font-size:10px}
+#tcSug .sg{display:flex;gap:8px;padding:1px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;opacity:.7}
+#tcSug .sg:first-child{opacity:1;background:rgba(37,99,235,.1)}
+#tcSug b{flex:none;font-family:Consolas,monospace;color:#1d4ed8}
+#tcSug span{color:#64748b;overflow:hidden;text-overflow:ellipsis}
+#tcPick{display:none;position:absolute;left:14px;right:14px;top:12px;bottom:34px;background:rgba(255,255,255,.97);border:1px solid #cbd5e1;border-radius:8px;padding:4px;flex-direction:column;gap:2px;z-index:4;overflow:hidden}
+#tcPick .pt{font-size:10px;font-weight:bold;color:#475569}
+#tcPick .pr{display:flex;align-items:center;gap:6px;padding:0 6px;height:16px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#334155;font-size:11px;font-weight:bold;transition:all .15s}
+#tcPick .pr img{width:12px;height:12px;border-radius:50%;object-fit:contain}
+#tcPick .pr.hl{background:#dbeafe;border-color:#2563eb}
+#tcCaps{display:none;position:absolute;inset:0;align-items:center;justify-content:center;gap:10px;z-index:5;color:#64748b}
+#tcCaps.on{display:flex}
+#tutRoot kbd.cap{font:700 22px Consolas,monospace;padding:8px 18px;border:1px solid #cbd5e1;border-bottom-width:5px;border-radius:10px;background:#fff;color:#1e293b;box-shadow:0 4px 10px rgba(0,0,0,.08);transition:all .12s}
+#tutRoot kbd.cap.dn{transform:translateY(4px);border-bottom-width:1px;background:#dbeafe;border-color:#2563eb;color:#1d4ed8}
+.tut-d{flex:1;min-height:0;overflow:hidden}
+.tut-fade{animation:tutF .35s ease}
+#tutDT{font-size:13px;font-weight:bold;color:#1e293b;margin-bottom:2px}
+#tutDD{font-size:12px;line-height:1.5;color:#475569;word-break:keep-all}
+#tutDD code{font:11px Consolas,monospace;background:#f1f5f9;color:#1d4ed8;padding:0 4px;border-radius:4px}
+.tut-f{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none}
+.tut-nav{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b}
+.tut-nav button{width:24px;height:24px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#475569;cursor:pointer;font-size:10px}
+.tut-nav button:hover{background:#eff6ff;border-color:#2563eb}
+.tut-ok{padding:7px 18px;border:none;border-radius:8px;font-size:13px;font-weight:bold;font-family:inherit;color:#fff;background:#22c55e;cursor:pointer;transition:background .4s,transform .2s}
+.tut-ok:disabled{background:#cbd5e1;cursor:not-allowed}
+.tut-ok:not(:disabled):hover{background:#16a34a;transform:scale(1.04)}
+.tut-ok.pulse{animation:tutPulse .9s ease-out 2}
 </style>
 </head>
 <body>
@@ -2042,7 +2107,7 @@ const TEACHER_CODE = 'PANdA';
 $('nickname').addEventListener('input', syncNickname);
 $('teacherCode').addEventListener('input', e => {
   const v = e.target.value === TEACHER_CODE; if (v === isTeacher) return;
-  isTeacher = v; if (v) { $('teacherCode').style.display = 'none'; $('cfgBtn').style.display = 'inline-block'; } if (v && !hostTeacher(activeUsers)) becomeHost(); if (!v) iAmHost = false; if (v) SFX.unlock();
+  isTeacher = v; if (v) { $('teacherCode').style.display = 'none'; $('cfgBtn').style.display = 'inline-block'; } if (v && !hostTeacher(activeUsers)) becomeHost(); if (!v) iAmHost = false; if (v) SFX.unlock(); if (v) tutOpen(); else tutClose(true);
   syncNickname(); applyUIState(gameStarted);
 });
 $('startBtn').onclick = () => { if (!isTeacher) return; phase = 'vote1'; voteEnd = Date.now() + S.voteSec * 1000; myVote = ''; updatePresence(); };
@@ -2498,6 +2563,7 @@ const CMDS = {
   loops: ['돌아가는 반복 목록', 'G', () => Object.values(cmdLoops).map(L => L.name + '→' + (L.t === 'all' ? '모두' : L.t === myId ? '나' : L.t == null ? '-' : nameOf(L.t)) + ' ' + L.sec + '초').join(', ') || '없음', ''],
   stoploops: ['반복 전부 중지', 'G', () => { const n = Object.keys(cmdLoops).length; Object.values(cmdLoops).forEach(L => clearInterval(L.id)); Object.keys(cmdLoops).forEach(k => delete cmdLoops[k]); return n + '개 중지'; }, ''],
   clear: ['콘솔 지우기', 'G', () => { cmdLines.length = 0; cmdRender(); }, ''],
+  tutorial: ['선생님 튜토리얼 다시 보기', 'G', () => { cmdOpen(false); tutOpen(); }, ''],
   help: ['명령어 목록 (+ loop 사용법)', 'G', () => { cmdLog('반복: /loop<명령> [me|all|닉네임] <초> [인자]   중지: /unloop<명령> [me|all|닉네임]   예) /loopkill all 0.5', 'ch'); Object.entries(CMDS).forEach(([k, v]) => cmdLog('/' + k + (v[3] ? ' ' + v[3] : '') + (v[1] === 'G' ? '' : ' [me|all|닉네임]') + ' — ' + v[0])); }, '']
 };
 function applyCmd(name, args) { const c = CMDS[name]; if (c && c[1] === 'T') try { c[2](args); } catch (e) { console.warn(e); } }
@@ -2608,8 +2674,168 @@ const cmdGo = () => {
     if (r && cmdPickCtx) { const f = cmdPickCtx; cmdPickCtx = null; $('cmdPick').style.display = 'none'; f(r.dataset.id); }
     else if (x) { $('cmdPick').style.display = 'none'; cmdPickCtx = null; }
   };
-  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { e.preventDefault(); cmdOpen(); } }, true);
+  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { e.preventDefault(); if (!TUT.on) cmdOpen(); } }, true);
 }
+/* ===== 선생님 튜토리얼 ===== */
+const TUT_WAIT = 10000;
+const TUT = { on: false, tk: 0, phase: 1, step: 0, t0: 0, int: null, to: null, root: null, txt: '' };
+const tkb = (...k) => k.map(x => `<kbd>${x}</kbd>`).join('<i class="pl">+</i>');
+const TUT_ROWS = [
+  ['', tkb('Ctrl', '1'), '콘솔'],
+  ['', tkb('Ctrl', '2'), '튜토리얼 넘기기'],
+  ['투표 중', tkb('A', 'Tab'), '숨바꼭질 술래 확정'],
+  ['숨바꼭질', tkb('A', 'F'), '술래 되기'],
+  ['숨바꼭질', tkb('A', 'G'), '도망자 되기'],
+  ['로비', '접속자 제목 클릭', '설정'],
+  ['콘솔', tkb('Tab'), '자동완성'],
+  ['콘솔', tkb('↑', '↓'), '지난 명령어'],
+  ['콘솔', tkb('Enter'), '실행'],
+  ['콘솔', '/tutorial', '튜토리얼 다시']
+];
+const tutSleep = ms => new Promise(r => setTimeout(r, ms));
+const tR = open => ({ a: 'reset', open }), tY = x => ({ a: 'type', x }), tE = { a: 'enter' }, tW = ms => ({ a: 'wait', ms });
+const tO = (x, k, ms) => ({ a: 'out', x, k, ms }), tKEYS = k => ({ a: 'keys', k }), tOPEN = { a: 'open' }, tPICK = i => ({ a: 'pick', i }), tTAB = { a: 'tab' };
+const TUT_INTRO = {
+  t: '이렇게 쓰는 거예요',
+  d: '<kbd>Ctrl</kbd> + <kbd>1</kbd> 로 콘솔을 열고 명령어를 치면, 접속자와 게임을 바로 조작할 수 있어요.',
+  s: [tR(0), tW(400), tKEYS(['Ctrl', '1']), tOPEN, tW(300), tY('/addscore 50 me'), tW(300), tE, tO('✔ /addscore 50 → 나', 'ok', 500), tY('/lives 5 all'), tW(300), tE, tO('✔ /lives 5 → 모두', 'ok', 900)]
+};
+const TUT_STEPS = [
+  { t: '1. 열고 닫기', d: '<kbd>Ctrl</kbd> + <kbd>1</kbd> 로 열고 닫아요. 열리면 접속자 카드가 위, 콘솔이 아래로 나뉘어요. 막히면 <code>/help</code>.',
+    s: [tR(0), tW(400), tKEYS(['Ctrl', '1']), tOPEN, tW(300), tY('/help'), tE, tO('반복: /loop<명령> [me|all|닉네임] <초> [인자]', 'ch', 250), tO('/kill — 즉시 탈락 [me|all|닉네임]', '', 250), tO('/addscore [n] — 점수 +n (기본 10)', '', 900)] },
+  { t: '2. 대상 정하기', d: '개인 명령어는 끝에 <code>me</code>(나) · <code>all</code>(모두) · 닉네임을 붙여요. 그 사람 화면에서 바로 실행돼요.',
+    s: [tR(1), tY('/addscore 50 all'), tE, tO('✔ /addscore 50 → 모두', 'ok', 500), tY('/lives 5 서연'), tE, tO('✔ /lives 5 → 서연', 'ok', 1100)] },
+  { t: '3. 대상 고르기', d: '대상을 안 쓰면 접속자 카드가 떠서 직접 골라요. <code>/bomb</code> <code>/steal</code> <code>/gift</code> 도 같은 방식이에요.',
+    s: [tR(1), tY('/kill'), tE, tPICK(2), tO('✔ /kill → 서연', 'ok', 1100)] },
+  { t: '4. 자동완성', d: '앞글자만 쳐도 추천이 떠요. <kbd>Tab</kbd> 자동완성 · <kbd>↑</kbd><kbd>↓</kbd> 지난 명령어. 추천을 클릭해도 돼요.',
+    s: [tR(1), tY('/fa'), tW(1100), tTAB, tW(200), tY('8'), tW(300), tE, tO('✔ /fake', 'ok', 1200)] },
+  { t: '5. 반복 실행', d: '<code>/loop명령</code> 뒤에 대상·초·값을 쓰면 n초마다 반복해요. 끄기는 <code>/unloop명령</code>, 전부 끄기는 <code>/stoploops</code>.',
+    s: [tR(1), tY('/loopaddscore all 2 5'), tE, tO('🔁 /loopaddscore 모두 2초마다 (끄기: /unloopaddscore)', '', 1400), tY('/unloopaddscore all'), tE, tO('⏹ /unloopaddscore — 1개 중지', '', 1000)] },
+  { t: '6. 게임 제어', d: '대상이 필요 없는 명령은 바로 실행돼요. <code>/mode</code> 모드 시작 · <code>/cfg</code> 설정 변경 · <code>/skipvote</code> <code>/end</code> 등.',
+    s: [tR(1), tY('/mode bomb'), tE, tO('✔ /mode', 'ok', 500), tY('/cfg score 20'), tE, tO('✔ /cfg → score=20', 'ok', 1100)] },
+  { t: '7. 혼자 연습', d: '<code>/fake</code> 로 가짜 유저를 만들 수 있어요. <code>/fakescore</code> <code>/fakekill</code> 로 상황을 만들고 <code>/users</code> 로 확인해요.',
+    s: [tR(1), tY('/fakescore 30'), tE, tO('✔ /fakescore', 'ok', 350), tY('/fakekill 2'), tE, tO('✔ /fakekill', 'ok', 350), tY('/users'), tE, tO('✔ /users → 나(0점), 익명(30점), 익명(30점,탈락)', 'ok', 1100)] },
+  { t: '8. 채팅과 마무리', d: '<code>/</code> 없이 치면 다른 선생님에게 채팅이 가요. 이 안내는 <code>/tutorial</code> 로 다시 볼 수 있어요.',
+    s: [tR(1), tY('수업 시작할게요'), tE, tO('(선생님) 김쌤: 확인했어요', 'ch', 1500)] }
+];
+function tutBuild() {
+  if (TUT.root) return;
+  const r = document.createElement('div'); r.id = 'tutRoot';
+  const rows = TUT_ROWS.map(x => `<div class="tut-k"><span class="ctx${x[0] ? '' : ' e'}">${x[0]}</span>${x[1]}<i class="eq">=</i><span class="rs">${x[2]}</span></div>`).join('');
+  const dots = TUT_STEPS.map((_, i) => `<span class="tdot" data-i="${i}"></span>`).join('');
+  r.innerHTML = `<div class="card tut-c1"><div class="tut-h"><span>선생님 단축키</span></div><div class="tut-kg">${rows}</div></div>
+<div class="card tut-c2">
+  <div class="tut-h"><span>콘솔 사용법</span><span id="tutTag" class="tut-tag">맛보기</span><span id="tutDots" class="tut-dots" style="display:none">${dots}</span></div>
+  <div class="tut-pg"><i id="tutProgF"></i></div>
+  <div class="tut-st">
+    <div id="tcCon" class="tut-con off">
+      <div class="tc-bar"><span>⌨ 콘솔</span><span>Ctrl + 1 로 닫기</span></div>
+      <div id="tcLog"></div>
+      <div class="tc-in"><div id="tcSug"></div><div class="tc-fi"><span id="tcTxt"></span><i class="tc-car"></i><span id="tcPh" class="tc-ph">/명령어  (예: /kill me)</span></div><span class="tc-bt">전송</span></div>
+    </div>
+    <div id="tcPick"></div><div id="tcCaps"></div>
+  </div>
+  <div class="tut-d" id="tutDW"><div id="tutDT"></div><div id="tutDD"></div></div>
+  <div class="tut-f"><div class="tut-nav"><span id="tutNav" style="display:none"><button id="tutPrev">◀</button> <span id="tutNo"></span> <button id="tutNext">▶</button></span><span id="tutHint">콘솔 맛보기 재생 중…</span></div><button id="tutOk" class="tut-ok" disabled>알겠습니다</button></div>
+</div>`;
+  document.querySelector('.right-card-container').appendChild(r); TUT.root = r;
+  $('tutOk').onclick = () => { if (!$('tutOk').disabled) tutClose(); };
+  $('tutPrev').onclick = () => tutGo(TUT.step - 1);
+  $('tutNext').onclick = () => tutGo(TUT.step + 1);
+  $('tutDots').onclick = e => { const d = e.target.closest('[data-i]'); if (d) tutGo(+d.dataset.i); };
+}
+function tutTxt(t) {
+  TUT.txt = t; $('tcTxt').textContent = t; $('tcPh').style.display = t ? 'none' : '';
+  const l = t ? cmdSug(t) : [], s = $('tcSug'); s.style.display = l.length ? 'flex' : 'none';
+  s.innerHTML = l.map(x => `<div class="sg"><b>${esc(x.usage)}</b><span>${esc(x.desc)}</span></div>`).join('');
+}
+function tutLog(t, k) {
+  const d = document.createElement('div'); d.className = k ? 'tl-' + k : ''; d.textContent = t;
+  const L = $('tcLog'); L.appendChild(d); while (L.children.length > 6) L.firstChild.remove();
+}
+function tutDesc(t, d) {
+  $('tutDT').textContent = t; $('tutDD').innerHTML = d;
+  const w = $('tutDW'); w.classList.remove('tut-fade'); void w.offsetWidth; w.classList.add('tut-fade');
+}
+function tutProg(w, ms) { const p = $('tutProgF'); p.style.transition = ms ? 'width ' + ms + 'ms linear' : 'none'; p.style.width = w; }
+async function tutAct(a, tk) {
+  const live = () => TUT.tk === tk && TUT.on;
+  if (a.a === 'reset') {
+    $('tcLog').innerHTML = ''; tutTxt(''); $('tcPick').style.display = 'none'; $('tcCaps').className = '';
+    $('tcCon').classList.toggle('off', !a.open); await tutSleep(a.open ? 350 : 150);
+  } else if (a.a === 'keys') {
+    const c = $('tcCaps'); c.innerHTML = a.k.map(x => `<kbd class="cap">${x}</kbd>`).join('<i>+</i>'); c.classList.add('on');
+    await tutSleep(700); if (!live()) return;
+    c.querySelectorAll('.cap').forEach(e => e.classList.add('dn')); SFX.move(); await tutSleep(500); c.classList.remove('on');
+  } else if (a.a === 'open') {
+    $('tcCon').classList.remove('off'); SFX.pop(); await tutSleep(500);
+  } else if (a.a === 'type') {
+    let t = TUT.txt;
+    for (const ch of a.x) { if (!live()) return; t += ch; tutTxt(t); SFX.hover(); await tutSleep(55 + Math.random() * 55); }
+    await tutSleep(250);
+  } else if (a.a === 'tab') {
+    const l = cmdSug(TUT.txt); if (l[0]) tutTxt(l[0].fill); SFX.move(); await tutSleep(450);
+  } else if (a.a === 'enter') {
+    const t = TUT.txt; tutTxt(''); tutLog('> ' + t, 'me'); SFX.send(); await tutSleep(350);
+  } else if (a.a === 'out') {
+    tutLog(a.x, a.k); await tutSleep(a.ms || 500);
+  } else if (a.a === 'pick') {
+    const p = $('tcPick'), U = [['나', selectedImage], ['민준', characterImages[1]], ['서연', characterImages[2]]];
+    p.innerHTML = '<div class="pt">/kill — 대상을 고르세요</div>' + U.map(u => `<div class="pr"><img src="${esc(u[1])}" alt=""><span>${u[0]}</span></div>`).join('');
+    p.style.display = 'flex'; SFX.cardOpen(); await tutSleep(1100); if (!live()) return;
+    p.children[a.i + 1].classList.add('hl'); SFX.click(); await tutSleep(650); p.style.display = 'none';
+  } else if (a.a === 'wait') await tutSleep(a.ms);
+}
+async function tutRun(s, tk) {
+  for (const a of s) { if (TUT.tk !== tk || !TUT.on) return false; await tutAct(a, tk); }
+  return TUT.tk === tk && TUT.on;
+}
+async function tutLoopIntro(tk) {
+  while (TUT.tk === tk && TUT.on) { if (!(await tutRun(TUT_INTRO.s, tk))) return; await tutSleep(1200); }
+}
+function tutGo(i) {
+  if (!TUT.on) return;
+  const n = TUT_STEPS.length; i = (i + n) % n; TUT.step = i; const tk = ++TUT.tk, st = TUT_STEPS[i];
+  document.querySelectorAll('#tutDots .tdot').forEach((d, j) => d.classList.toggle('on', j === i));
+  $('tutNo').textContent = (i + 1) + ' / ' + n; tutDesc(st.t, st.d); tutProg(((i + 1) / n * 100) + '%', 400);
+  tutRun(st.s, tk).then(async ok => { if (!ok) return; await tutSleep(3800); if (TUT.on && TUT.tk === tk) tutGo(i + 1); });
+}
+function tutPhase2() {
+  if (!TUT.on) return;
+  TUT.phase = 2; const ok = $('tutOk'); ok.disabled = false; ok.textContent = '알겠습니다'; ok.classList.add('pulse'); SFX.unlock();
+  $('tutTag').style.display = 'none'; $('tutDots').style.display = 'flex'; $('tutNav').style.display = 'inline'; $('tutHint').style.display = 'none';
+  tutGo(0);
+}
+function tutTick() {
+  if (!TUT.on) return;
+  if (gameStarted || curStage) return tutClose(true);
+  if (TUT.phase === 1) { const n = Math.max(0, Math.ceil((TUT_WAIT - (Date.now() - TUT.t0)) / 1000)); $('tutOk').textContent = '알겠습니다 (' + n + ')'; }
+}
+function tutOpen() {
+  if (TUT.on || gameStarted || curStage) return;
+  tutBuild(); closeSettings(); cmdOpen(false);
+  TUT.on = true; TUT.phase = 1; TUT.step = 0; TUT.t0 = Date.now(); const tk = ++TUT.tk;
+  clearInterval(TUT.int); clearTimeout(TUT.to);
+  document.querySelector('.right-card-container').classList.add('tut-open');
+  const ok = $('tutOk'); ok.disabled = true; ok.classList.remove('pulse'); ok.textContent = '알겠습니다 (10)';
+  $('tutTag').style.display = ''; $('tutDots').style.display = 'none'; $('tutNav').style.display = 'none'; $('tutHint').style.display = '';
+  $('tcLog').innerHTML = ''; tutTxt(''); $('tcCon').classList.add('off'); $('tcPick').style.display = 'none'; $('tcCaps').className = '';
+  tutDesc(TUT_INTRO.t, TUT_INTRO.d);
+  tutProg('0%', 0); void $('tutProgF').offsetWidth; tutProg('100%', TUT_WAIT);
+  TUT.int = setInterval(tutTick, 250); TUT.to = setTimeout(tutPhase2, TUT_WAIT);
+  SFX.cardOpen(); tutLoopIntro(tk);
+}
+function tutClose(silent) {
+  if (!TUT.on) return;
+  TUT.on = false; TUT.tk++; clearInterval(TUT.int); clearTimeout(TUT.to);
+  document.querySelector('.right-card-container').classList.remove('tut-open');
+  if (!silent) SFX.pop();
+}
+addEventListener('keydown', e => {
+  if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') && isTeacher && TUT.on) {
+    e.preventDefault(); tutClose(); showToast(null, '튜토리얼', '건너뛰었어요 · 콘솔에서 /tutorial 로 다시 볼 수 있어요', '#22c55e');
+  }
+}, true);
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
 
