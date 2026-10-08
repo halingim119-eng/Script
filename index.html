@@ -380,6 +380,62 @@ body.bshake{animation:shk .08s linear 14}
 .info-item div{display:flex;flex-direction:column;min-width:0}
 .info-item b{font-size:12px;color:#1e293b}
 .info-item span{font-size:11px;color:#64748b;line-height:1.4;word-break:keep-all}
+/* ===== 학생 모드 설명창 (로비 자동 표시) ===== */
+.inf-st{position:relative;flex:1;min-height:0;display:flex;align-items:center;gap:12px;padding:10px 36px;border-radius:12px;background:linear-gradient(135deg,#f8fafc,#e0e7ff);border:1px solid #e2e8f0;overflow:hidden}
+.inf-st img{width:92px;height:92px;object-fit:contain;flex:none;animation:infP .5s cubic-bezier(.2,1.5,.4,1)}
+.inf-tx{min-width:0;display:flex;flex-direction:column;gap:4px;animation:infS .35s ease}
+.inf-nm{font-size:17px;font-weight:900;color:#1e293b}
+.inf-tg{display:flex;gap:4px;flex-wrap:wrap}
+.inf-tg b{font-size:10px;padding:1px 8px;border-radius:8px;background:#dbeafe;color:#1d4ed8}
+.inf-ds{font-size:12px;line-height:1.5;color:#475569;word-break:keep-all}
+.inf-tp{font-size:11px;color:#7c3aed;font-weight:bold}
+.inf-ar{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;border-radius:50%;background:#fff;color:#475569;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2);font-size:10px}
+.inf-bar{position:absolute;left:0;bottom:0;height:3px;background:#2563eb}
+.inf-th{display:flex;gap:4px;flex:none}
+.inf-th button{flex:1;min-width:0;height:34px;padding:2px;border:2px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;transition:all .2s}
+.inf-th button img{width:100%;height:100%;object-fit:contain}
+.inf-th button.on{border-color:#2563eb;background:#eff6ff;transform:translateY(-2px)}
+@keyframes infP{from{transform:scale(.4) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes infS{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+@keyframes infB{from{width:0}to{width:100%}}
+/* ===== 튜토리얼: 버튼/설정 시연 화면 ===== */
+#tcUi{position:absolute;inset:0;display:none;gap:6px;padding:6px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:9px;overflow:hidden}
+#tcUi.on{display:flex;animation:tutF .3s ease}
+.tm-l{width:92px;flex:none;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:4px;font-size:9px;color:#475569}
+.tm-l>img{width:48px;height:48px;object-fit:contain}
+.tm-r{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.tm-c{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:5px 8px;flex:1;min-height:0;overflow:hidden;font-size:10px;color:#334155;display:flex;flex-direction:column;gap:2px;transition:flex .5s,opacity .4s}
+.tm-c.hid{flex:0 0 0;padding-top:0;padding-bottom:0;opacity:0;border-width:0}
+.tm-c.sm{flex:0 0 40px}
+.tm-h{display:flex;justify-content:space-between;font-weight:bold;font-size:11px;color:#1e293b}
+.tm-h em{font-style:normal;font-size:9px;color:#b91c1c;background:#fee2e2;border-radius:10px;padding:0 6px}
+.tm-h u{text-decoration:none}
+.tm-u{display:flex;align-items:center;gap:5px}
+.tm-u img{width:14px;height:14px;border-radius:50%}
+.tm-u i{margin-left:auto;font-style:normal;font-size:8px;color:#22c55e}
+.tm-b{width:100%;padding:4px 0;border-radius:6px;background:#94a3b8;color:#fff;font-weight:bold;text-align:center;font-size:11px;transition:transform .15s}
+.tm-b.red{background:#ef4444}
+.prs{transform:scale(.9)}
+.tm-vg{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.tm-vg div{border:1px solid #e2e8f0;border-radius:6px;text-align:center;font-size:8px;padding:1px;line-height:1.2;transition:all .3s}
+.tm-vg img{width:20px;height:20px}
+.tm-vg div.top{border-color:#2563eb;background:#dbeafe}
+.tm-tabs{display:flex;gap:2px;white-space:nowrap;overflow:hidden}
+.tm-tabs b{padding:1px 5px;border:1px solid #e2e8f0;border-radius:5px;font-size:9px;color:#64748b;font-weight:normal}
+.tm-tabs b.on{background:#0f172a;color:#fff;border-color:#0f172a}
+.tm-rw{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9;padding:2px 0;font-size:10px}
+.tm-rw u{text-decoration:none;min-width:28px;text-align:center;border:1px solid #cbd5e1;border-radius:4px;padding:0 4px;transition:all .2s}
+.tm-rw u.hl{background:#fef08a;border-color:#eab308}
+.tm-pod{display:flex;align-items:flex-end;justify-content:center;gap:4px;flex:1}
+.tm-pod div{width:42px;border-radius:4px 4px 0 0;color:#fff;font-weight:bold;text-align:center;height:0;transition:height .7s cubic-bezier(.2,1,.3,1)}
+.tm-pod.up .p1{height:46px;background:#eab308}
+.tm-pod.up .p2{height:32px;background:#94a3b8}
+.tm-pod.up .p3{height:22px;background:#b45309}
+.tm-note{position:absolute;right:8px;bottom:6px;background:#22c55e;color:#fff;border-radius:8px;padding:2px 8px;font-size:10px;font-weight:bold;animation:tutF .3s}
+.tm-cur{position:absolute;left:0;top:0;z-index:9;pointer-events:none;transform:translate(300px,110px);transition:transform .4s cubic-bezier(.3,.7,.3,1)}
+.tkb{display:inline-block;padding:1px 8px;border-radius:6px;background:#0f172a;color:#fff;font-size:10px;font-weight:bold}
+.tkb.r{background:#ef4444}
+.tdot:nth-child(5){margin-right:6px}
 </style>
 </head>
 <body>
@@ -1027,7 +1083,7 @@ function renderAll() {
   forceView(users); coopSync(users); teacherTick(users);
   if (gameStarted && $('gameUI').style.display === 'none') applyUIState(true);
   koTick(); renderSpectate(users);   // 게임 중인데 게임 화면이 아니면 이동
-  renderVote(users); renderLiarVote(users);
+  renderVote(users); renderLiarVote(users); infoSync();
   renderUserList(fakeLabel(users));
   renderRankingList(fakeLabel(users));
 }
@@ -1309,6 +1365,7 @@ function applyUIState(started) {
   $('teacherControls').style.display = (isTeacher && started) ? 'flex' : 'none';
   setModeUI();
   if (started) initThreeOnce();
+  infoSync();
 }
 
 function renderUserList(users) {
@@ -2130,8 +2187,8 @@ $('endBtn').onclick = teacherEndGame;
 $('lobbyBtn').onclick = closeResult;
 [['showdownBtn', 'showdown'], ['bombBtn', 'bomb'], ['speedBtn', 'speedrun'], ['onehitBtn', 'onehit'], ['stackBtn', 'stack'], ['blueprintBtn', 'blueprint'], ['liarBtn', 'liar'], ['coopBtn', 'coop'], ['soloBtn', 'solo'], ['duoBtn', 'duo']]
   .forEach(([id, k]) => { $(id).onclick = () => { if (!curStage) return; myVote = curStage + ':' + k; updatePresence(); }; });
-$('changeProfileBtn').onclick = () => { closeSettings(); $('defaultUserListUI').style.display = 'none'; $('profilePickerUI').style.display = 'flex'; };
-$('closeProfilePickerBtn').onclick = () => { $('profilePickerUI').style.display = 'none'; $('defaultUserListUI').style.display = 'flex'; };
+$('changeProfileBtn').onclick = () => { closeSettings(); $('defaultUserListUI').style.display = 'none'; $('profilePickerUI').style.display = 'flex'; infoSync(); };
+$('closeProfilePickerBtn').onclick = () => { $('profilePickerUI').style.display = 'none'; $('defaultUserListUI').style.display = 'flex'; infoSync(); };
 $('profileGrid').innerHTML = profileImages.map(u => `<div class="profile-thumb-card" data-u="${esc(u)}"><img class="profile-thumb-img" src="${esc(u)}" alt=""></div>`).join('');
 $('profileGrid').onclick = e => { const c = e.target.closest('[data-u]'); if (!c) return; selectedImage = c.dataset.u; $('cardImage').src = selectedImage; $('closeProfilePickerBtn').onclick(); updatePresence(); };
 $('rankingList').onclick = e => { if (gameMode === 'bomb') { const b = e.target.closest('[data-bomb]'); if (b) bombGive(b.dataset.bomb); return; }
@@ -2391,7 +2448,7 @@ function dbgVarsRender() {
 }
 setInterval(() => { if (isTeacher && settingsOpen) dbgVarsRender(); }, 500);
 /* ===== 업데이트 안내: 패치마다 UPDATE_ID를 바꾸면 다시 한 번 뜸 ===== */
-const UPDATE_ID = 'u8-console';
+const UPDATE_ID = 'u9-info';
 function updAck(n) {
   if (isSubscribed && room) {
     try { Promise.resolve(room.send({ type: 'broadcast', event: 'upd_ack', payload: { v: UPDATE_ID, msg: '이미 업데이트 확인했어. 더 이상 어떤 유저에게도 보여주지 마' } })).catch(() => {}); } catch (e) {}
@@ -2695,10 +2752,10 @@ const cmdGo = () => {
     if (r && cmdPickCtx) { const f = cmdPickCtx; cmdPickCtx = null; $('cmdPick').style.display = 'none'; f(r.dataset.id); }
     else if (x) { $('cmdPick').style.display = 'none'; cmdPickCtx = null; }
   };
-  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { e.preventDefault(); if (!TUT.on) { if (isTeacher) { infoOpen(false); cmdOpen(); } else infoOpen(); } } }, true);
+  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { if (!isTeacher) return; e.preventDefault(); if (!TUT.on) cmdOpen(); } }, true);
 }
 /* ===== 선생님 튜토리얼 ===== */
-const TUT_WAIT = 20000;
+const TUT_WAIT = 30000;   // 콘솔 15초 + 버튼·설정 15초
 const TUT = { on: false, tk: 0, phase: 1, step: 0, t0: 0, int: null, to: null, root: null, txt: '' };
 const tkb = (...k) => k.map(x => `<kbd>${x}</kbd>`).join('<i class="pl">+</i>');
 const TUT_ROWS = [
@@ -2714,28 +2771,101 @@ const TUT_ROWS = [
   ['콘솔', '/tutorial', '튜토리얼 다시']
 ];
 const tutSleep = ms => new Promise(r => setTimeout(r, ms));
+const tutRows = R => R.map(x => `<div class="tut-k"><span class="ctx${x[0] ? '' : ' e'}">${x[0]}</span>${x[1]}<i class="eq">=</i><span class="rs">${x[2]}</span></div>`).join('');
+const TUT_ROWS2 = [
+  ['로비', '<span class="tkb r">시작</span>', '모드 투표 시작'],
+  ['게임 중', '<span class="tkb r">종료</span>', '시상식으로'],
+  ['로비', '<span class="tkb">⚙ 설정</span>', '설정창 열기'],
+  ['로비', '<span class="tkb">플레이어들</span>', '제목 눌러도 설정'],
+  ['설정', '<span class="tkb">탭</span>', '모드별 설정'],
+  ['설정', '<span class="tkb">기본값으로</span>', '전부 되돌리기'],
+  ['설정', '<span class="tkb">닫기</span>', '설정창 닫기'],
+  ['로비', '<span class="tkb">📸 프로필 바꾸기</span>', '프로필 고르기'],
+  ['시상식', '<span class="tkb">로비로</span>', '시상식 끝나면'],
+  ['콘솔', '/tutorial', '튜토리얼 다시']
+];
+function tutSec(b) {   // 콘솔 구간(1~5) / 버튼·설정 구간(6~10)에 맞춰 위 카드와 제목을 바꿈
+  if (TUT.sec === b) return; TUT.sec = b;
+  $('tutH1').textContent = b ? '선생님 버튼' : '선생님 단축키'; $('tutH2').textContent = b ? '버튼 · 설정 사용법' : '콘솔 사용법';
+  const g = $('tutKG'); g.innerHTML = tutRows(b ? TUT_ROWS2 : TUT_ROWS); g.classList.remove('tut-fade'); void g.offsetWidth; g.classList.add('tut-fade');
+}
+/* --- 버튼 · 설정 시연 (가짜 화면 + 마우스 커서) --- */
+const TM_T = ['공통', '한방', '스피드런', '도면', '쌓기', '협동', '라이어', '카드/효과', '소리', '디버그'];
+const TM_R = { 0: [['투표 시간 (초)', '10'], ['정답 점수 (점)', '10']], 1: [['생존자 1명 남으면 자동 종료', '✔']], 2: [['제한시간 (초)', '90'], ['블록 최소 개수 (개)', '11']], 6: [['라운드 시간 (초)', '25'], ['채팅 허용', '✔']] };
+const tmTabs = o => '<div class="tm-tabs">' + TM_T.map((t, i) => `<b data-i="${i}"${i === o ? ' class="on"' : ''}>${t}</b>`).join('') + '</div>';
+const tmRows = i => (TM_R[i] || []).map(r => `<div class="tm-rw"><span>${r[0]}</span><u>${r[1]}</u></div>`).join('');
+const tmUs = n => [[selectedImage, '나'], [characterImages[1], '민준'], [characterImages[2], '서연'], [characterImages[3], '하준']].slice(0, n).map(u => `<div class="tm-u"><img src="${esc(u[0])}" alt=""><span>${u[1]}</span><i>● 온라인</i></div>`).join('');
+const tmC = (h, b, c, id) => `<div class="tm-c ${c || ''}"${id ? ' id="' + id + '"' : ''}><div class="tm-h">${h}</div>${b}</div>`;
+const tmQ = s => $('tcUi').querySelector(s);
+async function tmGo(s, d = 430) {   // 커서를 요소 위로 이동 (화면 배율 보정)
+  const e = tmQ(s); if (!e) return;
+  const a = $('tcUi').getBoundingClientRect(), b = e.getBoundingClientRect(), k = uiScale || 1;
+  tmQ('.tm-cur').style.transform = `translate(${(b.left - a.left + b.width / 2) / k}px,${(b.top - a.top + b.height / 2) / k}px)`;
+  await tutSleep(d);
+}
+async function tmClk(s) { const e = tmQ(s); if (!e) return; e.classList.add('prs'); SFX.click(); await tutSleep(170); e.classList.remove('prs'); }
+async function tutMock(k, live) {
+  const ui = $('tcUi'), img = `<img src="${esc(selectedImage)}" alt="">`;
+  const L = (l, r) => { ui.innerHTML = `<div class="tm-l">${l}</div><div class="tm-r" id="tmR">${r}</div><svg class="tm-cur" width="16" height="16" viewBox="0 0 16 16"><path d="M2 1l11 6-5 1.5L6 14z" fill="#1e293b" stroke="#fff"/></svg>`; ui.classList.add('on'); };
+  if (k === 'start') {
+    L(img + '<div class="tm-b red" id="tmS">시작</div>', tmC('플레이어들 <em>● 4명</em>', tmUs(4)));
+    await tutSleep(300); if (!live()) return; await tmGo('#tmS'); await tmClk('#tmS'); if (!live()) return;
+    $('tmR').innerHTML = tmC('🗳 모드 투표 ⏱ 10초', '<div class="tm-vg">' + MODE_INFO.map(m => `<div><img src="${SC(m[2])}" alt=""><br>${m[1].split(' ')[0].slice(0, 4)}<br><b>0표</b></div>`).join('') + '</div>');
+    const T = [...ui.querySelectorAll('.tm-vg div')], v = (i, n) => { T[i].querySelector('b').textContent = n + '표'; };
+    await tutSleep(400); v(1, 1); v(4, 2); SFX.pop(); await tutSleep(400); if (!live()) return; v(4, 4); T[4].classList.add('top'); SFX.pop(); await tutSleep(400);
+  } else if (k === 'end') {
+    L('<div style="background:#e2e8f0;border-radius:10px;padding:1px 8px">블록 관찰 중</div><div style="font-size:26px">🧊</div><div class="tm-b red" id="tmE">종료</div>', tmC('🏆 랭킹', tmUs(3)));
+    await tutSleep(300); if (!live()) return; await tmGo('#tmE'); await tmClk('#tmE'); if (!live()) return;
+    $('tmR').innerHTML = tmC('🎉 시상식', '<div class="tm-pod" id="tmP"><div class="p2">2</div><div class="p1">1</div><div class="p3">3</div></div>');
+    await tutSleep(60); $('tmP').classList.add('up'); SFX.podRise(); await tutSleep(900);
+  } else if (k === 'cfg') {
+    L(img + '<div class="tm-b red">시작</div>', tmC('플레이어들 <em>● 4명 <u id="tmG">⚙ 설정</u></em>', tmUs(2)) + tmC('설정 <span>닫기</span>', tmTabs(0) + tmRows(0), 'hid', 'tmSet'));
+    await tutSleep(300); if (!live()) return; await tmGo('#tmG'); await tmClk('#tmG'); if (!live()) return;
+    tmQ('.tm-c').classList.add('sm'); $('tmSet').classList.remove('hid'); SFX.cardOpen(); await tutSleep(700);
+    if (!live()) return; await tmGo('.tm-h span'); await tutSleep(200);
+  } else if (k === 'tabs') {
+    L(img, tmC('설정 <span>기본값으로</span>', tmTabs(0) + '<div id="tmRw">' + tmRows(0) + '</div>'));
+    await tutSleep(250);
+    for (const i of [1, 2, 6]) {
+      if (!live()) return; const q = `.tm-tabs b[data-i="${i}"]`; await tmGo(q, 380); await tmClk(q);
+      ui.querySelectorAll('.tm-tabs b').forEach(b => b.classList.toggle('on', +b.dataset.i === i)); $('tmRw').innerHTML = tmRows(i);
+    }
+  } else if (k === 'vals') {
+    L(img, tmC('설정 <span>기본값으로</span>', '<div class="tm-rw"><span>투표 시간 (초)</span><u id="tmN">10</u></div><div class="tm-rw"><span>정답 후 카드 보상</span><u id="tmK">✔</u></div><div class="tm-rw"><span>블록 색</span><u id="tmO" style="background:#3b82f6;color:#3b82f6">■■</u></div>'));
+    await tutSleep(250); if (!live()) return; await tmGo('#tmN'); await tmClk('#tmN'); $('tmN').textContent = '15'; $('tmN').classList.add('hl');
+    if (!live()) return; await tmGo('#tmO'); await tmClk('#tmO'); const o = $('tmO'); o.style.background = o.style.color = '#f43f5e'; o.classList.add('hl');
+    ui.insertAdjacentHTML('beforeend', '<div class="tm-note">학생 화면에도 바로 적용!</div>'); SFX.pop(); await tutSleep(500);
+    if (!live()) return; await tmGo('.tm-h span'); await tmClk('.tm-h span');
+    $('tmN').textContent = '10'; o.style.background = o.style.color = '#3b82f6'; ui.querySelectorAll('.hl').forEach(x => x.classList.remove('hl'));
+  }
+}
 const tR = open => ({ a: 'reset', open }), tY = x => ({ a: 'type', x }), tE = { a: 'enter' }, tW = ms => ({ a: 'wait', ms });
 const tO = (x, k, ms) => ({ a: 'out', x, k, ms }), tKEYS = k => ({ a: 'keys', k }), tOPEN = { a: 'open' }, tPICK = i => ({ a: 'pick', i }), tTAB = { a: 'tab' };
 const TUT_STEPS = [
-  { t: '1. 열고 닫기', d: '<kbd>Ctrl</kbd> + <kbd>1</kbd> 으로 열면 명령어 목록이 떠요. 또 누르면 닫혀요.',
-    s: [tR(0), tW(150), tKEYS(['Ctrl', '1']), tOPEN, tY('/help'), tE, tO('반복: /loop<명령> [me|all|닉네임] <초> [인자]', 'ch', 150), tO('/kill — 즉시 탈락 [me|all|닉네임]', '', 150), tO('/addscore [n] — 점수 +n (기본 10)', '', 300)] },
-  { t: '2. 대상 정하기', d: '끝에 <code>me</code>(나) <code>all</code>(전체) 닉네임 중 하나를 붙이세요.',
-    s: [tR(1), tY('/addscore 50 all'), tE, tO('✔ /addscore 50 → 모두', 'ok', 250), tY('/lives 5 서연'), tE, tO('✔ /lives 5 → 서연', 'ok', 500)] },
-  { t: '3. 대상 고르기', d: '대상을 안 쓰면 목록이 떠요. 거기서 고르면 돼요. <code>/bomb</code> <code>/steal</code> <code>/gift</code> 도 똑같아요.',
-    s: [tR(1), tY('/kill'), tE, tPICK(2), tO('✔ /kill → 서연', 'ok', 500)] },
-  { t: '4. 자동완성 · 모드 미리보기', d: '앞글자만 쳐도 추천이 떠요. <code>/mode </code> 뒤엔 모드 목록이 나와요. <kbd>Tab</kbd> 으로 완성.',
-    s: [tR(1), tY('/mo'), tW(450), tTAB, tW(350), tY('b'), tW(600), tY('omb'), tE, tO('✔ /mode', 'ok', 500)] },
-  { t: '5. 반복 실행', d: '<code>/loop명령</code> 뒤에 대상·초·값을 쓰면 반복해요. 끄기: <code>/unloop명령</code> · 전부 끄기: <code>/stoploops</code> · 다시 보기: <code>/tutorial</code>',
-    s: [tR(1), tY('/loopaddscore all 2 5'), tE, tO('🔁 /loopaddscore 모두 2초마다', '', 500), tY('/unloopaddscore all'), tE, tO('⏹ /unloopaddscore — 1개 중지', '', 500)] }
+  { t: `1. 열고 닫기`, d: `<kbd>Ctrl</kbd> + <kbd>1</kbd> 으로 열면 명령어 목록이 떠요. 또 누르면 닫혀요.`,
+    s: [tR(0), tW(100), tKEYS(['Ctrl', '1']), tOPEN, tY('/help'), tE, tO('반복: /loop<명령> [me|all|닉네임] <초> [인자]', 'ch', 120), tO('/kill — 즉시 탈락 [me|all|닉네임]', '', 120), tO('/addscore [n] — 점수 +n (기본 10)', '', 200)] },
+  { t: `2. 대상 정하기`, d: `끝에 <code>me</code>(나) <code>all</code>(전체) 닉네임 중 하나를 붙이세요.`,
+    s: [tR(1), tY('/addscore 50 all'), tE, tO('✔ /addscore 50 → 모두', 'ok', 200), tY('/lives 5 서연'), tE, tO('✔ /lives 5 → 서연', 'ok', 300)] },
+  { t: `3. 대상 고르기`, d: `대상을 안 쓰면 목록이 떠요. 거기서 고르면 돼요. <code>/bomb</code> <code>/steal</code> <code>/gift</code> 도 똑같아요.`,
+    s: [tR(1), tY('/kill'), tE, tPICK(2), tO('✔ /kill → 서연', 'ok', 400)] },
+  { t: `4. 자동완성 · 모드 미리보기`, d: `앞글자만 쳐도 추천이 떠요. <code>/mode </code> 뒤엔 모드 목록이 나와요. <kbd>Tab</kbd> 으로 완성.`,
+    s: [tR(1), tY('/mo'), tW(350), tTAB, tW(250), tY('b'), tW(450), tY('omb'), tE, tO('✔ /mode', 'ok', 400)] },
+  { t: `5. 반복 실행`, d: `<code>/loop명령</code> 뒤에 대상·초·값을 쓰면 반복해요. 끄기: <code>/unloop명령</code> · 전부 끄기: <code>/stoploops</code> · 다시 보기: <code>/tutorial</code>`,
+    s: [tR(1), tY('/loopaddscore all 2'), tE, tO('🔁 /loopaddscore 모두 2초마다', '', 300), tY('/unloopaddscore all'), tE, tO('⏹ /unloopaddscore — 1개 중지', '', 300)] },
+  { t: `6. 시작 버튼`, d: `로비에서 빨간 <code>시작</code> 을 누르면 모드 투표가 열려요. 투표가 끝나면 가장 많이 뽑힌 모드로 바로 시작!`, s: [tR(0), { a: 'mock', k: 'start' }] },
+  { t: `7. 종료 버튼`, d: `게임 중 왼쪽 아래 <code>종료</code> 를 누르면 바로 시상식! 시상식이 끝나야 <code>로비로</code> 가 풀려요.`, s: [tR(0), { a: 'mock', k: 'end' }] },
+  { t: `8. 설정 열기`, d: `로비에서 접속자 카드의 <code>⚙ 설정</code> (또는 '플레이어들' 제목)을 누르면 카드가 둘로 나뉘며 설정창이 열려요. 투표·게임 중엔 안 열려요.`, s: [tR(0), { a: 'mock', k: 'cfg' }] },
+  { t: `9. 설정 탭`, d: `위쪽 탭으로 모드별 설정을 골라요. <code>한방</code> <code>스피드런</code> <code>라이어</code>… 색·크기 같은 디자인도 바꿀 수 있어요.`, s: [tR(0), { a: 'mock', k: 'tabs' }] },
+  { t: `10. 값 바꾸기`, d: `숫자·체크·색을 바꾸면 <b>학생 화면에도 바로 적용</b>돼요. <code>기본값으로</code> 로 되돌리고, <code>디버그</code> 탭에선 가짜 유저로 테스트해요.`, s: [tR(0), { a: 'mock', k: 'vals' }] }
 ];
 function tutBuild() {
   if (TUT.root) return;
   const r = document.createElement('div'); r.id = 'tutRoot';
   const rows = TUT_ROWS.map(x => `<div class="tut-k"><span class="ctx${x[0] ? '' : ' e'}">${x[0]}</span>${x[1]}<i class="eq">=</i><span class="rs">${x[2]}</span></div>`).join('');
   const dots = TUT_STEPS.map((_, i) => `<span class="tdot" data-i="${i}"></span>`).join('');
-  r.innerHTML = `<div class="card tut-c1"><div class="tut-h"><span>선생님 단축키</span></div><div class="tut-kg">${rows}</div></div>
+  r.innerHTML = `<div class="card tut-c1"><div class="tut-h"><span id="tutH1">선생님 단축키</span></div><div class="tut-kg" id="tutKG">${rows}</div></div>
 <div class="card tut-c2">
-  <div class="tut-h"><span>콘솔 사용법</span><span id="tutDots" class="tut-dots">${dots}</span></div>
+  <div class="tut-h"><span id="tutH2">콘솔 사용법</span><span id="tutDots" class="tut-dots">${dots}</span></div>
   <div class="tut-pg"><i id="tutProgF"></i></div>
   <div class="tut-st">
     <div id="tcCon" class="tut-con off">
@@ -2743,7 +2873,7 @@ function tutBuild() {
       <div id="tcLog"></div>
       <div class="tc-in"><div id="tcSug"></div><div class="tc-fi"><span id="tcTxt"></span><i class="tc-car"></i><span id="tcPh" class="tc-ph">/명령어  (예: /kill me)</span></div><span class="tc-bt">전송</span></div>
     </div>
-    <div id="tcPick"></div><div id="tcCaps"></div>
+    <div id="tcPick"></div><div id="tcCaps"></div><div id="tcUi"></div>
   </div>
   <div class="tut-d" id="tutDW"><div id="tutDT"></div><div id="tutDD"></div></div>
   <div class="tut-f"><div class="tut-nav"><span id="tutNav"><button id="tutPrev">◀</button> <span id="tutNo"></span> <button id="tutNext">▶</button></span><span id="tutHint"></span></div><button id="tutOk" class="tut-ok" disabled>알겠습니다</button></div>
@@ -2771,7 +2901,7 @@ function tutProg(w, ms) { const p = $('tutProgF'); p.style.transition = ms ? 'wi
 async function tutAct(a, tk) {
   const live = () => TUT.tk === tk && TUT.on;
   if (a.a === 'reset') {
-    $('tcLog').innerHTML = ''; tutTxt(''); $('tcPick').style.display = 'none'; $('tcCaps').className = '';
+    $('tcLog').innerHTML = ''; tutTxt(''); $('tcUi').classList.remove('on'); $('tcPick').style.display = 'none'; $('tcCaps').className = '';
     $('tcCon').classList.toggle('off', !a.open); await tutSleep(a.open ? 150 : 80);
   } else if (a.a === 'keys') {
     const c = $('tcCaps'); c.innerHTML = a.k.map(x => `<kbd class="cap">${x}</kbd>`).join('<i>+</i>'); c.classList.add('on');
@@ -2781,7 +2911,7 @@ async function tutAct(a, tk) {
     $('tcCon').classList.remove('off'); SFX.pop(); await tutSleep(300);
   } else if (a.a === 'type') {
     let t = TUT.txt;
-    for (const ch of a.x) { if (!live()) return; t += ch; tutTxt(t); SFX.hover(); await tutSleep(22 + Math.random() * 22); }
+    for (const ch of a.x) { if (!live()) return; t += ch; tutTxt(t); SFX.hover(); await tutSleep(14 + Math.random() * 12); }
     await tutSleep(250);
   } else if (a.a === 'tab') {
     const l = cmdSug(TUT.txt); if (l[0]) tutTxt(l[0].fill); SFX.move(); await tutSleep(250);
@@ -2794,6 +2924,7 @@ async function tutAct(a, tk) {
     p.innerHTML = '<div class="pt">/kill — 대상을 고르세요</div>' + U.map(u => `<div class="pr"><img src="${esc(u[1])}" alt=""><span>${u[0]}</span></div>`).join('');
     p.style.display = 'flex'; SFX.cardOpen(); await tutSleep(600); if (!live()) return;
     p.children[a.i + 1].classList.add('hl'); SFX.click(); await tutSleep(350); p.style.display = 'none';
+  } else if (a.a === 'mock') { $('tcCon').classList.add('off'); await tutMock(a.k, live);
   } else if (a.a === 'wait') await tutSleep(a.ms);
 }
 async function tutRun(s, tk) {
@@ -2804,7 +2935,7 @@ function tutGo(i, auto) {
   if (!TUT.on) return;
   const n = TUT_STEPS.length; i = (i + n) % n; TUT.step = i; const tk = ++TUT.tk, st = TUT_STEPS[i];
   document.querySelectorAll('#tutDots .tdot').forEach((d, j) => d.classList.toggle('on', j === i));
-  $('tutNo').textContent = (i + 1) + ' / ' + n; tutDesc(st.t, st.d);
+  $('tutNo').textContent = (i + 1) + ' / ' + n; tutDesc(st.t, st.d); tutSec(i >= 5);
   tutRun(st.s, tk).then(async ok => {
     if (!ok || !auto || i >= n - 1) return;
     await tutSleep(Math.max(0, TUT.t0 + (i + 1) * TUT_WAIT / n - Date.now()));   // 단계마다 같은 시간씩 → 전체 20초
@@ -2827,7 +2958,7 @@ function tutOpen() {
   clearInterval(TUT.int); clearTimeout(TUT.to);
   document.querySelector('.right-card-container').classList.add('tut-open');
   const ok = $('tutOk'); ok.disabled = true; ok.classList.remove('pulse'); ok.textContent = '알겠습니다 (' + TUT_WAIT / 1000 + ')';
-  $('tcLog').innerHTML = ''; tutTxt(''); $('tcCon').classList.add('off'); $('tcPick').style.display = 'none'; $('tcCaps').className = '';
+  $('tcLog').innerHTML = ''; tutTxt(''); $('tcCon').classList.add('off'); $('tcUi').classList.remove('on'); $('tcPick').style.display = 'none'; $('tcCaps').className = '';
   tutProg('0%', 0); void $('tutProgF').offsetWidth; tutProg('100%', TUT_WAIT);
   TUT.int = setInterval(tutTick, 250); TUT.to = setTimeout(tutPhase2, TUT_WAIT);
   SFX.cardOpen(); tutGo(0, true);
@@ -2844,24 +2975,43 @@ addEventListener('keydown', e => {
   }
 }, true);
 /* ===== 학생용 모드 설명창 (Ctrl+1) ===== */
+/* ===== 학생용 모드 설명창: 로비에서만 자동으로 떠 있음 (게임/투표/시상식/프로필 고르기 중엔 숨김) ===== */
 const INFO_MODES = [
-  [SC('jMsj2Hr31RAw62EHKQQn'), '솔로 쇼다운', '블록 개수 맞히기. 맞히면 점수 + 카드!'],
-  ['https://gcdnb.pbrd.co/images/B1HRT4kn89U_.png', '듀오 쇼다운', '레드 vs 블루 팀 점수 대결. 같은 팀은 공격 못 해요.'],
-  [SC('HSFDVYouXjAjgw4uEs1i'), '폭탄', '폭탄을 넘기세요. 시간 끝나면 터져서 탈락! 빛나는 블록은 빼고 세요.'],
-  [SC('Q9NfQk57PnnpP9SVvyUR'), '스피드런', '블록이 많아요. 15문제 먼저 풀면 끝!'],
-  [SC('ZvRjhpftKDfgK4zcyvLQ'), '한방', '한 번 틀리면 바로 탈락. 끝까지 살아남기.'],
-  [SC('PQVbThjT3zxxtSMb2Ji8'), '쌓기', '위에서 본 모양대로 쌓기. WASD 이동 · Space 쌓기 · Q 빼기'],
-  [SC('qRCHU9udC89wwbegbVKw'), '도면보고 맞추기', '위·앞·옆 도면 보고 개수 맞히기. 틀리면 정답 공개.'],
-  [SC('y46nReaY9L9cZkjd5x2m'), '라이어', '한 명만 다른 모양을 봐요. 채팅으로 라이어를 찾아 투표!'],
-  [SC('v889UjVZ57DW1nNmHPZK'), '협동 쌓기', '2명이 한 팀. 한 명은 설명, 한 명은 쌓기. 다른 팀 채팅이 섞여요.']
+  [SC('jMsj2Hr31RAw62EHKQQn'), '솔로 쇼다운', ['개인전', '점수'], '블록 개수를 맞히면 점수 + 카드! 카드로 친구를 방해할 수도 있어요.', '정답 → 카드 고르기'],
+  ['https://gcdnb.pbrd.co/images/B1HRT4kn89U_.png', '듀오 쇼다운', ['팀전', '레드 vs 블루'], '두 팀 점수 대결. 같은 팀끼리는 공격할 수 없어요.', '상대 팀만 지목할 수 있어요'],
+  [SC('HSFDVYouXjAjgw4uEs1i'), '폭탄', ['생존', '눈치'], '폭탄을 넘기세요! 시간이 끝나면 터져서 탈락. 빛나는 블록은 빼고 세요.', '넘길 때마다 시간 -30%'],
+  [SC('Q9NfQk57PnnpP9SVvyUR'), '스피드런', ['개인전', '속도'], '블록이 아주 많아요. 15문제를 먼저 풀면 끝!', '카드 없이 바로 다음 문제'],
+  [SC('ZvRjhpftKDfgK4zcyvLQ'), '한방', ['생존'], '한 번이라도 틀리면 바로 탈락. 끝까지 살아남으세요.', '탈락해도 ◀ ▶ 로 친구 관전'],
+  [SC('PQVbThjT3zxxtSMb2Ji8'), '쌓기', ['개인전', '조작'], '위에서 본 모양대로 블록을 쌓아요.', 'W A S D 이동 · Space 쌓기 · Q 빼기'],
+  [SC('qRCHU9udC89wwbegbVKw'), '도면보고 맞추기', ['개인전', '추리'], '위·앞·옆 도면만 보고 블록 개수를 맞혀요.', '틀리면 3D 정답을 보여줘요'],
+  [SC('y46nReaY9L9cZkjd5x2m'), '라이어', ['단체', '채팅'], '한 명만 다른 모양을 봐요. 채팅으로 설명하며 라이어를 찾아 투표!', '라이어를 맞히면 +10점'],
+  [SC('v889UjVZ57DW1nNmHPZK'), '협동 쌓기', ['팀전', '2인 1조'], '한 명은 도면을 설명, 한 명은 듣고 쌓아요. 가끔 다른 팀 채팅이 섞여요!', '설명 담당만 도면을 볼 수 있어요']
 ];
-let infoOn = false;
+let infoOn = false, infoI = 0, infoAt = 0;
 {
   const iu = document.createElement('div'); iu.id = 'infoUI'; iu.className = 'card right-card';
-  iu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">📖 모드 설명 <span style="font-size:11px;color:#94a3b8;font-weight:normal">Ctrl+1 로 닫기</span></div></div><div id="infoList">' + INFO_MODES.map(m => `<div class="info-item"><img src="${m[0]}" alt=""><div><b>${m[1]}</b><span>${m[2]}</span></div></div>`).join('') + '</div>';
+  iu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">📖 모드 설명</div><span style="font-size:11px;color:#94a3b8">어떤 모드가 나올까요?</span></div>'
+    + '<div class="inf-st"><button class="inf-ar" id="infL" style="left:6px">◀</button><img id="infImg" alt=""><div class="inf-tx" id="infTx"></div><button class="inf-ar" id="infR" style="right:6px">▶</button><i class="inf-bar" id="infBar"></i></div>'
+    + '<div class="inf-th" id="infTh">' + INFO_MODES.map((m, i) => `<button data-i="${i}"><img src="${m[0]}" alt=""></button>`).join('') + '</div>';
   document.querySelector('.right-card-container').appendChild(iu);
+  $('infL').onclick = () => infoShow(infoI - 1, 1); $('infR').onclick = () => infoShow(infoI + 1, 1);
+  $('infTh').onclick = e => { const b = e.target.closest('[data-i]'); if (b) infoShow(+b.dataset.i, 1); };
 }
-function infoOpen(on) { infoOn = on === undefined ? !infoOn : on; document.querySelector('.right-card-container').classList.toggle('info-split', infoOn); }
+function infoShow(i, hold) {   // hold: 직접 눌렀으면 10초 동안 자동 넘김 멈춤
+  const n = INFO_MODES.length; infoI = (i % n + n) % n; const m = INFO_MODES[infoI];
+  const re = (el, a) => { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = a || ''; };
+  $('infImg').src = m[0]; re($('infImg'));
+  const tx = $('infTx'); tx.innerHTML = `<div class="inf-nm">${m[1]}</div><div class="inf-tg">${m[2].map(t => `<b>${t}</b>`).join('')}</div><div class="inf-ds">${m[3]}</div><div class="inf-tp">💡 ${m[4]}</div>`; re(tx);
+  $('infTh').querySelectorAll('button').forEach((b, j) => b.classList.toggle('on', j === infoI));
+  re($('infBar'), 'infB ' + (hold ? 10 : 5) + 's linear forwards'); infoAt = Date.now() + (hold ? 10000 : 5000);
+}
+function infoSync() {
+  const on = !isTeacher && !gameStarted && !curStage && $('profilePickerUI').style.display !== 'flex' && !$('resultOverlay').classList.contains('active');
+  if (on === infoOn) return; infoOn = on;
+  document.querySelector('.right-card-container').classList.toggle('info-split', on);
+  if (on) infoShow(infoI);
+}
+setInterval(() => { if (infoOn && Date.now() >= infoAt) infoShow(infoI + 1); }, 400);
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
 
