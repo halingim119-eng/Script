@@ -2218,7 +2218,6 @@ function showResult(res) {
     rt(() => { trollInt = setInterval(trollTick, 380); }, T1 + 300);
     rt(unlock, T1 + 5500);
   } else if (!tr) rt(unlock, 5600);
-  } else if (!tr) rt(unlock, 5600);
   if (!fxOn) { fxOn = true; fxLoop(); }
 }
 function closeResult() {
@@ -2632,12 +2631,7 @@ function showUpdate() {
 }
 
 /* ===== 큰 알림 (접속자/문제 카드 오른쪽 아래) ===== */
-function bigNotice(t, c) {
-  const p = document.querySelector('.right-card-container'); let b = $('bigBox');
-  if (!b) { b = document.createElement('div'); b.id = 'bigBox'; p.appendChild(b); }
-  const e = document.createElement('div'); e.className = 'big-notice'; e.style.background = c || '#ef4444'; e.textContent = t; b.appendChild(e); SFX.pop();
-  setTimeout(() => e.remove(), 4500); while (b.children.length > 3) b.firstChild.remove();
-}
+function bigNotice(t, c) { showToast(null, '알림', t, '#f59e0b'); }   // 큰 알림 대신 기존 알림창과 똑같은 모양으로
 function bombFx() {
   SFX.boom(); const d = document.createElement('div'); d.className = 'bomb-fx'; d.innerHTML = '<div class="bf-ring"></div><div class="bf-emoji">💥</div>';
   document.body.appendChild(d); document.body.classList.add('bshake'); setTimeout(() => { d.remove(); document.body.classList.remove('bshake'); }, 1600);
@@ -3204,6 +3198,29 @@ function infoSync() {   // 로비에서만 (선생님도). 설정/콘솔/튜토�
   b.onclick = () => { infoHide = false; infoSync(); };
 }
 setInterval(() => { if (infoOn && Date.now() >= infoAt) infoShow(infoI + 1); }, 400);
+/* ===== 전체화면 강제 · 알림 위치/크기 ===== */
+{
+  const de = document.documentElement, fsCan = !!(de.requestFullscreen || de.webkitRequestFullscreen);
+  const fsOn = () => !fsCan || !!(document.fullscreenElement || document.webkitFullscreenElement) || (screen.height - innerHeight < 4 && screen.width - innerWidth < 4);
+  const fsReq = () => { try { const f = de.requestFullscreen || de.webkitRequestFullscreen, p = f && f.call(de); if (p && p.catch) p.catch(() => {}); } catch (e) {} };
+  const st = document.createElement('style');
+  st.textContent = '#fsWarn{display:none;position:absolute;inset:0;z-index:30;background:rgba(255,255,255,.97);border-radius:16px;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;text-align:center}#fsWarn.on{display:flex}#fsWarn .fs-i{font-size:54px}#fsWarn .fs-t{font-size:20px;font-weight:900;color:#dc2626}#fsWarn .fs-d{font-size:13px;color:#475569;line-height:1.5;word-break:keep-all}#fsBlock{display:none;position:fixed;inset:0;z-index:8500;background:transparent;cursor:pointer}#toastBox{position:absolute;bottom:8px;right:8px;z-index:60;max-width:96%}.toast{white-space:normal;font-size:16px;padding:10px 20px 10px 12px;gap:12px;border-radius:14px;background:rgba(255,255,255,.92)}.toast img{width:44px;height:44px}.toast b{font-size:17px}.toast span{font-size:15px}';
+  document.head.appendChild(st);
+  const w = document.createElement('div'); w.id = 'fsWarn';
+  w.innerHTML = '<div class="fs-i">⚠️</div><div class="fs-t">전체화면이 아니에요!</div><div class="fs-d">전체화면으로 돌아와야 게임을 할 수 있어요.<br>화면을 클릭하면 다시 전체화면이 돼요.</div>';
+  document.querySelector('.left-card').appendChild(w);
+  const bl = document.createElement('div'); bl.id = 'fsBlock'; document.body.appendChild(bl);
+  document.querySelector('.right-card-container').appendChild($('toastBox'));   // 알림은 플레이어들 카드 오른쪽 아래 구석
+  const fsCheck = () => { const bad = !fsOn() && !isTeacher; w.classList.toggle('on', bad); bl.style.display = bad ? 'block' : 'none'; };
+  const go = () => { if (!fsOn()) fsReq(); };
+  addEventListener('click', go, true);
+  addEventListener('keydown', e => {
+    if (e.key !== 'Escape') go();
+    if (!fsOn() && !isTeacher && !/INPUT|TEXTAREA/.test((e.target.tagName || ''))) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
+  addEventListener('fullscreenchange', fsCheck); addEventListener('resize', fsCheck); setInterval(fsCheck, 400);
+  go(); fsCheck();
+}
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
 
