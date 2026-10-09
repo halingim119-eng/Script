@@ -245,6 +245,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 #trollPodium.show{display:flex;animation:tIn .9s cubic-bezier(.2,1.5,.4,1)}
 #comboPodium{display:none;position:absolute;top:3vh;left:calc(50% - var(--pw)/2);margin-top:0}
 #comboPodium.show{display:flex;animation:tIn .9s cubic-bezier(.2,1.5,.4,1)}
+#comboPodium.show.tfx-c{animation:tZoom .5s ease-in-out infinite alternate;will-change:transform}
 @keyframes tIn{from{transform:scale(.1) rotate(-25deg);opacity:0}to{transform:none;opacity:1}}
 @keyframes tSpin{to{transform:rotate(360deg)}}
 #resultOverlay.troll{}
@@ -431,7 +432,7 @@ body.bshake{animation:shk .08s linear 14}
 .inf-ds{font-size:12px;line-height:1.5;color:#475569;word-break:keep-all}
 .inf-tp{font-size:11px;color:#7c3aed;font-weight:bold}
 .inf-ar{position:absolute;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;border-radius:50%;background:#fff;color:#475569;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.2);font-size:10px}
-.inf-bar{position:absolute;left:0;bottom:0;height:3px;background:#2563eb}
+.inf-bar{position:absolute;left:0;bottom:0;height:3px;background:#fff;box-shadow:0 0 2px rgba(0,0,0,.15)}
 .inf-th{display:flex;gap:4px;flex:none}
 .inf-th button{flex:1;min-width:0;height:34px;padding:2px;border:2px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;transition:all .2s}
 .inf-th button img{width:100%;height:100%;object-fit:contain}
@@ -614,7 +615,7 @@ body.bshake{animation:shk .08s linear 14}
   <div id="strobe"></div><div id="resBanner"></div>
   <div class="podium" id="podium"></div>
   <div class="podium troll-pod" id="trollPodium"></div>
-  <div class="podium" id="comboPodium"></div>
+  <div class="podium troll-pod" id="comboPodium"></div>
   <div class="res-panel" id="resPanel"><div class="res-list" id="resList"></div><button class="res-lobby" id="lobbyBtn">로비로</button></div>
 </div>
 <div class="modal-overlay" id="pwModalOverlay"><div class="pw-box"><div class="pw-title" id="pwTitle"></div><div id="pwChoices" style="width:100%;display:flex;flex-direction:column;gap:8px;"></div></div></div>
@@ -1472,7 +1473,7 @@ function renderRankingList(users) {
       const m = users.filter(u => teams[u.id] === k);
       return { k, m, score: gameMode === 'knockout' ? ((koState && koState.wins[k]) || 0) : m.reduce((s, u) => s + (u.score || 0), 0) };
     }).sort((a, b) => b.score - a.score).map((t, i) => `
-      <div class="rank-item" style="border:2px solid ${teamColor(t.k)};">
+      <div class="rank-item">
         <div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc'}">${i + 1}등</span>
           <span>${esc(teamName(t.k, users).replace(/^\S+\s/, ''))}${teams[myId] === t.k ? ' (내 팀)' : ''}</span>
           <span style="color:#94a3b8;font-size:11px;">${gameMode === 'knockout' ? '생존 ' + t.m.filter(u => !u.dead).length + '/' + t.m.length : '콤보 ' + Math.max(0, ...t.m.map(u => u.cb || 0)) + ' · ' + t.m.length + '명'}</span></div>
@@ -2198,23 +2199,32 @@ function showResult(res) {
   }
   if (CB) {   // 콤보 단상식: 다른 단상식과 같은 모양, 3등 → 2등 → 1등 순서로 긴장감 있게 공개
     const cp = $('comboPodium');
+    const T3 = C + 2200, T2 = C + 5000, T1 = C + 8600;   // 3등 → 2등 → 1등, 간격을 길게 줘서 긴장감 UP
     rt(() => {
-      clearInterval(trollInt); trollInt = null; trollLv = 0; trollFl = [0, 0, 0]; deco = [];
+      clearInterval(trollInt); trollInt = null; trollLv = 3; trollFl = [1, 1, 1]; deco = [];   // 트롤 단상식보다 더 화려하게: 효과 3종 전부 켬
       $('trollPodium').classList.remove('show', 'shaking', 'tfx-a', 'tfx-b', 'tfx-c');
-      $('podium').classList.add('out'); SFX.whoosh(); fillPod(cp, CB, 'c'); cp.classList.add('show', 'shaking'); SFX.drumroll(1.2);
+      $('podium').classList.add('out'); SFX.whoosh(); fillPod(cp, CB, 'c'); cp.classList.add('show', 'shaking');
+      SFX.drumroll(2); SFX.siren(3); SFX.crash(); for (let i = 0; i < 4; i++) pushLaser(9000);
     }, C);
-    revealPod(cp, CB, 'c', [C + 5200, C + 2800, C + 1200]);
-    [3300, 3900, 4500].forEach(d => rt(SFX.heart, C + d));
-    rt(() => { cp.classList.add('shaking'); SFX.drumroll(2.4); }, C + 3000);
-    rt(() => { trollInt = setInterval(() => { if (Math.random() < .6) fxRocket(); if (Math.random() < .4) SFX.sparkle(); }, 600); }, C + 5200);
-    rt(unlock, C + 8000);
+    rt(() => ['a', 'b', 'c'].forEach(k => cp.classList.add('tfx-' + k)), C + 1000);
+    revealPod(cp, CB, 'c', [T1, T2, T3]);
+    [T3, T2, T1].forEach(t => rt(() => trollBlast(true), t + 500));   // 공개될 때마다 대폭발
+    [400, 1000, 1600].forEach(d => rt(SFX.heart, C + d));
+    [1200, 1800, 2400].forEach(d => rt(SFX.heart, T3 + d));
+    [1400, 2000, 2600, 3200].forEach(d => rt(SFX.heart, T2 + d));
+    rt(() => SFX.drumroll(2.6), T3 + 600);
+    rt(() => { cp.classList.add('shaking'); SFX.drumroll(3.4); }, T2 + 1000);   // 1등 발표 직전 가장 길게
+    rt(() => { SFX.partyBeat(8); SFX.airhorn(); for (let i = 0; i < 4; i++) pushLaser(9000); }, T1);
+    rt(() => { trollInt = setInterval(trollTick, 380); }, T1 + 300);
+    rt(unlock, T1 + 5500);
+  } else if (!tr) rt(unlock, 5600);
   } else if (!tr) rt(unlock, 5600);
   if (!fxOn) { fxOn = true; fxLoop(); }
 }
 function closeResult() {
   resClosed = shownSess; resT.forEach(clearTimeout); resT = []; clearInterval(trollInt); trollInt = null; parts = []; trollLv = 0; trollFl = [0, 0, 0]; deco = []; { const bn = $('resBanner'); bn.style.display = 'none'; bn.className = ''; }
   const L = $('lobbyBtn'); L.disabled = false; L.textContent = '로비로';
-  $('resultOverlay').classList.remove('active'); $('podium').classList.remove('out'); $('trollPodium').classList.remove('show', 'shaking', 'tfx-a', 'tfx-b', 'tfx-c'); $('comboPodium').classList.remove('show', 'shaking');
+  $('resultOverlay').classList.remove('active'); $('podium').classList.remove('out'); $('trollPodium').classList.remove('show', 'shaking', 'tfx-a', 'tfx-b', 'tfx-c'); $('comboPodium').classList.remove('show', 'shaking', 'tfx-a', 'tfx-b', 'tfx-c');
   $('podium').innerHTML = ''; $('trollPodium').innerHTML = ''; $('comboPodium').innerHTML = ''; cbReset(); $('resPanel').classList.remove('on');
 }
 function fxBoom(x, y, n) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = 1.5 + Math.random() * 5; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 50 + Math.random() * 30, c: `hsl(${Math.random() * 360},90%,60%)`, g: .1 }); } }
@@ -2841,7 +2851,7 @@ function cmdInput(raw) {   // 명령어면 true. 일반: 끝에 me/all/닉네임
   const c = CMDS[name]; if (!c) return false;
   const tgt = s => s === 'me' ? myId : s === 'all' ? 'all' : ((activeUsers.find(x => x.nickname === s) || {}).id || null);
   let t = null;
-  if (c[1] !== 'G') { if (mode) { t = tgt(tk[0]); if (t) tk.shift(); } else { t = tgt(tk[tk.length - 1]); if (t) tk.pop(); } }
+  if (c[1] !== 'G') { if (mode) { t = tgt(tk[0]); if (t) tk.shift(); } else { t = tgt(tk[tk.length - 1]); if (t) tk.pop(); else { t = tgt(tk[0]); if (t) tk.shift(); } } }
   if (mode === 'un') { cmdUnloop(name, t); return true; }
   if (mode === 'loop') {
     const sec = Math.max(0.1, parseFloat(tk[0]) || 1); if (!isNaN(parseFloat(tk[0]))) tk.shift();
@@ -2869,7 +2879,7 @@ function cmdSug(v, max = 9) {   // 입력 중인 글자로 명령어 3개 추천
     const arg = (raw.slice(sp).trim().split(/\s+/)[0] || '').toLowerCase();
     return MD.filter(m => m[0].startsWith(arg)).slice(0, max).map(m => ({ fill: '/mode ' + m[0], usage: '/mode ' + m[0], desc: m[1] }));
   }
-  const ent = (pre, n) => { const c = CMDS[n]; return { fill: '/' + pre + n + ' ', usage: '/' + pre + n + (c[1] === 'G' ? '' : ' ' + T) + (pre === 'loop' ? ' <초>' : '') + (pre !== 'unloop' && c[3] ? ' ' + c[3] : ''), desc: (pre === 'loop' ? '🔁 반복: ' : pre === 'unloop' ? '⏹ 반복 중지: ' : '') + c[0] }; };
+  const ent = (pre, n) => { const c = CMDS[n]; return { fill: '/' + pre + n + ' ', usage: '/' + pre + n + (pre === '' ? (c[3] ? ' ' + c[3] : '') + (c[1] === 'G' ? '' : ' ' + T) : (c[1] === 'G' ? '' : ' ' + T) + (pre === 'loop' ? ' <초>' : '') + (pre !== 'unloop' && c[3] ? ' ' + c[3] : '')), desc: (pre === 'loop' ? '🔁 반복: ' : pre === 'unloop' ? '⏹ 반복 중지: ' : '') + c[0] }; };
   const pre = tok.startsWith('unloop') ? 'unloop' : tok.startsWith('loop') ? 'loop' : '';
   if (pre && (tok.length > pre.length || done)) {
     const base = tok.slice(pre.length); let l = names.filter(n => n.startsWith(base)); if (done) l = l.filter(n => n === base);
