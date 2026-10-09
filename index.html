@@ -513,6 +513,24 @@ body.bshake{animation:shk .08s linear 14}
 .lc-emo-n{font-size:10px;color:#94a3b8;margin-top:6px}
 .right-card-container.info-split>#defaultUserListUI{transition:flex-basis .45s cubic-bezier(.6,0,.3,1),padding .45s,opacity .35s,margin .45s}
 .right-card-container.info-split.lc-max>#defaultUserListUI{flex:0 0 0px;padding-top:0;padding-bottom:0;margin-bottom:-10px;opacity:0;pointer-events:none}
+/* ===== 이모지 선택창 · 카톡식 메시지 묶기 ===== */
+#lcEmoPanel{border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 8px 24px rgba(15,23,42,.18);padding:8px;bottom:38px}
+#lcEmoPanel.on{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.lc-ec{position:relative;aspect-ratio:1;border:none;border-radius:12px;background:#f1f5f9;padding:4px;cursor:pointer;transition:transform .12s,background .12s}
+.lc-ec:hover{background:#dbeafe;transform:translateY(-2px) scale(1.06)}
+.lc-ec:active{transform:scale(.94)}
+.lc-ec img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
+.lc-ec i{position:absolute;right:3px;bottom:3px;font-style:normal;font-size:8px;font-weight:bold;color:#fff;background:#64748b;border-radius:6px;padding:0 4px;line-height:12px}
+#lcMsgs .chat-row{gap:8px}
+.lc-col{display:flex;flex-direction:column;gap:3px;min-width:0;align-items:flex-start}
+.lc-col.me{align-items:flex-end}
+.lc-col .chat-bub{border-radius:12px}
+.lc-col .chat-name + .chat-bub{border-top-left-radius:4px}
+.lc-col.me .chat-bub:first-child{border-top-right-radius:4px}
+.lc-emo{position:relative;width:84px;height:84px;flex:none}
+.lc-emo.gif{cursor:pointer}
+.lc-emo img,.lc-emo canvas{width:100%;height:100%;object-fit:contain;display:block}
+.lc-emo.gif:not(.pl)::after{content:"▶ 재생";position:absolute;right:2px;bottom:2px;font-size:9px;background:rgba(15,23,42,.65);color:#fff;border-radius:8px;padding:1px 6px;pointer-events:none}
 .inf-cell span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:8.5px;line-height:1.25;color:#64748b;word-break:keep-all}
 </style>
 </head>
@@ -1395,7 +1413,9 @@ async function connect() {
   ch.on('broadcast', { event: 'lchat' }, ({ payload }) => {
     if (!payload || !payload.id || payload.id === myId) return;
     const now = Date.now(); if (now - (lcSeen[payload.id] || 0) < 2500) return; lcSeen[payload.id] = now;   // 도배 방지: 받는 쪽에서도 확인
-    lcAdd({ id: payload.id, n: String(payload.n || '익명').slice(0, 20), a: payload.a, text: String(payload.text || '').slice(0, 60) });
+    const eo = Number.isInteger(payload.emo) && payload.emo >= 0 && payload.emo < LC_EMO.length ? payload.emo : -1;
+    if (eo < 0 && !payload.text) return;
+    lcAdd({ id: payload.id, n: String(payload.n || '익명').slice(0, 20), a: payload.a, text: eo >= 0 ? '' : String(payload.text || '').slice(0, 60), emo: eo });
   });
   ch.on('broadcast', { event: 'hspos' }, ({ payload }) => hsRecv(payload));
   ch.on('broadcast', { event: 'bombpass' }, ({ payload }) => { if (iAmHost && payload && payload.s === currentSession) bombApply(payload.from, payload.to); });
@@ -3190,7 +3210,7 @@ let infoOn = false, infoI = 0, infoAt = 0;
     + '<div class="inf-st" id="infSt"><button class="inf-ar" id="infL" style="left:6px">◀</button><img id="infImg" alt=""><div class="inf-tx" id="infTx"></div><button class="inf-ar" id="infR" style="right:6px">▶</button><i class="inf-bar" id="infBar"></i></div>'
     + '<div class="inf-grid" id="infGrid">' + INFO_MODES.concat([null], INFO_CARDS).map(m => !m ? '<div style="grid-column:1/-1;font-size:11px;font-weight:bold;color:#475569;padding:2px 0">🃏 카드 설명</div>' : `<div class="inf-cell"><img src="${m[0]}" alt=""><div><b>${m[1]}</b><span>${m[3]}</span></div></div>`).join('') + '</div>'
     + '<button class="inf-all" id="infAll">전체 보기</button>'
-    + '<div id="lcBox"><div id="lcMsgs"></div><div id="lcEmoPanel"><div class="lc-emo-t">😀 이모지</div><div class="lc-emo-g">' + '<div>＋</div>'.repeat(12) + '</div><div class="lc-emo-n">고른 이미지를 보내는 기능은 나중에 추가돼요</div></div><div class="lc-in"><input id="lcIn" maxlength="60" placeholder="메시지 입력 (3초에 한 번)" autocomplete="off"><button id="lcEmo">이모지</button><button id="lcSend">전송</button></div></div>';
+    + '<div id="lcBox"><div id="lcMsgs"><div class="chat-sys" id="lcEmpty">아직 대화가 없어요. 먼저 인사해 보세요!</div></div><div id="lcEmoPanel"></div><div class="lc-in"><input id="lcIn" maxlength="60" placeholder="메시지 입력 (3초에 한 번)" autocomplete="off"><button id="lcEmo">이모지</button><button id="lcSend">전송</button></div></div>';
 document.querySelector('.right-card-container').appendChild(iu);
   $('infL').onclick = () => infoShow(infoI - 1, 1); $('infR').onclick = () => infoShow(infoI + 1, 1);
   $('infAll').onclick = () => { infoAll = !infoAll; infoView(); }; $('infX').onclick = () => { infoHide = true; infoSync(); };
@@ -3240,25 +3260,102 @@ function lcView() {
   if (!on) $('lcEmoPanel').classList.remove('on');
 }
 function lcLayout() { document.querySelector('.right-card-container').classList.toggle('lc-max', infoOn && infoChat && lcMax); }
-function lcRender() {
-  const b = $('lcMsgs'); if (!b) return;
-  b.innerHTML = lcMsgs.length ? lcMsgs.map(m => m.id === myId
-    ? `<div class="chat-row me"><div class="chat-bub me">${esc(m.text)}</div></div>`
-    : `<div class="chat-row"><img class="chat-av" src="${esc(m.a || characterImages[0])}" alt=""><div><div class="chat-name">${esc(m.n)}</div><div class="chat-bub">${esc(m.text)}</div></div></div>`).join('')
-    : '<div class="chat-sys">아직 대화가 없어요. 먼저 인사해 보세요!</div>';
-  b.scrollTop = b.scrollHeight;
+/* ----- 이모지 목록 (순서대로) ----- */
+const LC_EMO = ['6jGjY3JAbFrkSx4FaiVH.png', 'eXh8oZFT33N7G4xt5EGH.png', 'mHRtGNEQXMVv9DVozG1F.png', 'JWXLGrUt4FCmP58Vabs3.png', 'JQnDakR63UwagbkZSqf7.gif', 'Lr2BtKHDFkPiuAYGqVPE.gif'].map(f => 'https://media.ffycdn.net/eu/supercell/' + f + '?width=2400');
+const lcIsGif = i => /\.gif(\?|$)/.test(LC_EMO[i]);
+$('lcEmoPanel').innerHTML = LC_EMO.map((u, i) => `<button class="lc-ec" type="button" data-e="${i}"><img src="${u}" alt="">${lcIsGif(i) ? '<i>GIF</i>' : ''}</button>`).join('');
+/* ----- GIF: 한 번 재생하고 멈춤 (눌러야 다시 재생) ----- */
+function lcGifDur(b) {   // GIF 파일에서 한 바퀴 재생 시간(ms)을 계산
+  try {
+    let p = 13, ms = 0;
+    if (b[10] & 0x80) p += 3 * (1 << ((b[10] & 7) + 1));
+    while (p < b.length) {
+      const t = b[p++];
+      if (t === 0x3B) break;
+      if (t === 0x21) {
+        const lab = b[p++];
+        if (lab === 0xF9) { const d = b[p + 2] | (b[p + 3] << 8); ms += (d <= 1 ? 10 : d) * 10; }
+        let n; while ((n = b[p++]) > 0) p += n;
+      } else if (t === 0x2C) {
+        const f = b[p + 8]; p += 9; if (f & 0x80) p += 3 * (1 << ((f & 7) + 1));
+        p++; let n; while ((n = b[p++]) > 0) p += n;
+      } else break;
+    }
+    return ms > 0 ? ms : 2500;
+  } catch (e) { return 2500; }
 }
+const lcG = {}, lcFr = {};
+function lcGifInfo(i) {   // GIF 파일을 한 번만 받아 두기 (받기 실패하면 2.5초로 계산)
+  return lcG[i] || (lcG[i] = fetch(LC_EMO[i]).then(r => r.arrayBuffer()).then(async buf => {
+    const blob = new Blob([buf], { type: 'image/gif' }); let bmp = null;
+    try { bmp = await createImageBitmap(blob); } catch (e) {}
+    return { blob, dur: lcGifDur(new Uint8Array(buf)), bmp };
+  }).catch(() => ({ blob: null, dur: 2500, bmp: null })));
+}
+function lcFirst(i) {   // 멈춰 있을 때 보여줄 첫 장면
+  return lcFr[i] || (lcFr[i] = lcGifInfo(i).then(g => g.bmp || new Promise(res => {
+    const im = new Image();
+    im.onload = () => { const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; c.getContext('2d').drawImage(im, 0, 0); res(c); };
+    im.onerror = () => res(null); im.src = LC_EMO[i];
+  })));
+}
+function lcMkStill(i) {
+  const c = document.createElement('canvas');
+  lcFirst(i).then(s => { if (!s) return; c.width = s.width; c.height = s.height; c.getContext('2d').drawImage(s, 0, 0); });
+  return c;
+}
+function lcPlay(el) {
+  if (el._pl) return; el._pl = 1; el.classList.add('pl');
+  const i = +el.dataset.e;
+  lcGifInfo(i).then(g => {
+    const old = el.firstChild, im = new Image(), url = g.blob ? URL.createObjectURL(g.blob) : LC_EMO[i] + '&_p=' + Date.now();
+    let done = 0;
+    const stop = () => {
+      if (done) return; done = 1;
+      if (el.contains(im)) el.replaceChild(lcMkStill(i), im);
+      if (g.blob) URL.revokeObjectURL(url);
+      el.classList.remove('pl'); el._pl = 0;
+    };
+    im.alt = ''; im.onload = () => setTimeout(stop, g.dur + 60); im.onerror = stop;
+    im.src = url; if (old) el.replaceChild(im, old); else el.appendChild(im);
+    setTimeout(stop, g.dur + 8000);   // 안전장치
+  });
+}
+$('lcMsgs').addEventListener('click', e => { const g = e.target.closest('.lc-emo.gif'); if (g) lcPlay(g); });
+/* ----- 메시지: 같은 사람이 연속으로 보내면 한 덩어리로 이어 붙임 (카톡처럼) ----- */
+function lcRender() { const b = $('lcMsgs'); if (b) b.scrollTop = b.scrollHeight; }
 function lcAdd(m) {
-  lcMsgs.push(m); if (lcMsgs.length > 80) lcMsgs.shift();
+  const box = $('lcMsgs'), em = $('lcEmpty'); if (em) em.remove();
+  const me = m.id === myId, last = box.lastElementChild;
+  let col;
+  if (last && last.dataset.s === m.id) col = last.querySelector('.lc-col');
+  else {
+    const row = document.createElement('div'); row.className = 'chat-row' + (me ? ' me' : ''); row.dataset.s = m.id;
+    row.innerHTML = (me ? '' : `<img class="chat-av" src="${esc(m.a || characterImages[0])}" alt="">`) + `<div class="lc-col${me ? ' me' : ''}">${me ? '' : `<div class="chat-name">${esc(m.n)}</div>`}</div>`;
+    box.appendChild(row); col = row.lastChild;
+  }
+  const isE = m.emo >= 0, gif = isE && lcIsGif(m.emo);
+  let b;
+  if (isE) {
+    b = document.createElement('div'); b.className = 'lc-emo' + (gif ? ' gif' : ''); b.dataset.e = m.emo;
+    if (gif) b.appendChild(lcMkStill(m.emo));
+    else { const im = new Image(); im.src = LC_EMO[m.emo]; im.alt = ''; b.appendChild(im); }
+  } else { b = document.createElement('div'); b.className = 'chat-bub' + (me ? ' me' : ''); b.textContent = m.text; }
+  col.appendChild(b);
+  if (gif) lcPlay(b);   // 보내면(받으면) 한 번 재생하고 멈춤
+  const all = box.querySelectorAll('.chat-bub,.lc-emo');
+  if (all.length > 80) { const f = all[0], row = f.closest('.chat-row'); f.remove(); if (!row.querySelector('.chat-bub,.lc-emo')) row.remove(); }
   if (m.id !== myId) { SFX.pop(); if (!(infoChat && infoOn)) lcUnread++; }
-  lcRender(); lcView();
+  box.scrollTop = box.scrollHeight; lcView();
 }
-function lcSend() {
-  const i = $('lcIn'), text = i.value.trim(); if (!text) return;
+function lcSend(emo) {   // emo 가 숫자면 이모지, 아니면 입력창 글자
+  const isE = typeof emo === 'number', i = $('lcIn'), text = isE ? '' : i.value.trim();
+  if (!isE && !text) return;
   const left = lcLast + 3000 - Date.now();
   if (left > 0) { showToast(null, '천천히!', Math.ceil(left / 1000) + '초 뒤에 보낼 수 있어요', '#94a3b8'); return; }
-  lcLast = Date.now(); i.value = '';
-  const m = { id: myId, n: myNickname, a: selectedImage, text };
+  lcLast = Date.now();
+  const m = { id: myId, n: myNickname, a: selectedImage };
+  if (isE) m.emo = emo; else { m.text = text; i.value = ''; }
   lcAdd(m); SFX.send();
   try { room.send({ type: 'broadcast', event: 'lchat', payload: m }); } catch (e) {}
 }
@@ -3271,7 +3368,11 @@ $('infMax').onclick = () => { lcMax = !lcMax; lcLayout(); };
 $('lcSend').onclick = lcSend;
 $('lcIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) lcSend(); });
 $('lcEmo').onclick = () => $('lcEmoPanel').classList.toggle('on');   // 이모지 선택 UI (아직 이미지 전송은 없음)
-$('lcEmoPanel').onclick = e => { if (e.target.closest('.lc-emo-g div')) showToast(null, '이모지', '이미지는 나중에 추가돼요', '#94a3b8'); };
+$('lcEmoPanel').onclick = e => {   // 이모지를 누르면 바로 전송 (3초 제한은 글자와 공유)
+  const b = e.target.closest('.lc-ec'); if (!b) return;
+  const before = lcLast; lcSend(+b.dataset.e);
+  if (lcLast !== before) $('lcEmoPanel').classList.remove('on');
+};
 setInterval(() => {   // 보내기 버튼에 남은 대기 시간 표시
   const b = $('lcSend'); if (!b || !infoChat) return;
   const l = Math.ceil((lcLast + 3000 - Date.now()) / 1000);
