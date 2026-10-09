@@ -331,10 +331,10 @@ body.bshake{animation:shk .08s linear 14}
 .cb-bg::before{content:"";position:absolute;left:50%;top:78%;width:200vmax;height:200vmax;margin:-100vmax 0 0 -100vmax;background:repeating-conic-gradient(rgba(251,146,60,.14) 0 6deg,transparent 6deg 18deg);-webkit-mask:radial-gradient(circle,#000 5%,transparent 60%);mask:radial-gradient(circle,#000 5%,transparent 60%);animation:tSpin 14s linear infinite}
 .cb-title{position:relative;margin-top:2.2vh;font-size:5.2vh;font-weight:900;letter-spacing:.3vh;background:linear-gradient(90deg,#fde047,#fb923c,#f43f5e,#fb923c,#fde047);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rbs 2s linear infinite;filter:drop-shadow(0 0 1.4vh rgba(251,146,60,.7))}
 .cb-sub{position:relative;font-size:2.4vh;color:#e9d5ff;height:3.4vh;margin-top:.4vh;font-weight:bold}
-.cb-row{position:relative;display:flex;gap:4vh;align-items:flex-end;justify-content:center;margin-top:1.2vh;height:76vh}
+.cb-row{position:relative;display:flex;gap:2.5vh;align-items:flex-end;justify-content:center;margin-top:1.2vh;height:76vh}
 #comboStage.shk .cb-row{animation:cbSh .07s linear infinite}
 @keyframes cbSh{0%,100%{transform:translate(0,0)}25%{transform:translate(-.3vh,.2vh)}50%{transform:translate(.3vh,-.3vh)}75%{transform:translate(-.2vh,-.2vh)}}
-.cb-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:20vh;height:100%}
+.cb-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:18vh;height:100%}
 .cb-num{font-size:6.4vh;font-weight:900;color:#93c5fd;font-variant-numeric:tabular-nums;text-shadow:0 0 1.6vh currentColor;height:8.4vh;line-height:8.4vh;transform-origin:bottom center}
 .cb-num.fin{animation:cbPop .5s cubic-bezier(.2,1.8,.4,1) both}
 @keyframes cbPop{0%{transform:scale(1)}40%{transform:scale(1.7)}100%{transform:scale(1.15)}}
@@ -362,7 +362,7 @@ body.bshake{animation:shk .08s linear 14}
 @keyframes cbBan{from{transform:scale(.1) rotate(-12deg)}to{transform:none}}
 .tdot{width:7px;height:7px;border-radius:4px;background:#e2e8f0;cursor:pointer;transition:all .25s}
 .tdot.on{width:18px;background:#2563eb}
-.tut-pg{height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;flex:none}
+.tut-pg{display:none}
 #tutProgF{display:block;height:100%;width:0;background:#2563eb;border-radius:2px}
 .tut-st{position:relative;flex:none;height:126px;border-radius:10px;background:transparent;border:none;overflow:hidden}
 .tut-con{position:absolute;inset:0;background:#fff;border:1px solid #cbd5e1;border-radius:9px;display:flex;flex-direction:column;gap:3px;padding:5px 8px;transition:opacity .35s,transform .45s cubic-bezier(.2,1.4,.4,1)}
@@ -1140,12 +1140,12 @@ function renderAll() {
   const lr = users.filter(u => u.isTeacher && u.result).map(u => u.result).sort((a, b) => b.session - a.session)[0];
   if (lr && !gameStarted && lr.session !== resClosed && !$('resultOverlay').classList.contains('active') && (lr.session === currentSession || (lr.at && Math.abs(hostNow() - lr.at) < 20000))) showResult(lr, true);   // 결과 화면이 안 떴으면 강제로 띄움
   ensureView();
-  forceView(users); coopSync(users); teacherTick(users);
+  forceView(users); try { coopSync(users); } catch (e) { console.error(e); } try { teacherTick(users); } catch (e) { console.error(e); }
   if (gameStarted && $('gameUI').style.display === 'none') applyUIState(true);
   koTick(); renderSpectate(users);   // 게임 중인데 게임 화면이 아니면 이동
   renderVote(users); renderLiarVote(users); infoSync();
   renderUserList(fakeLabel(users));
-  renderRankingList(fakeLabel(users));
+  try { renderRankingList(fakeLabel(users)); } catch (e) { console.error(e); }
 }
 
 /* 게임 시작(각자 자기 문제로 진행) */
@@ -1271,7 +1271,7 @@ function startMode(mode, users) {
   teams = {};
   if (mode === 'duo') {   // 2명씩 팀 (홀수면 남는 1명은 마지막 팀에 합류 → 3명)
     const ids = users.map(u => u.id).sort(() => Math.random() - 0.5), nt = Math.max(1, Math.floor(ids.length / 2));
-    ids.forEach((id, i) => { teams[id] = Math.min(Math.floor(i / 2), nt - 1); });
+    ids.forEach((id, i) => { teams[id] = ids.length < 4 ? i % 2 : Math.min(Math.floor(i / 2), nt - 1); });   // 3명 이하면 2팀으로 (서로 공격할 상대가 있게)
   }
   if (mode === 'knockout') {                               // 랜덤으로 섞어 반반 (홀수면 남는 1명은 랜덤 팀)
     const off = Math.random() < 0.5 ? 0 : 1;
@@ -1586,6 +1586,7 @@ function handleCardSelect(card) {
   if (card.type === 'coin') { myScore += card.val; updatePresence(); }
   else if (['confusion', 'taunt', 'freeze'].includes(card.type)) {
     pendingAttackType = card.type === 'confusion' ? 'glitch' : card.type;
+    if (!activeUsers.some(u => u.id !== myId && !u.dead && !((gameMode === 'duo' || gameMode === 'knockout') && teams[u.id] === teams[myId]))) { pendingAttackType = null; showToast(null, '공격 불가', '공격할 상대가 없어요', '#94a3b8'); return; }
     isTargetSelectMode = true; renderRankingList(activeUsers);
   }
   else if (card.type === 'hack') { pendingAttackType = 'hack'; isTargetSelectMode = true; renderRankingList(activeUsers); }
@@ -2085,7 +2086,7 @@ function buildTroll() {
   }
   return { podium: us.slice(0, 3) };
 }
-const podHtml = (p, r, tr) => `<div class="pod-col r${r}"><div class="beam"></div><img class="pod-avatar" src="${esc(p.a || characterImages[0])}" alt=""><div class="pod-name">${esc(p.n)}</div><div class="pod-score">${tr ? '😈 ' + (p.tr ? p.tr + '번 방해' : '운명의 트롤') : p.s + '점'}</div><div class="pod-block">${r}</div></div>`;
+const podHtml = (p, r, tr) => `<div class="pod-col r${r}"><div class="beam"></div><img class="pod-avatar" src="${esc(p.a || characterImages[0])}" alt=""><div class="pod-name">${esc(p.n)}</div><div class="pod-score">${tr ? (p.tr ? p.tr + '번 방해' : '운명의 트롤') : p.s + '점'}</div><div class="pod-block">${r}</div></div>`;
 /* ===== 콤보 HUD ===== */
 let lastCb = -1;
 function comboHud() {
@@ -2103,8 +2104,10 @@ setInterval(comboHud, 120);
 let cbRun = 0;
 function cbReset() { cbRun++; const s = $('comboStage'); if (s) { s.className = ''; s.innerHTML = ''; } }
 function buildCombo() {
-  const us = collectUsers().filter(u => (u.mc || 0) >= 2).sort((a, b) => (b.mc || 0) - (a.mc || 0) || (b.score || 0) - (a.score || 0)).slice(0, 3);
-  return us.length ? us.map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, c: u.mc })) : null;
+  const all = collectUsers();
+  let us = all.filter(u => (u.mc || 0) >= 2).sort((a, b) => (b.mc || 0) - (a.mc || 0) || (b.score || 0) - (a.score || 0)).slice(0, 5);   // 콤보 단상식은 5명
+  if (!us.length) us = [...all].sort(() => Math.random() - .5).slice(0, 5).sort((a, b) => (b.mc || 0) - (a.mc || 0));   // 아무도 없으면 아무나 5명
+  return us.length ? us.map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, c: Math.max(1, u.mc || 0) })) : null;
 }
 function cbStart(L) {
   const s = $('comboStage'); if (!s) return;
@@ -2113,7 +2116,7 @@ function cbStart(L) {
   const heat = f => 'hsl(' + (210 + 150 * Math.min(1, f)) + ',95%,60%)';
   const T2 = (f, d) => setTimeout(() => { if (tk === cbRun) f(); }, d);
   s.innerHTML = '<div class="cb-bg"></div><div class="cb-title">🔥 COMBO 단상식</div><div class="cb-sub" id="cbSub">가장 긴 콤보를 쌓은 사람은?</div><div class="cb-row">'
-    + [1, 0, 2].filter(i => L[i]).map(i => `<div class="cb-col r${i + 1}" id="cbc${i}"><div class="cb-num" id="cbn${i}">0</div><div class="cb-tower" id="cbt${i}"></div><img class="cb-av" src="${esc(L[i].a || characterImages[0])}" alt=""><div class="cb-nm" id="cbm${i}">???</div><div class="cb-sc" id="cbs${i}"></div></div>`).join('')
+    + [3, 1, 0, 2, 4].filter(i => L[i]).map(i => `<div class="cb-col r${i + 1}" id="cbc${i}"><div class="cb-num" id="cbn${i}">0</div><div class="cb-tower" id="cbt${i}"></div><img class="cb-av" src="${esc(L[i].a || characterImages[0])}" alt=""><div class="cb-nm" id="cbm${i}">???</div><div class="cb-sc" id="cbs${i}"></div></div>`).join('')
     + '</div><div class="cb-vig" id="cbV"></div><div class="cb-flash" id="cbF"></div><div class="cb-ban" id="cbB">👑 COMBO KING 👑</div>';
   s.className = 'on'; requestAnimationFrame(() => requestAnimationFrame(() => { if (tk === cbRun) s.classList.add('vis'); })); SFX.whoosh();
   const fl = c.map(() => { const e = document.createElement('div'); e.className = 'cb-fl'; e.textContent = '🔥'; return e; });
@@ -2124,10 +2127,10 @@ function cbStart(L) {
   const ember = n => { for (let k = 0; k < n; k++) parts.push({ x: Math.random() * innerWidth, y: innerHeight + 10, vx: (Math.random() - .5) * 1.4, vy: -(2 + Math.random() * 4), life: 130, c: 'hsl(' + (15 + Math.random() * 35) + ',100%,' + (50 + Math.random() * 20) + '%)', g: 0 }); };
   const lock = i => {
     const col = $('cbc' + i), r = col.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height * .4;
-    col.classList.add('on'); $('cbm' + i).textContent = ['🥇 ', '🥈 ', '🥉 '][i] + L[i].n; $('cbs' + i).textContent = '🔥 ' + c[i] + ' 콤보';
+    col.classList.add('on'); $('cbm' + i).textContent = (['🥇 ', '🥈 ', '🥉 '][i] || (i + 1) + '등 ') + L[i].n; $('cbs' + i).textContent = '🔥 ' + c[i] + ' 콤보';
     const nn = $('cbn' + i); nn.style.transform = ''; nn.classList.add('fin');
-    $('cbSub').textContent = i === 2 ? '3등 확정!' : i === 1 ? '2등 확정! 이제 1등만 남았어요…' : '👑 최고의 콤보왕 탄생!!';
-    SFX.cbLock(i); fxBoom(x, y, 40 + (2 - i) * 25); parts.push({ k: 'ring', x, y, r: 10, life: 30, c: COL[i] }); flash();
+    $('cbSub').textContent = i === 0 ? '👑 최고의 콤보왕 탄생!!' : i === 1 ? '2등 확정! 이제 1등만 남았어요…' : (i + 1) + '등 확정!';
+    SFX.cbLock(i); fxBoom(x, y, Math.max(20, 40 + (2 - i) * 25)); parts.push({ k: 'ring', x, y, r: 10, life: 30, c: COL[i] || '#94a3b8' }); flash();
     if (i === 0) {
       $('cbV').classList.remove('hb'); SFX.cbSlam(); SFX.bigFanfare(); SFX.applause(3); $('cbB').classList.add('on'); barrage(10); fxCannon(0, 50); fxCannon(1, 50);
       s.classList.add('shk'); T2(() => s.classList.remove('shk'), 1000);
