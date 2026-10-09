@@ -495,6 +495,24 @@ body.bshake{animation:shk .08s linear 14}
 .inf-cell{display:flex;align-items:center;gap:5px;padding:3px 5px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;min-width:0}
 .inf-cell img{width:28px;height:28px;object-fit:contain;flex:none}
 .inf-cell b{display:block;font-size:10.5px;color:#1e293b}
+/* ===== 로비 채팅 ===== */
+#lcBox{display:none;position:relative;flex:1;min-height:0;flex-direction:column;gap:6px}
+#lcMsgs{flex:1;min-height:0;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+#lcMsgs .chat-bub{background:#fff;border-color:#e2e8f0}
+#lcMsgs .chat-bub.me{background:#eff6ff;border-color:#bfdbfe}
+.lc-in{display:flex;gap:6px;flex:none}
+.lc-in input{flex:1;min-width:0;padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;outline:none;background:#fff;margin:0}
+.lc-in button{flex:none;padding:6px 10px;border:none;border-radius:8px;background:#e4e6ea;color:#334155;font-weight:bold;font-size:12px;cursor:pointer;font-family:inherit}
+#lcSend{min-width:46px}
+#lcEmoPanel{display:none;position:absolute;left:0;right:0;bottom:36px;background:#fff;border:1px solid #cbd5e1;border-radius:10px;padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.15);z-index:5}
+#lcEmoPanel.on{display:block}
+.lc-emo-t{font-size:11px;font-weight:bold;color:#475569;margin-bottom:6px}
+.lc-emo-g{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.lc-emo-g div{height:34px;border:2px dashed #cbd5e1;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#cbd5e1;font-size:16px;cursor:pointer}
+.lc-emo-g div:hover{border-color:#2563eb;color:#2563eb}
+.lc-emo-n{font-size:10px;color:#94a3b8;margin-top:6px}
+.right-card-container.info-split>#defaultUserListUI{transition:flex-basis .45s cubic-bezier(.6,0,.3,1),padding .45s,opacity .35s,margin .45s}
+.right-card-container.info-split.lc-max>#defaultUserListUI{flex:0 0 0px;padding-top:0;padding-bottom:0;margin-bottom:-10px;opacity:0;pointer-events:none}
 .inf-cell span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:8.5px;line-height:1.25;color:#64748b;word-break:keep-all}
 </style>
 </head>
@@ -1374,6 +1392,11 @@ async function connect() {
     else if (payload.type === 'freeze') triggerFreezeEffect();
   });
 
+  ch.on('broadcast', { event: 'lchat' }, ({ payload }) => {
+    if (!payload || !payload.id || payload.id === myId) return;
+    const now = Date.now(); if (now - (lcSeen[payload.id] || 0) < 2500) return; lcSeen[payload.id] = now;   // 도배 방지: 받는 쪽에서도 확인
+    lcAdd({ id: payload.id, n: String(payload.n || '익명').slice(0, 20), a: payload.a, text: String(payload.text || '').slice(0, 60) });
+  });
   ch.on('broadcast', { event: 'hspos' }, ({ payload }) => hsRecv(payload));
   ch.on('broadcast', { event: 'bombpass' }, ({ payload }) => { if (iAmHost && payload && payload.s === currentSession) bombApply(payload.from, payload.to); });
   ch.on('broadcast', { event: 'bombboom' }, ({ payload }) => {
@@ -3163,10 +3186,11 @@ let infoCard = false;
 let infoOn = false, infoI = 0, infoAt = 0;
 {
   const iu = document.createElement('div'); iu.id = 'infoUI'; iu.className = 'card right-card';
-  iu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">모드 설명</div><span style="display:flex;gap:4px"><button class="inf-x" id="infCard">카드 설명</button><button class="inf-x" id="infX">숨기기</button></span></div>'
+  iu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">모드 설명</div><span style="display:flex;gap:4px"><button class="inf-x" id="infCard">카드 설명</button><button class="inf-x" id="infChat">채팅</button><button class="inf-x" id="infMax" style="display:none" title="크게/작게">□</button><button class="inf-x" id="infX">숨기기</button></span></div>'
     + '<div class="inf-st" id="infSt"><button class="inf-ar" id="infL" style="left:6px">◀</button><img id="infImg" alt=""><div class="inf-tx" id="infTx"></div><button class="inf-ar" id="infR" style="right:6px">▶</button><i class="inf-bar" id="infBar"></i></div>'
     + '<div class="inf-grid" id="infGrid">' + INFO_MODES.concat([null], INFO_CARDS).map(m => !m ? '<div style="grid-column:1/-1;font-size:11px;font-weight:bold;color:#475569;padding:2px 0">🃏 카드 설명</div>' : `<div class="inf-cell"><img src="${m[0]}" alt=""><div><b>${m[1]}</b><span>${m[3]}</span></div></div>`).join('') + '</div>'
-    + '<button class="inf-all" id="infAll">전체 보기</button>';
+    + '<button class="inf-all" id="infAll">전체 보기</button>'
+    + '<div id="lcBox"><div id="lcMsgs"></div><div id="lcEmoPanel"><div class="lc-emo-t">😀 이모지</div><div class="lc-emo-g">' + '<div>＋</div>'.repeat(12) + '</div><div class="lc-emo-n">고른 이미지를 보내는 기능은 나중에 추가돼요</div></div><div class="lc-in"><input id="lcIn" maxlength="60" placeholder="메시지 입력 (3초에 한 번)" autocomplete="off"><button id="lcEmo">이모지</button><button id="lcSend">전송</button></div></div>';
 document.querySelector('.right-card-container').appendChild(iu);
   $('infL').onclick = () => infoShow(infoI - 1, 1); $('infR').onclick = () => infoShow(infoI + 1, 1);
   $('infAll').onclick = () => { infoAll = !infoAll; infoView(); }; $('infX').onclick = () => { infoHide = true; infoSync(); };
@@ -3180,17 +3204,18 @@ function infoShow(i, hold) {   // hold: 직접 눌렀으면 10초 동안 자동 
   ;
   re($('infBar'), 'infB ' + (hold ? 10 : 5) + 's linear forwards'); infoAt = Date.now() + (hold ? 10000 : 5000);
 }
-let infoHide = false, infoAll = false;
+let infoHide = false, infoAll = false, infoChat = false, lcMax = false;
 function infoView() {   // 한 개씩 보기 ↔ 전체 보기
-  $('infSt').style.display = infoAll ? 'none' : ''; $('infGrid').style.display = infoAll ? 'grid' : 'none';
+  $('infSt').style.display = (infoAll || infoChat) ? 'none' : ''; $('infGrid').style.display = (infoAll && !infoChat) ? 'grid' : 'none'; $('infAll').style.display = infoChat ? 'none' : ''; lcView();
   $('infAll').textContent = infoAll ? '한 개씩 보기' : '전체 보기';
-  infoAt = infoAll ? Infinity : Date.now() + 5000;
+  infoAt = (infoAll || infoChat) ? Infinity : Date.now() + 5000;
 }
 function infoSync() {   // 로비에서만 (선생님도). 설정/콘솔/튜토리얼/프로필 고르기 중엔 잠시 숨김
   const lobby = !gameStarted && !curStage && $('profilePickerUI').style.display !== 'flex' && !$('resultOverlay').classList.contains('active');
   const on = lobby && !infoHide && !settingsOpen && !cmdOn && !TUT.on, ob = $('infOpenBtn');
   if (ob) ob.style.display = (lobby && infoHide) ? '' : 'none';
   $('infSt').classList.toggle('grad', !!S.infGrad);
+  document.querySelector('.right-card-container').classList.toggle('lc-max', on && infoChat && lcMax);
   if (on === infoOn) return; infoOn = on;
   document.querySelector('.right-card-container').classList.toggle('info-split', on);
   if (on) { infoShow(infoI); infoView(); }
@@ -3200,7 +3225,58 @@ function infoSync() {   // 로비에서만 (선생님도). 설정/콘솔/튜토�
   $('onlineCountText').closest('.online-count-badge').insertAdjacentElement('afterend', b);
   b.onclick = () => { infoHide = false; infoSync(); };
 }
-setInterval(() => { if (infoOn && Date.now() >= infoAt) infoShow(infoI + 1); }, 400);
+setInterval(() => { if (infoOn && !infoChat && Date.now() >= infoAt) infoShow(infoI + 1); }, 400);
+/* ===== 로비 채팅 (모드 설명 카드를 채팅창으로 바꿔 씀 · 3초에 한 번 · □ 로 크게 보기) ===== */
+const lcMsgs = [], lcSeen = {};
+let lcUnread = 0, lcLast = 0;
+function lcView() {
+  const on = infoChat;
+  if (on && infoOn) lcUnread = 0;
+  $('lcBox').style.display = on ? 'flex' : 'none';
+  $('infMax').style.display = on ? '' : 'none';
+  $('infCard').style.display = on ? 'none' : '';
+  $('infChat').textContent = on ? '모드 설명' : '채팅' + (lcUnread ? ' (' + (lcUnread > 9 ? '9+' : lcUnread) + ')' : '');
+  document.querySelector('#infoUI .board-title').textContent = on ? '💬 채팅' : (infoCard ? '카드 설명' : '모드 설명');
+  if (!on) $('lcEmoPanel').classList.remove('on');
+}
+function lcLayout() { document.querySelector('.right-card-container').classList.toggle('lc-max', infoOn && infoChat && lcMax); }
+function lcRender() {
+  const b = $('lcMsgs'); if (!b) return;
+  b.innerHTML = lcMsgs.length ? lcMsgs.map(m => m.id === myId
+    ? `<div class="chat-row me"><div class="chat-bub me">${esc(m.text)}</div></div>`
+    : `<div class="chat-row"><img class="chat-av" src="${esc(m.a || characterImages[0])}" alt=""><div><div class="chat-name">${esc(m.n)}</div><div class="chat-bub">${esc(m.text)}</div></div></div>`).join('')
+    : '<div class="chat-sys">아직 대화가 없어요. 먼저 인사해 보세요!</div>';
+  b.scrollTop = b.scrollHeight;
+}
+function lcAdd(m) {
+  lcMsgs.push(m); if (lcMsgs.length > 80) lcMsgs.shift();
+  if (m.id !== myId) { SFX.pop(); if (!(infoChat && infoOn)) lcUnread++; }
+  lcRender(); lcView();
+}
+function lcSend() {
+  const i = $('lcIn'), text = i.value.trim(); if (!text) return;
+  const left = lcLast + 3000 - Date.now();
+  if (left > 0) { showToast(null, '천천히!', Math.ceil(left / 1000) + '초 뒤에 보낼 수 있어요', '#94a3b8'); return; }
+  lcLast = Date.now(); i.value = '';
+  const m = { id: myId, n: myNickname, a: selectedImage, text };
+  lcAdd(m); SFX.send();
+  try { room.send({ type: 'broadcast', event: 'lchat', payload: m }); } catch (e) {}
+}
+$('infChat').onclick = () => {
+  infoChat = !infoChat; if (!infoChat) lcMax = false;
+  lcLayout(); infoView();
+  if (infoChat) { lcRender(); setTimeout(() => $('lcIn').focus(), 50); } else infoShow(infoI);
+};
+$('infMax').onclick = () => { lcMax = !lcMax; lcLayout(); };
+$('lcSend').onclick = lcSend;
+$('lcIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) lcSend(); });
+$('lcEmo').onclick = () => $('lcEmoPanel').classList.toggle('on');   // 이모지 선택 UI (아직 이미지 전송은 없음)
+$('lcEmoPanel').onclick = e => { if (e.target.closest('.lc-emo-g div')) showToast(null, '이모지', '이미지는 나중에 추가돼요', '#94a3b8'); };
+setInterval(() => {   // 보내기 버튼에 남은 대기 시간 표시
+  const b = $('lcSend'); if (!b || !infoChat) return;
+  const l = Math.ceil((lcLast + 3000 - Date.now()) / 1000);
+  b.textContent = l > 0 ? l + '초' : '전송'; b.style.opacity = l > 0 ? .5 : '';
+}, 200);
 /* ===== 전체화면 강제 · 알림 위치/크기 ===== */
 {
   const de = document.documentElement, fsCan = !!(de.requestFullscreen || de.webkitRequestFullscreen);
