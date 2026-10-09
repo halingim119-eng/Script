@@ -510,6 +510,12 @@ body.bshake{animation:shk .08s linear 14}
 body.p2on .modal-overlay,body.p2on #tauntOverlay,body.p2on #resultOverlay{right:50vw}
 body.p2on #resultOverlay{--pw:min(1140px,48vw)}
 .inf-cell span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:8.5px;line-height:1.25;color:#64748b;word-break:keep-all}
+/* ===== 2인용: 왼쪽 90도 · 오른쪽 270도 (마주 보고 하는 화면) ===== */
+body.p2on .modal-overlay,body.p2on #resultOverlay,body.p2on #tauntOverlay,body.p2on #modeReveal,body.p2on #updSplash,
+body.p2me .modal-overlay,body.p2me #resultOverlay,body.p2me #tauntOverlay,body.p2me #modeReveal,body.p2me #updSplash{inset:auto!important;right:auto!important;bottom:auto!important;top:50%!important;width:125vh!important;height:100vh!important;--pw:120vh!important}
+body.p2on .modal-overlay,body.p2on #resultOverlay,body.p2on #tauntOverlay,body.p2on #modeReveal,body.p2on #updSplash{left:25%!important;transform:translate(-50%,-50%) rotate(90deg) scale(var(--p2s,.8))!important}
+body.p2me .modal-overlay,body.p2me #resultOverlay,body.p2me #tauntOverlay,body.p2me #modeReveal,body.p2me #updSplash{left:50%!important;transform:translate(-50%,-50%) rotate(270deg) scale(var(--p2s,.8))!important}
+body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;height:90%!important}
 </style>
 </head>
 <body>
@@ -648,6 +654,7 @@ const fs = n => Math.floor(n || 0);   // 점수 표시: 11.5점은 12점이 될 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const P2 = !!new URLSearchParams(location.search).get('p2');   // 2인용 오른쪽 화면(같은 페이지를 한 번 더 띄운 것)이면 true
+if (P2) document.body.classList.add('p2me');   // 2인용 오른쪽 화면 표시
 const newId = () => 'user_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const myId = (() => {            // 새로고침해도 같은 ID를 써서 다른 사람 화면에 옛 프로필이 남지 않게 함
   try { const K = 'blocksMyId' + (P2 ? '_p2' : ''); let v = sessionStorage.getItem(K); if (!v) { v = newId(); sessionStorage.setItem(K, v); } return v; }
@@ -1079,9 +1086,11 @@ const roster = new Map();
 
 /* ---------- 화면 크기에 맞춰 UI 확대/축소 ---------- */
 function fitScreen() {
-  uiScale = Math.min((p2On ? window.innerWidth / 2 : window.innerWidth) / 940, window.innerHeight / 530);   // 2인용이면 왼쪽 절반에 맞춤
+  const rot = p2On || P2, fw = p2On ? window.innerWidth / 2 : window.innerWidth;   // 2인용은 세로로 돌려서 맞춤
+  uiScale = rot ? Math.min(fw / 530, window.innerHeight / 940) : Math.min(fw / 940, window.innerHeight / 530);
+  document.documentElement.style.setProperty('--p2s', Math.min(0.8, fw / window.innerHeight));   // 2인용이면 왼쪽 절반에 맞춤
   uiScale = Math.max(0.4, Math.min(uiScale, 3));
-  $('mainContainer').style.transform = (p2On ? `translateX(${-window.innerWidth / 4}px) ` : '') + `scale(${uiScale})`;
+  $('mainContainer').style.transform = (p2On ? `translateX(${-window.innerWidth / 4}px) rotate(90deg) ` : P2 ? 'rotate(270deg) ' : '') + `scale(${uiScale})`;
   if (renderer) { renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * uiScale, 3)); if (resizeThree) resizeThree(); }
 }
 window.addEventListener('resize', fitScreen);
@@ -1862,9 +1871,10 @@ function initThreeOnce() {
   renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * uiScale, 3));
   container.appendChild(renderer.domElement);
   const cv = renderer.domElement; cv.style.touchAction = 'none';
+  const dragPos = e => p2On ? e.clientY : P2 ? -e.clientY : e.clientX;   // 화면이 돌아간 만큼 드래그 방향도 맞춤
   let dragX = null;                                   // 쌓기 모드: 3D 화면은 좌우(수평)로만 회전
-  cv.addEventListener('pointerdown', e => { if (stackish() || gameMode === 'hide') { dragX = e.clientX; try { cv.setPointerCapture(e.pointerId); } catch (_) {} } });
-  cv.addEventListener('pointermove', e => { if (dragX === null) return; if (!isCameraFrozen) cameraAngle += (e.clientX - dragX) * 0.012 / uiScale; dragX = e.clientX; });
+  cv.addEventListener('pointerdown', e => { if (stackish() || gameMode === 'hide') { dragX = dragPos(e); try { cv.setPointerCapture(e.pointerId); } catch (_) {} } });
+  cv.addEventListener('pointermove', e => { if (dragX === null) return; if (!isCameraFrozen) cameraAngle += (dragPos(e) - dragX) * 0.012 / uiScale; dragX = dragPos(e); });
   ['pointerup', 'pointercancel'].forEach(ev => cv.addEventListener(ev, () => { dragX = null; }));
   resizeThree = () => {
     const w = container.clientWidth, h = container.clientHeight;
@@ -2418,7 +2428,9 @@ function hsRelease() {   // 블록이 된 상태에서 Space 로 풀기
 function hsClick(ev) {
   const H = hsState, role = hsRole(); if (!gameStarted || gameMode !== 'hide' || !H || isDead || role !== 's' || hsPhase() !== 2 || hsAtt >= 4) return;
   const r = renderer.domElement.getBoundingClientRect(), rc = new THREE.Raycaster();
-  rc.setFromCamera(new THREE.Vector2((ev.clientX - r.left) / r.width * 2 - 1, -((ev.clientY - r.top) / r.height * 2 - 1)), camera);
+  let nx = (ev.clientX - r.left) / r.width * 2 - 1, ny = (ev.clientY - r.top) / r.height * 2 - 1;   // 돌아간 화면에서도 클릭 위치 맞춤
+  if (p2On) { const t = nx; nx = ny; ny = -t; } else if (P2) { const t = nx; nx = -ny; ny = t; }
+  rc.setFromCamera(new THREE.Vector2(nx, -ny), camera);
   const hit = rc.intersectObjects([...blockGroup.children, ...(hsDyn ? hsDyn.children : [])], false)[0]; if (!hit) return;   // 블록/도망자가 아닌 곳은 무시
   const o = hit.object, q = o.position, cell = o.userData.cell != null ? o.userData.cell : Math.round(q.x) * 9 + Math.round(q.z) * 3 + Math.round(q.y);
   const u = activeUsers.find(x => H.players.includes(x.id) && !H.seekers.includes(x.id) && !x.dead && x.hc === cell);
