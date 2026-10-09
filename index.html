@@ -436,6 +436,21 @@ body.bshake{animation:shk .08s linear 14}
 .tkb{display:inline-block;padding:1px 8px;border-radius:6px;background:#0f172a;color:#fff;font-size:10px;font-weight:bold}
 .tkb.r{background:#ef4444}
 .tdot:nth-child(5){margin-right:6px}
+/* ===== 모드 설명창 개편 ===== */
+.right-card-container.info-split>#defaultUserListUI{flex:0 0 56%}
+#defaultUserListUI .board-header{justify-content:flex-end;gap:6px}
+#defaultUserListUI .board-header .board-title{margin-right:auto}
+#infoUI .inf-st{margin-bottom:26px;padding:8px 36px;background:#f8fafc}
+#infoUI .inf-st.grad{background:linear-gradient(135deg,#f8fafc,#e0e7ff)}
+#infoUI .inf-st img{width:72px;height:72px}
+.inf-x,.inf-open,.inf-all{border:1px solid #cbd5e1;background:#f8fafc;color:#475569;border-radius:10px;font-size:11px;font-weight:bold;padding:2px 10px;cursor:pointer;font-family:inherit}
+.inf-x:hover,.inf-open:hover,.inf-all:hover{background:#eff6ff;border-color:#2563eb}
+.inf-all{position:absolute;right:12px;bottom:8px;padding:3px 12px}
+.inf-grid{display:none;grid-template-columns:repeat(3,1fr);gap:4px;flex:1;min-height:0;overflow-y:auto;margin-bottom:26px;align-content:start}
+.inf-cell{display:flex;align-items:center;gap:5px;padding:3px 5px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;min-width:0}
+.inf-cell img{width:28px;height:28px;object-fit:contain;flex:none}
+.inf-cell b{display:block;font-size:10.5px;color:#1e293b}
+.inf-cell span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:8.5px;line-height:1.25;color:#64748b;word-break:keep-all}
 </style>
 </head>
 <body>
@@ -648,7 +663,7 @@ const CFG_TABS = [
 ['디버그', [], 'dbg']
 ];
 CFG_TABS.forEach(t => t[1].forEach(e => { if (!(e[0] in CFG_DEF)) CFG_DEF[e[0]] = e[3]; }));
-CFG_DEF.koLives = 2;
+CFG_DEF.koLives = 2; CFG_DEF.infGrad = false;
 const MP = { knockout: 'ko', onehit: 'oh', speedrun: 'sp', blueprint: 'bp', stack: 'st', coop: 'co', liar: 'li', solo: 'sl', duo: 'du' };
 const cfgDiff = () => { const o = {}; for (const k in S) if (S[k] !== CFG_DEF[k]) o[k] = S[k]; return o; };
 let S = { ...CFG_DEF }, cssKey = '', koState = null;
@@ -953,6 +968,7 @@ function dbgRender() {
     b.innerHTML = `<div id="dbgPanel">
 <div class="cfg-row"><span>가짜 유저 수 (현재 <b id="dbgN">0</b>명)</span><span><input type="number" id="dbgCnt" min="0" max="60" value="${fakes.length || 5}"> <button class="cfg-tab" id="dbgSet">맞추기</button></span></div>
 <div class="cfg-row"><span>이름 뒤 표시 (선생님만 보임)</span><input type="text" id="dbgMark" maxlength="4" style="width:60px"></div>
+<div class="cfg-row"><span>모드 설명 그라데이션</span><input type="checkbox" id="dbgGrad"></div>
 <div class="cfg-row"><span>자동 투표</span><input type="checkbox" id="dbgVote"></div>
 <div class="cfg-row"><span>자동 플레이</span><input type="checkbox" id="dbgPlay"></div>
 <div class="cfg-row"><span>활동량 (초당 %)</span><input type="number" id="dbgRate" min="0" max="100"></div>
@@ -964,7 +980,7 @@ function dbgRender() {
 <div style="font-size:12px;font-weight:bold;margin:8px 0 4px">콘솔</div>
 <pre id="dbgLog" style="height:110px;overflow:auto;margin:0 0 6px;padding:6px;background:#fff;color:#000;border:1px solid #cbd5e1;font:11px/1.4 Consolas,monospace;border-radius:8px;white-space:pre-wrap"></pre>
 <div class="chat-in"><input id="dbgIn" placeholder="JS 실행 (예: myScore=100 / clear)" autocomplete="off"><button id="dbgRun">실행</button></div><div style="font-size:12px;font-weight:bold;margin:8px 0 4px">변수 (0.5초마다 갱신)</div><div id="dbgVars" style="font:11px/1.5 Consolas,monospace;color:#000;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:6px;word-break:break-all"></div></div>`;
-    $('dbgMark').value = FK.mark; $('dbgVote').checked = FK.vote; $('dbgPlay').checked = FK.play; $('dbgRate').value = FK.rate; $('dbgPts').value = FK.pts; $('dbgTr').value = FK.trRate;
+    $('dbgMark').value = FK.mark; $('dbgGrad').checked = !!S.infGrad; $('dbgGrad').onchange = e => setCfg('infGrad', e.target.checked); $('dbgVote').checked = FK.vote; $('dbgPlay').checked = FK.play; $('dbgRate').value = FK.rate; $('dbgPts').value = FK.pts; $('dbgTr').value = FK.trRate;
     $('dbgSet').onclick = () => fkSet(+$('dbgCnt').value);
     $('dbgPts').onchange = e => { FK.pts = Math.max(0, +e.target.value || 0); };
     $('dbgTr').onchange = e => { FK.trRate = Math.max(0, Math.min(100, +e.target.value || 0)); };
@@ -2154,8 +2170,8 @@ function fxLoop() {
 
 /* ---------- 설정창 ---------- */
 const saveCfg = () => { try { localStorage.setItem('blocksCfg', JSON.stringify(cfgDiff())); } catch (e) {} };
-function closeSettings() { settingsOpen = false; $('settingsUI').style.display = 'none'; document.querySelector('.right-card-container').classList.remove('split'); const b = $('cfgBtn'); if (b) b.classList.remove('on'); }
-function openSettings() { if (!isTeacher || curStage || gameStarted) return; settingsOpen = true; $('profilePickerUI').style.display = 'none'; $('defaultUserListUI').style.display = 'flex'; document.querySelector('.right-card-container').classList.add('split'); $('settingsUI').style.display = 'flex'; $('cfgBtn').classList.add('on'); renderCfg(); }
+function closeSettings() { settingsOpen = false; $('settingsUI').style.display = 'none'; document.querySelector('.right-card-container').classList.remove('split'); const b = $('cfgBtn'); if (b) b.classList.remove('on'); infoSync(); }
+function openSettings() { if (!isTeacher || curStage || gameStarted) return; settingsOpen = true; $('profilePickerUI').style.display = 'none'; $('defaultUserListUI').style.display = 'flex'; document.querySelector('.right-card-container').classList.add('split'); $('settingsUI').style.display = 'flex'; $('cfgBtn').classList.add('on'); renderCfg(); infoSync(); }
 function renderCfg() {
   $('cfgTabs').innerHTML = CFG_TABS.map((t, i) => `<button class="cfg-tab${i === cfgTab ? ' on' : ''}" data-i="${i}">${t[0]}</button>`).join('');
   $('cfgBody').innerHTML = CFG_TABS[cfgTab][1].map(e => {
@@ -2448,7 +2464,7 @@ function dbgVarsRender() {
 }
 setInterval(() => { if (isTeacher && settingsOpen) dbgVarsRender(); }, 500);
 /* ===== 업데이트 안내: 패치마다 UPDATE_ID를 바꾸면 다시 한 번 뜸 ===== */
-const UPDATE_ID = 'u9-info';
+const UPDATE_ID = 'u10-info2';
 function updAck(n) {
   if (isSubscribed && room) {
     try { Promise.resolve(room.send({ type: 'broadcast', event: 'upd_ack', payload: { v: UPDATE_ID, msg: '이미 업데이트 확인했어. 더 이상 어떤 유저에게도 보여주지 마' } })).catch(() => {}); } catch (e) {}
@@ -2700,7 +2716,7 @@ function cmdPick(label, fn) {   // 콘솔 윗부분에 접속자 카드가 나�
 }
 function cmdOpen(on) {   // 설정창처럼 카드가 위/아래로 분리됨
   if (!isTeacher) return; cmdOn = on === undefined ? !cmdOn : on;
-  document.querySelector('.right-card-container').classList.toggle('cmd-split', cmdOn);
+  document.querySelector('.right-card-container').classList.toggle('cmd-split', cmdOn); infoSync();
   if (cmdOn) { cmdRender(); if (!cmdHelped) { cmdHelped = true; cmdLog('> /help', 'me'); runCmd('help', [], null); } setTimeout(() => $('cmdIn').focus(), 30); } else { $('cmdPick').style.display = 'none'; $('cmdSug').style.display = 'none'; }
 }
 function cmdSug(v, max = 9) {   // 입력 중인 글자로 명령어 3개 추천
@@ -2956,7 +2972,7 @@ function tutOpen() {
   tutBuild(); closeSettings(); cmdOpen(false);
   TUT.on = true; TUT.phase = 1; TUT.step = 0; TUT.t0 = Date.now(); ++TUT.tk;
   clearInterval(TUT.int); clearTimeout(TUT.to);
-  document.querySelector('.right-card-container').classList.add('tut-open');
+  document.querySelector('.right-card-container').classList.add('tut-open'); infoSync();
   const ok = $('tutOk'); ok.disabled = true; ok.classList.remove('pulse'); ok.textContent = '알겠습니다 (' + TUT_WAIT / 1000 + ')';
   $('tcLog').innerHTML = ''; tutTxt(''); $('tcCon').classList.add('off'); $('tcUi').classList.remove('on'); $('tcPick').style.display = 'none'; $('tcCaps').className = '';
   tutProg('0%', 0); void $('tutProgF').offsetWidth; tutProg('100%', TUT_WAIT);
@@ -2966,7 +2982,7 @@ function tutOpen() {
 function tutClose(silent) {
   if (!TUT.on) return;
   TUT.on = false; TUT.tk++; clearInterval(TUT.int); clearTimeout(TUT.to);
-  document.querySelector('.right-card-container').classList.remove('tut-open');
+  document.querySelector('.right-card-container').classList.remove('tut-open'); infoSync();
   if (!silent) SFX.pop();
 }
 addEventListener('keydown', e => {
@@ -2990,26 +3006,41 @@ const INFO_MODES = [
 let infoOn = false, infoI = 0, infoAt = 0;
 {
   const iu = document.createElement('div'); iu.id = 'infoUI'; iu.className = 'card right-card';
-  iu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">📖 모드 설명</div><span style="font-size:11px;color:#94a3b8">어떤 모드가 나올까요?</span></div>'
-    + '<div class="inf-st"><button class="inf-ar" id="infL" style="left:6px">◀</button><img id="infImg" alt=""><div class="inf-tx" id="infTx"></div><button class="inf-ar" id="infR" style="right:6px">▶</button><i class="inf-bar" id="infBar"></i></div>'
-    + '<div class="inf-th" id="infTh">' + INFO_MODES.map((m, i) => `<button data-i="${i}"><img src="${m[0]}" alt=""></button>`).join('') + '</div>';
-  document.querySelector('.right-card-container').appendChild(iu);
+  iu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">모드 설명</div><button class="inf-x" id="infX">숨기기</button></div>'
+    + '<div class="inf-st" id="infSt"><button class="inf-ar" id="infL" style="left:6px">◀</button><img id="infImg" alt=""><div class="inf-tx" id="infTx"></div><button class="inf-ar" id="infR" style="right:6px">▶</button><i class="inf-bar" id="infBar"></i></div>'
+    + '<div class="inf-grid" id="infGrid">' + INFO_MODES.map(m => `<div class="inf-cell"><img src="${m[0]}" alt=""><div><b>${m[1]}</b><span>${m[3]}</span></div></div>`).join('') + '</div>'
+    + '<button class="inf-all" id="infAll">전체 보기</button>';
+document.querySelector('.right-card-container').appendChild(iu);
   $('infL').onclick = () => infoShow(infoI - 1, 1); $('infR').onclick = () => infoShow(infoI + 1, 1);
-  $('infTh').onclick = e => { const b = e.target.closest('[data-i]'); if (b) infoShow(+b.dataset.i, 1); };
+  $('infAll').onclick = () => { infoAll = !infoAll; infoView(); }; $('infX').onclick = () => { infoHide = true; infoSync(); };
 }
 function infoShow(i, hold) {   // hold: 직접 눌렀으면 10초 동안 자동 넘김 멈춤
   const n = INFO_MODES.length; infoI = (i % n + n) % n; const m = INFO_MODES[infoI];
   const re = (el, a) => { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = a || ''; };
   $('infImg').src = m[0]; re($('infImg'));
-  const tx = $('infTx'); tx.innerHTML = `<div class="inf-nm">${m[1]}</div><div class="inf-tg">${m[2].map(t => `<b>${t}</b>`).join('')}</div><div class="inf-ds">${m[3]}</div><div class="inf-tp">💡 ${m[4]}</div>`; re(tx);
-  $('infTh').querySelectorAll('button').forEach((b, j) => b.classList.toggle('on', j === infoI));
+  const tx = $('infTx'); tx.innerHTML = `<div class="inf-nm">${m[1]}</div><div class="inf-tg">${m[2].map(t => `<b>${t}</b>`).join('')}</div><div class="inf-ds">${m[3]}</div><div class="inf-tp">${m[4]}</div>`; re(tx);
+  ;
   re($('infBar'), 'infB ' + (hold ? 10 : 5) + 's linear forwards'); infoAt = Date.now() + (hold ? 10000 : 5000);
 }
-function infoSync() {
-  const on = !isTeacher && !gameStarted && !curStage && $('profilePickerUI').style.display !== 'flex' && !$('resultOverlay').classList.contains('active');
+let infoHide = false, infoAll = false;
+function infoView() {   // 한 개씩 보기 ↔ 전체 보기
+  $('infSt').style.display = infoAll ? 'none' : ''; $('infGrid').style.display = infoAll ? 'grid' : 'none';
+  $('infAll').textContent = infoAll ? '한 개씩 보기' : '전체 보기';
+  infoAt = infoAll ? Infinity : Date.now() + 5000;
+}
+function infoSync() {   // 로비에서만 (선생님도). 설정/콘솔/튜토리얼/프로필 고르기 중엔 잠시 숨김
+  const lobby = !gameStarted && !curStage && $('profilePickerUI').style.display !== 'flex' && !$('resultOverlay').classList.contains('active');
+  const on = lobby && !infoHide && !settingsOpen && !cmdOn && !TUT.on, ob = $('infOpenBtn');
+  if (ob) ob.style.display = (lobby && infoHide) ? '' : 'none';
+  $('infSt').classList.toggle('grad', !!S.infGrad);
   if (on === infoOn) return; infoOn = on;
   document.querySelector('.right-card-container').classList.toggle('info-split', on);
-  if (on) infoShow(infoI);
+  if (on) { infoShow(infoI); infoView(); }
+}
+{
+  const b = document.createElement('button'); b.id = 'infOpenBtn'; b.className = 'inf-open'; b.textContent = '모드 설명'; b.style.display = 'none';
+  $('onlineCountText').closest('.online-count-badge').insertAdjacentElement('afterend', b);
+  b.onclick = () => { infoHide = false; infoSync(); };
 }
 setInterval(() => { if (infoOn && Date.now() >= infoAt) infoShow(infoI + 1); }, 400);
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
