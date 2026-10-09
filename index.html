@@ -516,6 +516,12 @@ body.p2me .modal-overlay,body.p2me #resultOverlay,body.p2me #tauntOverlay,body.p
 body.p2on .modal-overlay,body.p2on #resultOverlay,body.p2on #tauntOverlay,body.p2on #modeReveal,body.p2on #updSplash{left:25%!important;transform:translate(-50%,-50%) rotate(90deg) scale(var(--p2s,.8))!important}
 body.p2me .modal-overlay,body.p2me #resultOverlay,body.p2me #tauntOverlay,body.p2me #modeReveal,body.p2me #updSplash{left:50%!important;transform:translate(-50%,-50%) rotate(270deg) scale(var(--p2s,.8))!important}
 body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;height:90%!important}
+/* ===== 아이북 질문 카드: 화면 가득 ===== */
+.ib-card{width:94%!important;height:90%!important;max-width:none!important;padding:4vh 4vw!important;gap:3.5vh!important;justify-content:center!important;border-radius:4vh!important}
+.ib-card img{width:36vh!important;height:36vh!important}
+.ib-t{font-size:5.4vh!important}
+.ib-b{min-height:11vh!important;gap:2vw!important}
+.ib-b button{font-size:3.6vh!important;padding:2.6vh!important;border-radius:2vh!important}
 </style>
 </head>
 <body>
@@ -536,7 +542,7 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
       <div class="game-title-badge" id="cameraStatusBadge">블록 관찰 중</div>
       <div id="koHud" class="ko-hud" style="display:none;"><div class="ko-lives" id="koLives">❤️❤️❤️</div><div class="ko-bar" id="koBar"><div id="koBarFill"></div></div></div>
       <div id="threeContainer"></div>
-      <div id="hsInfo" style="display:none;width:100%;flex:none;font-size:12px;text-align:center;line-height:1.5;color:#334155;margin-bottom:6px"></div>
+      <!-- -->
       <div id="bpView"></div>
       <div id="stackPad">
         <div class="pad-row"><button class="pad-btn" data-k="w">W</button></div>
@@ -569,7 +575,7 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
         <div class="vote-stage" id="voteStage1">
           <div class="vote-row">
             <button class="mode-btn" id="showdownBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="쇼다운"><span>쇼다운</span><span class="vote-count" id="showdownCount">0표</span></button>
-            <button class="mode-btn" id="bombBtn"><img src="https://media.ffycdn.net/eu/supercell/HSFDVYouXjAjgw4uEs1i.png?width=2400" alt="폭탄"><span>폭탄</span><span class="vote-count" id="bombCount">0표</span></button>
+            <button class="mode-btn" id="bombBtn"><img src="https://media.ffycdn.net/eu/supercell/iywtfPAAP1aULVTDai7Y.png?width=2400" alt="폭탄"><span>폭탄</span><span class="vote-count" id="bombCount">0표</span></button>
           </div>
           <div class="vote-row">
             <button class="mode-btn" id="speedBtn"><img src="https://media.ffycdn.net/eu/supercell/Q9NfQk57PnnpP9SVvyUR.png?width=2400" alt="스피드런">
@@ -591,7 +597,7 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
           </div>
         </div>
         
-<div class="vote-stage" id="voteStage3"></div>
+<!-- -->
 <div class="vote-stage" id="voteStage2">
           <div class="vote-row">
             <button class="mode-btn" id="soloBtn"><img src="https://media.ffycdn.net/eu/supercell/jMsj2Hr31RAw62EHKQQn.png?width=2400" alt="솔로 쇼다운"><span>솔로 쇼다운</span><span class="vote-count" id="soloCount">0표</span></button>
@@ -811,7 +817,7 @@ const hostTeacher = us => us.filter(u => u.isTeacher && u.host).sort((a, b) => (
 const spMs = () => S.spSec * 1000;                                   // 스피드런 제한시간(90초)
 const maxLives = () => gameMode === 'onehit' ? 1 : S.koLives;     // 한방 모드는 목숨 1개
 let stackH = [], stackT = [], stackCur = { x: 1, y: 1 };
-let hsState = null, hsN = 4, hsCell = -1, hsForce = false, hsBlock = false;
+/* 숨바꼭질 삭제됨 */
 
 /* ---------- 라이어 모드 ---------- */
 let liarState = null, myLV = '', chat = [];
@@ -951,7 +957,7 @@ function liarResolve(users) {
 const FK = { mark: ',', vote: true, play: true, rate: 20, pts: 0, trRate: 10, seq: 0, last: 0, log: [] };
 let fakes = [];
 const FK_NAMES = ['민준','서연','지호','하은','도윤','서윤','시우','지우','예준','수아','주원','하윤','건우','지민','현우','다은','유준','채원','선우','지안'];
-const fakePub = f => ({ id: f.id, nickname: f.nickname, avatarUrl: f.avatarUrl, score: f.score, isTeacher: false, lives: f.lives, dead: f.dead, diedAt: f.diedAt, tr: f.tr || 0, vote: f.vote, lv: f.lv, cr: 0, cs: 0, joinedAt: f.joinedAt, hb: Date.now(), fk: 1, hc: f.hc == null ? -1 : f.hc, hk: f.hc >= 0 });
+const fakePub = f => ({ id: f.id, nickname: f.nickname, avatarUrl: f.avatarUrl, score: f.score, isTeacher: false, lives: f.lives, dead: f.dead, diedAt: f.diedAt, tr: f.tr || 0, vote: f.vote, lv: f.lv, cr: 0, cs: 0, joinedAt: f.joinedAt, hb: Date.now(), fk: 1 });
 const fakeLabel = us => isTeacher ? us.map(u => u.fk ? { ...u, nickname: (u.nickname || '익명') + FK.mark } : u) : us;   // 표시 기호는 선생님 화면에만
 function fkSet(n) {
   n = Math.max(0, Math.min(60, n | 0));
@@ -977,13 +983,12 @@ function fakeTick() {   // 가짜 유저가 투표하고 점수를 얻고 탈락
       if (!f.vote && now >= f.va) { const o = curStage === 'vote1' ? ['showdown', 'bomb', 'speedrun', 'onehit', 'stack', 'blueprint', 'liar', 'coop'] : ['solo', 'duo']; f.vote = curStage + ':' + o[Math.floor(Math.random() * o.length)]; ch = true; }
     } else if (!curStage && f.vs) { f.vs = ''; f.vote = ''; ch = true; }
     if (!gameStarted || !FK.play) return;
-    if (f.sess !== currentSession) { f.sess = currentSession; f.score = f.s0 || 0; f.tr = f.t0 || 0; f.dead = false; f.lives = f.l0 || maxLives(); f.lv = ''; f.kr = 0; f.hc = -1; ch = true; }
+    if (f.sess !== currentSession) { f.sess = currentSession; f.score = f.s0 || 0; f.tr = f.t0 || 0; f.dead = false; f.lives = f.l0 || maxLives(); f.lv = ''; f.kr = 0; ch = true; }
     if (gameMode === 'knockout' && koState) {
       if (f.kr !== koState.round) { f.kr = koState.round; f.lives = f.l0 || maxLives(); f.dead = false; ch = true; }
       else if (!f.dead && !koState.over && now > koState.startAt + 1500 && Math.random() < p / 2) { if (--f.lives <= 0) { f.lives = 0; f.dead = true; f.diedAt = now; } ch = true; }
-    } else if (gameMode === 'hide') {
-      if (hsState && !f.dead && !(f.hc >= 0) && hsState.players.includes(f.id) && !hsState.seekers.includes(f.id) && hsPhase() >= 1) { f.hc = hsFree(); ch = true; }
-    } else if (gameMode === 'onehit' || gameMode === 'bomb') {
+    /* 숨바꼭질 삭제됨 */
+} else if (gameMode === 'onehit' || gameMode === 'bomb') {
       if (gameMode === 'bomb' && bombState && bombState.holder === f.id && !f.dead && bombState.cand.length && Math.random() < .4) { bombPass(f.id, bombState.cand[Math.floor(Math.random() * bombState.cand.length)]); ch = true; }
       if (!f.dead && Math.random() < p / 4) { f.lives = 0; f.dead = true; f.diedAt = now; ch = true; }
     } else if (gameMode === 'liar') {
@@ -1103,7 +1108,7 @@ function getMyPayload() {
     phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
     mode: isTeacher ? gameMode : '', teams: isTeacher ? teams : null, result: isTeacher ? resultData : null,
     lives: myLives, dead: isDead, diedAt, tr: myTroll, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
-    runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, bomb: isTeacher ? bombState : null, hs: isTeacher ? hsState : null, hc: hsCell, hk: hsBlock, lv: myLV, ko: isTeacher ? koState : null,
+    runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, bomb: isTeacher ? bombState : null, /**/ lv: myLV, ko: isTeacher ? koState : null,
     vote: myVote,
     host: isTeacher && iAmHost, hostAt: isTeacher ? hostAt : 0, cfg: isTeacher ? cfgDiff() : null, coop: isTeacher ? coopState : null, cr: coopRound, cs: currentSession,
     joinedAt, hb: Date.now()
@@ -1157,7 +1162,7 @@ function renderAll() {
     if (iAmHost) { iAmHost = false; if (phase.startsWith('vote')) phase = ''; }
     noTeacherSince = 0; S = { ...CFG_DEF, ...(host.cfg || {}) };
     if (host.id !== lastHostId) { lastHostId = host.id; clk = []; pingHost(); }
-    if (host.gameStarted) { gameMode = host.mode || 'solo'; teams = host.teams || {}; runEnd = host.runEnd || 0; if (host.liar) syncLiar(host.liar); if (host.bomb) bombState = host.bomb; if (host.hs) hsState = host.hs; if (host.ko) syncKo(host.ko); if (host.coop) coopState = host.coop; if (host.session && (host.session !== endedSession || Date.now() - endedAt > 6000) && (host.session !== currentSession || !gameStarted)) startLocal(host.session); }
+    if (host.gameStarted) { gameMode = host.mode || 'solo'; teams = host.teams || {}; runEnd = host.runEnd || 0; if (host.liar) syncLiar(host.liar); if (host.bomb) bombState = host.bomb; /**/ if (host.ko) syncKo(host.ko); if (host.coop) coopState = host.coop; if (host.session && (host.session !== endedSession || Date.now() - endedAt > 6000) && (host.session !== currentSession || !gameStarted)) startLocal(host.session); }
     else if (gameStarted) endGameLocal();
   } else if (!host) {
     if (gameStarted) {
@@ -1196,7 +1201,7 @@ function startLocal(session) {
 /* 나만의 다음 문제 */
 function nextProblem() {
   if (!gameStarted || isDead) return;
-  if (gameMode === 'hide') return hsStart();
+  /**/
   if (gameMode === 'coop') return nextCoopProblem();
   if (gameMode === 'stack') return nextStackProblem();
   if (gameMode === 'blueprint') return nextBlueprintProblem();
@@ -1215,7 +1220,7 @@ function endGameLocal() {
   endedSession = currentSession; endedAt = Date.now();
   gameStarted = false; currentBlocks = []; liarState = null; koState = null; bombState = null; bombIdx = -1; bombMesh = null; myLV = ''; chat = []; coopState = null; coopRound = 0; coopLog = []; coopReveal = false; $('choiceButtons').style.maxHeight = ''; phase = ''; myVote = ''; teams = {}; gameMode = 'solo';
   koDeadline = 0; runEnd = 0; isDead = false; myLives = 3; diedAt = 0; specId = ''; specKey = ''; specPanelKey = '';
-  ['koHud', 'specPrev', 'specNext'].forEach(id => { $(id).style.display = 'none'; }); hsClear();
+  ['koHud', 'specPrev', 'specNext'].forEach(id => { $(id).style.display = 'none'; });
   $('cardModalOverlay').classList.remove('active'); $('pwModalOverlay').classList.remove('active'); isTargetSelectMode = false; pendingAttackType = null;
   activeShiningEyesRound = false; hasShiningEyesBuff = false;
   applyUIState(false);
@@ -1236,13 +1241,10 @@ function teacherTick(users) {
     else startMode(best, users);
   }
   else if (phase === 'vote2' && now >= voteEnd) finishVote(users);
-  else if (phase === 'vote3' && now >= voteEnd) finishVote3(users);
+  /**/
   else if (gameStarted && gameMode === 'speedrun') { if (users.some(u => (u.score || 0) >= S.score * 15)) teacherEndGame(); }
-  else if (gameStarted && gameMode === 'hide') {
-    const H = hsState;
-    if (H) { const hd = H.players.filter(i => !H.seekers.includes(i)), t = hostNow() - H.t0; if (t >= HS_END + 2000 || (t > HS_REL + 1500 && users.filter(u => hd.includes(u.id) && !u.dead).length === 0)) teacherEndGame(); }
-  }
-  else if (gameStarted && gameMode === 'onehit' && S.koAutoEnd && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
+  /* 숨바꼭질 삭제됨 */
+else if (gameStarted && gameMode === 'onehit' && S.koAutoEnd && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
     if (users.filter(u => !u.dead).length <= 1) { koEndAt = koEndAt || now + 2500; if (now >= koEndAt) { koEndAt = 0; teacherEndGame(); } }
     else koEndAt = 0;
   }
@@ -1262,7 +1264,7 @@ function teacherTick(users) {
 function renderVote(users) {
   const t = hostTeacher(users);
   const stage = (t && !gameStarted) ? (t.phase || '') : '';
-  const active = stage === 'vote1' || stage === 'vote2' || stage === 'vote3';
+  const active = stage === 'vote1' || stage === 'vote2';
   curStage = active ? stage : '';
   $('voteOverlay').style.display = active ? 'flex' : 'none';
   $('startBtn').style.display = (isTeacher && !gameStarted && !active) ? 'block' : 'none';
@@ -1272,8 +1274,8 @@ function renderVote(users) {
   closeSettings();
   $('voteStage1').style.display = stage === 'vote1' ? 'flex' : 'none';
   $('voteStage2').style.display = stage === 'vote2' ? 'flex' : 'none';
-  $('voteStage3').style.display = stage === 'vote3' ? 'flex' : 'none';
-  if (stage === 'vote3') for (let i = 2; i <= 7; i++) { $('hc' + i).innerText = users.filter(u => u.vote === 'vote3:n' + i).length + '표'; $('hb' + i).classList.toggle('voted', myVote === 'vote3:n' + i); }
+  /**/
+  /**/
   ;
   const left = Math.max(0, Math.ceil((t.voteEnd - hostNow()) / 1000));
   scheduleTicks(stage, t.voteEnd);
@@ -1290,13 +1292,7 @@ function finishVote(users) {
   startMode(c('duo') > c('solo') ? 'duo' : 'solo', users);   // 동점/무투표는 솔로
 }
 
-function finishVote3(users) {
-  if (!isTeacher || phase !== 'vote3') return;
-  const ks = [2, 3, 4, 5, 6, 7], n = k => users.filter(u => u.vote === 'vote3:n' + k).length, mx = Math.max(...ks.map(n)), top = ks.filter(k => n(k) === mx);
-  hsN = Math.max(1, Math.min(top[Math.floor(Math.random() * top.length)], users.length));
-  startMode('hide', users);
-}
-
+/* 숨바꼭질 삭제됨 */
 function startMode(mode, users) {
   if (!isTeacher) return;
   gameMode = mode;
@@ -1322,12 +1318,8 @@ function startMode(mode, users) {
     const al = users.filter(u => !u.dead);
     if (al.length) { const h = al[Math.floor(Math.random() * al.length)]; bombState = { session, holder: h.id, passes: 0, end: Date.now() + 18000, cand: bombCand(users, h.id, 0), seq: 1, msg: '💣 폭탄 모드 시작! 첫 폭탄: ' + (h.nickname || '익명'), kind: '' }; }
   }
-  if (mode === 'hide') {   // A+Tab 으로 확정해 둔 선생님은 무조건 술래
-    let ids = users.map(u => u.id).sort(() => Math.random() - 0.5).slice(0, hsN);
-    if (hsForce) ids = [myId, ...ids.filter(i => i !== myId)].slice(0, hsN);
-    hsState = { session, players: ids, seekers: ids.slice(0, hsN >= 5 ? 2 : 1), n: hsN, t0: session }; hsForce = false;
-  }
-  if (mode === 'coop') {   // 2명씩 팀: 한 명은 설명, 한 명은 쌓기 (홀수면 남는 1명은 마지막 팀의 쌓기)
+  /* 숨바꼭질 삭제됨 */
+if (mode === 'coop') {   // 2명씩 팀: 한 명은 설명, 한 명은 쌓기 (홀수면 남는 1명은 마지막 팀의 쌓기)
     const ids = users.map(u => u.id).sort(() => Math.random() - 0.5), ts = [];
     for (let i = 0; i + 1 < ids.length; i += 2) ts.push({ d: ids[i], b: [ids[i + 1]] });
     if (ids.length % 2 && ts.length) ts[ts.length - 1].b.push(ids[ids.length - 1]); else if (ids.length % 2) ts.push({ d: ids[0], b: [] });
@@ -1335,7 +1327,7 @@ function startMode(mode, users) {
   }
   startLocal(session);
   updatePresence();
-  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState, bomb: bombState, hs: hsState, coop: coopState, ko: koState, cfg: cfgDiff() } }); } catch (e) {}
+  try { room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'start', session, mode: gameMode, teams, runEnd, liar: liarState, bomb: bombState, coop: coopState, ko: koState, cfg: cfgDiff() } }); } catch (e) {}
 }
 
 async function teacherEndGame() {
@@ -1373,7 +1365,7 @@ async function connect() {
     if (isTeacher && iAmHost && payload.action === 'start' && gameStarted && payload.session > currentSession) return;   // 동시에 시작하면 먼저 시작한 쪽만 인정
     if (payload.action === 'start') { iAmHost = false; if (phase.startsWith('vote')) phase = ''; }
     if (payload.action === 'end') { endGameLocal(); sendSoon(); if (payload.result && payload.result.session === currentSession) showResult(payload.result); }
-    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; if (payload.bomb) bombState = payload.bomb; if (payload.hs) hsState = payload.hs; if (payload.ko) koState = payload.ko; if (payload.coop) coopState = payload.coop; if (payload.cfg) S = { ...CFG_DEF, ...payload.cfg }; startLocal(payload.session); }
+    else if (payload.action === 'start' && payload.session !== currentSession) { gameMode = payload.mode || 'solo'; teams = payload.teams || {}; runEnd = payload.runEnd || 0; if (payload.liar) liarState = payload.liar; if (payload.bomb) bombState = payload.bomb; /**/ if (payload.ko) koState = payload.ko; if (payload.coop) coopState = payload.coop; if (payload.cfg) S = { ...CFG_DEF, ...payload.cfg }; startLocal(payload.session); }
   });
 
   ch.on('broadcast', { event: 'ping' }, ({ payload }) => {
@@ -1412,7 +1404,7 @@ async function connect() {
     p2Asked = 0;
     if (payload.ok) p2Start(); else showToast(null, '2인용', '선생님이 허락하지 않았어요', '#ef4444');
   });
-  ch.on('broadcast', { event: 'hspos' }, ({ payload }) => hsRecv(payload));
+  /**/
   ch.on('broadcast', { event: 'bombpass' }, ({ payload }) => { if (iAmHost && payload && payload.s === currentSession) bombApply(payload.from, payload.to); });
   ch.on('broadcast', { event: 'bombboom' }, ({ payload }) => {
     if (!payload || payload.s !== currentSession) return;
@@ -1420,7 +1412,7 @@ async function connect() {
     if (f) { f.dead = true; f.lives = 0; f.diedAt = Date.now(); sendSoon(); } else if (payload.to === myId) bombDie();
   });
   ch.on('broadcast', { event: 'upd_ack' }, ({ payload }) => { if (payload && payload.v === UPDATE_ID) { try { localStorage.setItem('blocksUpd', UPDATE_ID); } catch (e) {} } });
-  ch.on('broadcast', { event: 'hscatch' }, ({ payload }) => hsCaught(payload));
+  /**/
   ch.subscribe(status => {
     if (ch !== room) return;
     if (status === 'SUBSCRIBED') {
@@ -1495,7 +1487,7 @@ function renderRankingList(users) {
   if (gameMode === 'liar') { $('rankingTitle').innerText = '💬 라이어를 찾아라'; return; }
   if (gameMode === 'bomb' && bombState) return bombRank(users);
   let html;
-  if (gameMode === 'hide' && hsState) users = users.filter(u => hsState.players.includes(u.id));
+  /**/
   const duo = gameMode === 'duo' || gameMode === 'knockout', ko = gameMode === 'knockout' || gameMode === 'onehit' || gameMode === 'bomb';
   const av = u => `<img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px;" alt="프로필">`;
   if (isTargetSelectMode) {
@@ -1645,13 +1637,13 @@ const modalOpen = () => $('cardModalOverlay').classList.contains('active') || $(
 
 function setModeUI() {
   $('mainContainer').dataset.m = gameStarted ? (MP[gameMode] || '') : '';
-  const co = gameStarted && gameMode === 'coop', st = gameStarted && (gameMode === 'stack' || co || gameMode === 'hide'), bp = gameStarted && gameMode === 'blueprint', tc = $('threeContainer');
-  const lr = gameStarted && (gameMode === 'liar' || co); document.querySelector('.chat-in').style.display = (co && coopRole() !== 'd') ? 'none' : ''; $('padSubmit').style.display = co ? '' : 'none'; $('topView').style.display = ((co && coopRole() !== 'd') || gameMode === 'hide') ? 'none' : ''; $('chatBox').style.display = lr ? 'flex' : 'none'; $('rankingList').style.display = lr ? 'none' : '';
+  const co = gameStarted && gameMode === 'coop', st = gameStarted && (gameMode === 'stack' || co), bp = gameStarted && gameMode === 'blueprint', tc = $('threeContainer');
+  const lr = gameStarted && (gameMode === 'liar' || co); document.querySelector('.chat-in').style.display = (co && coopRole() !== 'd') ? 'none' : ''; $('padSubmit').style.display = co ? '' : 'none'; $('topView').style.display = (co && coopRole() !== 'd') ? 'none' : ''; $('chatBox').style.display = lr ? 'flex' : 'none'; $('rankingList').style.display = lr ? 'none' : '';
   document.querySelector('.left-card').classList.toggle('stack-left', st);          // 쌓기 모드: 왼쪽 캐릭터 그림을 줄여 버튼 공간 확보
   if (st) $('stackView').appendChild(tc);                                           // 3D 화면을 오른쪽 아래 카드로 이동
   else if (tc.parentNode !== $('gameUI')) $('gameUI').insertBefore(tc, $('bpView'));  // 원래 자리로 복귀
   $('stackView').style.display = st ? 'block' : 'none';
-  $('stackPad').style.display = (st && gameMode !== 'hide' && !(co && coopRole() === 'd')) ? 'flex' : 'none';
+  $('stackPad').style.display = (st && !(co && coopRole() === 'd')) ? 'flex' : 'none';
   $('choiceButtons').style.display = st ? 'none' : '';
   $('gameRankingUI').classList.toggle('stack-mode', st);
   $('bpView').style.display = (bp || (co && coopRole() === 'd')) ? 'flex' : 'none';
@@ -1873,7 +1865,7 @@ function initThreeOnce() {
   const cv = renderer.domElement; cv.style.touchAction = 'none';
   const dragPos = e => p2On ? e.clientY : P2 ? -e.clientY : e.clientX;   // 화면이 돌아간 만큼 드래그 방향도 맞춤
   let dragX = null;                                   // 쌓기 모드: 3D 화면은 좌우(수평)로만 회전
-  cv.addEventListener('pointerdown', e => { if (stackish() || gameMode === 'hide') { dragX = dragPos(e); try { cv.setPointerCapture(e.pointerId); } catch (_) {} } });
+  cv.addEventListener('pointerdown', e => { if (stackish()) { dragX = dragPos(e); try { cv.setPointerCapture(e.pointerId); } catch (_) {} } });
   cv.addEventListener('pointermove', e => { if (dragX === null) return; if (!isCameraFrozen) cameraAngle += (dragPos(e) - dragX) * 0.012 / uiScale; dragX = dragPos(e); });
   ['pointerup', 'pointercancel'].forEach(ev => cv.addEventListener(ev, () => { dragX = null; }));
   resizeThree = () => {
@@ -1895,7 +1887,7 @@ function initThreeOnce() {
 
   (function animate() {
     requestAnimationFrame(animate);
-    if (!isCameraFrozen && !stackish() && gameMode !== 'hide') cameraAngle += (gameMode === 'speedrun' ? S.spCam : S.cam) * camMul;
+    if (!isCameraFrozen && !stackish()) cameraAngle += (gameMode === 'speedrun' ? S.spCam : S.cam) * camMul;
 
     const a = cameraAngle, R = S.camR;
     camera.position.set(1 + Math.cos(a) * R, S.camH, 1 + Math.sin(a) * R); camera.lookAt(1, 1, 1);
@@ -2084,7 +2076,7 @@ function renderSpectate(us) {
 const specGo = d => { const l = activeUsers.filter(u => u.id !== myId && !u.dead && u.blocks); if (!l.length) return; const i = l.findIndex(u => u.id === specId); specId = l[(i + d + l.length) % l.length].id; specKey = ''; renderSpectate(activeUsers); };
 function koTick() {
   if (!gameStarted) return;
-  if (gameMode === 'hide') return hsTick();
+  /**/
   if (gameMode === 'liar') return liarTick();
   if (gameMode === 'bomb') return bombTick();
   if (gameMode === 'speedrun') { const n = Math.floor(myScore / S.score); $('koBarFill').style.width = Math.min(100, n / 15 * 100) + '%'; $('koLives').innerText = '🏁 ' + n + ' / 15 문제'; return; }
@@ -2106,7 +2098,7 @@ setInterval(koTick, 100);
 let shownSess = 0, resT = [], trollInt = null, parts = [], fxOn = false, lastTk = 0;
 const rt = (f, d) => resT.push(setTimeout(f, d));
 function buildResult() {
-  const us = collectUsers().filter(u => gameMode !== 'hide' || (hsState && hsState.players.includes(u.id))), duo = gameMode === 'duo' || gameMode === 'knockout', ko = gameMode === 'knockout' || gameMode === 'onehit' || gameMode === 'bomb';
+  const us = collectUsers(), duo = gameMode === 'duo' || gameMode === 'knockout', ko = gameMode === 'knockout' || gameMode === 'onehit' || gameMode === 'bomb';
   const r = { session: currentSession, at: hostNow(), mode: gameMode, duo };
   if (duo) {
     r.teams = teamIds(us).map(k => { const m = us.filter(u => teams[u.id] === k); return { k, name: teamName(k, us), color: teamColor(k), m: m.map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: u.score || 0 })), score: gameMode === 'knockout' ? ((koState && koState.wins[k]) || 0) : m.reduce((s, u) => s + (u.score || 0), 0) }; }).sort((a, b) => b.score - a.score);
@@ -2342,192 +2334,9 @@ setInterval(() => { if (gameStarted && $('resultOverlay').classList.contains('ac
 $('cfgBtn').onclick = () => { if (settingsOpen) closeSettings(); else openSettings(); };
 $('cfgTabs').addEventListener('wheel', e => { e.currentTarget.scrollLeft += e.deltaY; e.preventDefault(); }, { passive: false });
 setInterval(() => { if (isTeacher && settingsOpen) dbgFkRender(); }, 1000);
-/* ===== 숨바꼭질 모드: 바닥 격자 위를 W A S D 로 한 칸씩 걸어 다니다가 1.5초 멈추면 블록이 됨 ===== */
-const HS = { card: 10000, hide: 10000, hunt: 60000 }, HS_REL = HS.card + HS.hide, HS_END = HS_REL + HS.hunt;
-const HS_STEP = 280;   // 한 칸 이동 간격(ms). 추격이 시작되면 속도 40% 감소 (간격 ÷ 0.6)
-let hsBl = [], hsCells = [], hsAtt = 0, hsCatch = 0, hsEnded = false, hsG = null, hsDyn = null, hsGrid = null, hsMk = '', hsDynKey = '', hsInfoKey = '', hsBound = false, hsMoveAt = 0, hsBox = null, hsEdge = null, hsPlane = null;
-const hsMats = {};
-$('voteStage3').innerHTML = [2, 3, 4, 5, 6, 7].map(n => `<button class="mode-btn" id="hb${n}" style="width:120px"><span>${n}명</span><span class="vote-count" id="hc${n}">0표</span></button>`).join('');
-[2, 3, 4, 5, 6, 7].forEach(n => { $('hb' + n).onclick = () => { if (!curStage) return; myVote = curStage + ':n' + n; updatePresence(); }; });
-const hsRole = () => !hsState ? '' : !hsState.players.includes(myId) ? 'w' : hsState.seekers.includes(myId) ? 's' : 'h';
-const hsPhase = () => { const e = hostNow() - hsState.t0; return e < HS.card ? 0 : e < HS_REL ? 1 : e < HS_END ? 2 : 3; };   // 0 도면 · 1 숨기 · 2 추격 · 3 끝
-const hsFree = () => { const occ = new Set(activeUsers.filter(u => u.hc >= 0).map(u => u.hc)), c = hsCells.filter(i => !occ.has(i)); return c.length ? c[Math.floor(Math.random() * c.length)] : hsCells[0]; };   // (가짜 유저용) 블록 속 빈 칸
-const hsFloor = () => { const occ = new Set(activeUsers.filter(u => u.hc >= 0 && !u.dead).map(u => u.hc)), c = [0, 3, 6, 9, 12, 15, 18, 21, 24].filter(i => !occ.has(i)); return c.length ? c[Math.floor(Math.random() * c.length)] : 0; };   // 바닥(1층) 빈 칸
-function hsRecv() {}
-function hsCaught(p) {
-  if (!p || p.to !== myId || p.s !== currentSession || isDead || hsRole() !== 'h' || hsPhase() !== 2) return;
-  isDead = true; hsBlock = false; diedAt = Date.now(); SFX.die(); sendSoon();
-}
-function hsBind() {   // 드래그는 화면 회전, 짧은 클릭만 잡기
-  if (hsBound || !renderer) return; hsBound = true;
-  const cv = renderer.domElement; let dn = null;
-  cv.addEventListener('pointerdown', e => { dn = { x: e.clientX, y: e.clientY, t: performance.now() }; });
-  cv.addEventListener('pointerup', e => { if (dn && gameMode === 'hide' && Math.hypot(e.clientX - dn.x, e.clientY - dn.y) < 6 && performance.now() - dn.t < 500) hsClick(e); dn = null; });
-  cv.addEventListener('pointercancel', () => { dn = null; });
-}
-function hsStart() {
-  hsBind(); const H = hsState; if (!H) return;
-  hsBl = seeded(H.session >>> 0, () => generateValidBlocks(20, 27));   // 3x3x3 안이라 최대 27개
-  hsCells = hsBl.map(b => b.x * 9 + b.y * 3 + b.z);
-  hsAtt = 0; hsCatch = 0; hsEnded = false; hsMoveAt = 0; cameraAngle = Math.PI / 2;
-  activeShiningEyesRound = false; hasShiningEyesBuff = false;
-  if (!hsBox) { hsBox = new THREE.BoxGeometry(1, 1, 1); hsEdge = new THREE.EdgesGeometry(hsBox); hsPlane = new THREE.PlaneGeometry(.8, .8); }
-  if (!hsGrid) {   // 바닥 격자 (3x3, 칸마다 좌표 x,y)
-    hsGrid = new THREE.Group(); scene.add(hsGrid); const tile = new THREE.PlaneGeometry(.94, .94);
-    for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) { const m = new THREE.Mesh(tile, new THREE.MeshBasicMaterial({ color: 0xcbd5e1, side: THREE.DoubleSide })); m.rotation.x = -Math.PI / 2; m.position.set(x, -.49, y); m.userData = { x, y }; hsGrid.add(m); }
-  }
-  if (!hsDyn) { hsDyn = new THREE.Group(); scene.add(hsDyn); }
-  rebuildBlocks(hsBl); drawBlueprint(hsBl); hsClear(); sendSoon();
-}
-function hsClear() {
-  [hsG, hsDyn].forEach(g => { if (g) while (g.children.length) g.remove(g.children[0]); });
-  if (hsGrid) hsGrid.visible = false;
-  hsMk = ''; hsDynKey = ''; hsInfoKey = ''; hsCell = -1; hsBlock = false;
-  const p = $('hsPaint'); if (p) p.remove();
-  const i = $('hsInfo'); if (i) i.style.display = 'none';
-}
-function hsPaint(on) {   // 술래 시야: 배경색 페인트가 번져 3D 화면을 덮음
-  let p = $('hsPaint');
-  if (!p) {
-    if (!on) return;
-    p = document.createElement('div'); p.id = 'hsPaint'; p.style.cssText = 'position:absolute;inset:0;z-index:5;overflow:hidden;pointer-events:none';
-    for (let i = 0; i < 40; i++) { const d = document.createElement('div'), s = 110 + Math.random() * 130, r = () => 40 + Math.random() * 20; d.style.cssText = `position:absolute;left:${Math.random() * 100}%;top:${Math.random() * 100}%;width:${s}px;height:${s}px;margin:-${s / 2}px 0 0 -${s / 2}px;border-radius:${r()}% ${r()}% ${r()}% ${r()}%;background:#f1f5f9;transform:scale(0);transition:transform .5s ${i * .03}s`; p.appendChild(d); }
-    $('stackView').appendChild(p);
-    requestAnimationFrame(() => requestAnimationFrame(() => p.childNodes.forEach(d => { d.style.transform = 'scale(1)'; })));
-    setTimeout(() => { p.style.background = '#f1f5f9'; }, 1800);
-  }
-  p.style.display = on ? 'block' : 'none';
-}
-/* ---------- 도망자 이동 (격자 1칸씩) ---------- */
-function hsDir() {   // 화면(카메라) 기준 W 앞 · S 뒤 · A 왼쪽 · D 오른쪽
-  const k = hsDown, fx = -Math.cos(cameraAngle), fz = -Math.sin(cameraAngle);
-  const f = Math.abs(fx) > Math.abs(fz) ? [Math.sign(fx), 0] : [0, Math.sign(fz)], r = [-f[1], f[0]];
-  if (k.w) return f; if (k.s) return [-f[0], -f[1]]; if (k.d) return r; if (k.a) return [-r[0], -r[1]];
-  return [0, 0];
-}
-function hsMove(dx, dy, dz) {
-  const x = Math.floor(hsCell / 9), y = Math.floor(hsCell / 3) % 3, z = hsCell % 3, nx = x + dx, ny = y + dy, nz = z + dz;
-  if (nx < 0 || nx > 2 || ny < 0 || ny > 2 || nz < 0 || nz > 2) return false;   // 격자 밖으로 안 나감
-  const c = nx * 9 + ny * 3 + nz; if (c === hsCell) return false;
-  if (activeUsers.some(u => u.id !== myId && !u.dead && u.hc === c)) return false;   // 다른 도망자가 있는 칸
-  hsCell = c; hsMoveAt = Date.now(); hsBlock = false; SFX.move(); updatePresence(); return true;
-}
-function hsAct() {   // W A S D 한 칸 · E 위 · Q 아래 · W+E / W+Q 는 앞으로 가며 오르내림
-  if (!gameStarted || gameMode !== 'hide' || !hsState || hsRole() !== 'h' || isDead) return;
-  const ph = hsPhase(); if (ph < 1 || ph > 2 || hsCell < 0 || hsBlock) return;
-  const [dx, dy] = hsDir(), dz = (hsDown.e ? 1 : 0) - (hsDown.q ? 1 : 0);
-  if (!dx && !dy && !dz) return;
-  if (Date.now() - hsMoveAt < (ph === 2 ? HS_STEP / .6 : HS_STEP)) return;   // 추격 중엔 40% 느리게
-  hsMove(dx, dy, dz) || hsMove(dx, dy, 0) || hsMove(0, 0, dz);
-}
-function hsRelease() {   // 블록이 된 상태에서 Space 로 풀기
-  if (!hsBlock || hsRole() !== 'h' || isDead) return;
-  hsBlock = false; hsMoveAt = Date.now(); SFX.pop(); updatePresence();
-}
-/* ---------- 술래 잡기 ---------- */
-function hsClick(ev) {
-  const H = hsState, role = hsRole(); if (!gameStarted || gameMode !== 'hide' || !H || isDead || role !== 's' || hsPhase() !== 2 || hsAtt >= 4) return;
-  const r = renderer.domElement.getBoundingClientRect(), rc = new THREE.Raycaster();
-  let nx = (ev.clientX - r.left) / r.width * 2 - 1, ny = (ev.clientY - r.top) / r.height * 2 - 1;   // 돌아간 화면에서도 클릭 위치 맞춤
-  if (p2On) { const t = nx; nx = ny; ny = -t; } else if (P2) { const t = nx; nx = -ny; ny = t; }
-  rc.setFromCamera(new THREE.Vector2(nx, -ny), camera);
-  const hit = rc.intersectObjects([...blockGroup.children, ...(hsDyn ? hsDyn.children : [])], false)[0]; if (!hit) return;   // 블록/도망자가 아닌 곳은 무시
-  const o = hit.object, q = o.position, cell = o.userData.cell != null ? o.userData.cell : Math.round(q.x) * 9 + Math.round(q.z) * 3 + Math.round(q.y);
-  const u = activeUsers.find(x => H.players.includes(x.id) && !H.seekers.includes(x.id) && !x.dead && x.hc === cell);
-  if (!u) { hsAtt++; SFX.wrong(); showToast(null, '아쉬워요', '아무도 없어요 (기회 ' + (4 - hsAtt) + '번 남음)', '#94a3b8'); return; }   // 빗나가면 기회 1번 소모
-  hsCatch++; myScore += 1; SFX.correct(); updatePresence();   // 잡으면 기회는 그대로
-  const f = fakes.find(x => x.id === u.id); if (f) { f.dead = true; f.diedAt = Date.now(); }
-  try { room.send({ type: 'broadcast', event: 'hscatch', payload: { to: u.id, s: currentSession } }); } catch (er) {}
-  showToast(u.avatarUrl, u.nickname || '익명', '🎯 잡았다! (기회 ' + (4 - hsAtt) + '번 그대로)', '#22c55e');
-}
-/* ---------- 화면 그리기 ---------- */
-function hsAvMat(url) {
-  if (hsMats[url]) return hsMats[url];
-  const m = new THREE.MeshBasicMaterial({ color: 0x94a3b8, transparent: true, side: THREE.DoubleSide }); hsMats[url] = m;
-  try { new THREE.TextureLoader().setCrossOrigin('anonymous').load(url, t => { m.map = t; m.color.set(0xffffff); m.needsUpdate = true; }); } catch (er) {}
-  return m;
-}
-function hsDynRender() {   // 걸어 다니는 도망자는 프로필 사진판, 1.5초 멈춘 도망자는 블록(구조물 안이면 티 안 남)
-  const H = hsState, hid = activeUsers.filter(u => H.players.includes(u.id) && !H.seekers.includes(u.id) && !u.dead && u.hc >= 0);
-  const key = hid.map(u => u.id + ':' + u.hc + ':' + (u.hk ? 1 : 0)).join(',');
-  if (key !== hsDynKey) {
-    hsDynKey = key; while (hsDyn.children.length) hsDyn.remove(hsDyn.children[0]);
-    hid.forEach(u => {
-      const c = u.hc, x = Math.floor(c / 9), y = Math.floor(c / 3) % 3, z = c % 3;
-      if (u.hk) {
-        if (hsCells.includes(c)) return;
-        const m = new THREE.Mesh(hsBox, new THREE.MeshStandardMaterial({ color: S.blockCol })); m.position.set(x, z, y); m.userData = { cell: c, pid: u.id };
-        m.add(new THREE.LineSegments(hsEdge, new THREE.LineBasicMaterial({ color: 0x1e3a8a }))); hsDyn.add(m);
-      } else {
-        const m = new THREE.Mesh(hsPlane, hsAvMat(u.avatarUrl || characterImages[0])); m.position.set(x, z, y); m.userData = { cell: c, pid: u.id, bb: 1 }; hsDyn.add(m);
-      }
-    });
-  }
-  hsDyn.children.forEach(m => { if (m.userData.bb) m.quaternion.copy(camera.quaternion); });   // 사진판은 항상 화면을 보게
-}
-function hsTick() {
-  const H = hsState; if (!H || !blockGroup || !hsCells.length || !hsDyn) return;
-  const role = hsRole(), ph = hsPhase(), e = hostNow() - H.t0, now = Date.now(), sec = t => Math.max(0, Math.ceil(t / 1000));
-  const left = ph === 0 ? sec(HS.card - e) : ph === 1 ? sec(HS_REL - e) : sec(HS_END - e);
-  $('bpView').style.display = (role === 'h' && ph === 0) ? 'flex' : 'none';   // 처음 10초: 도망자만 도면 확인
-  hsPaint(role === 's' && ph < 2);
-  if (role === 'h' && !isDead && ph >= 1 && ph <= 2) {
-    if (hsCell < 0) { hsCell = hsFloor(); hsMoveAt = now; hsBlock = false; updatePresence(); }   // 바닥(1층)에서 시작
-    else if (!hsBlock) { hsAct(); if (now - hsMoveAt >= 1500) { hsBlock = true; SFX.place(); updatePresence(); } }   // 1.5초 가만히 있으면 블록
-  }
-  if (ph === 3 && !hsEnded) { hsEnded = true; if (role === 'h' && !isDead) { myScore += H.n >= 5 ? 2 : 1; sendSoon(); } }   // 끝까지 생존: 1점 (5명부터 2점)
-  if (hsGrid) {
-    hsGrid.visible = ph >= 1 && ph <= 2 && !(role === 's' && ph < 2);
-    const mx = role === 'h' && hsCell >= 0 ? Math.floor(hsCell / 9) : -1, my = role === 'h' && hsCell >= 0 ? Math.floor(hsCell / 3) % 3 : -1;
-    hsGrid.children.forEach(t => t.material.color.set(t.userData.x === mx && t.userData.y === my ? 0xfacc15 : 0xcbd5e1));
-  }
-  hsDynRender();
-  const side = H.players.filter(id => id !== myId && (H.seekers.includes(id) === (role === 's')));
-  const names = side.map(id => { const u = activeUsers.find(x => x.id === id); return u ? `<img src="${esc(u.avatarUrl || characterImages[0])}" style="width:16px;height:16px;border-radius:50%;vertical-align:middle"> ${esc(u.nickname || '익명')}${u.dead ? '💀' : ''}` : ''; }).join(' · ');
-  const pos = role === 'h' && hsCell >= 0 ? `<br>내 좌표: (${Math.floor(hsCell / 9) + 1}, ${Math.floor(hsCell / 3) % 3 + 1}) · ${hsCell % 3 + 1}층 · ${hsBlock ? '🧱 블록' : '🚶 이동 중'}` : '';
-  const info = `<b style="font-size:14px;color:${role === 's' ? '#ef4444' : '#2563eb'}">${role === 's' ? '🔍 당신은 술래' : role === 'h' ? '🏃 당신은 도망자' : '👀 관전'}</b><br>${role === 'w' ? '' : '아군: ' + (names || '없음')}${pos}`;
-  if (info !== hsInfoKey) { hsInfoKey = info; $('hsInfo').innerHTML = info; } $('hsInfo').style.display = 'block';
-  const mk = [];   // 도망자 화면에만: 내 위치(노랑), 아군 위치(초록) — 블록 뒤에 가려도 보임
-  if (role === 'h') { if (!isDead && hsCell >= 0) mk.push([hsCell, 0xfacc15]); side.forEach(id => { const u = activeUsers.find(x => x.id === id); if (u && !u.dead && u.hc >= 0) mk.push([u.hc, 0x22c55e]); }); }
-  const key = mk.map(m => m.join(':')).join(',');
-  if (key !== hsMk) {
-    hsMk = key; if (!hsG) { hsG = new THREE.Group(); scene.add(hsG); }
-    while (hsG.children.length) hsG.remove(hsG.children[0]);
-    const geo = new THREE.BoxGeometry(1.06, 1.06, 1.06), eg = new THREE.EdgesGeometry(geo);
-    mk.forEach(([c, col]) => {
-      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: .35, depthWrite: false, depthTest: false })); m.renderOrder = 10;
-      m.position.set(Math.floor(c / 9), c % 3, Math.floor(c / 3) % 3); hsG.add(m);
-      const l = new THREE.LineSegments(eg, new THREE.LineBasicMaterial({ color: col, depthTest: false })); l.renderOrder = 11; l.position.copy(m.position); hsG.add(l);
-    });
-  }
-  $('cameraStatusBadge').innerText = role === 'w' ? '👀 관전 중' : isDead ? '💀 잡혔어요 · 관전 중' : ph === 3 ? '끝!'
-    : role === 's' ? (ph < 2 ? '🎨 시야 차단 ' + left + '초' : '🔍 술래 · 남은 ' + left + '초')
-    : ph === 0 ? '📋 도면 확인 ' + left + '초' : ph === 1 ? '🧱 숨는 중 ' + left + '초' : '🏃 추격 중 (속도 -40%) · 남은 ' + left + '초';
-  $('quizTitle').innerText = role === 's' ? (ph < 2 ? '잠시 눈이 가려져요' : '의심되는 곳을 클릭! 못 찾으면 기회 소모 (' + (4 - hsAtt) + '번 남음)')
-    : role === 'h' ? (ph === 0 ? '도면을 보고 숨을 곳을 생각하세요' : 'WASD 이동 · E 위 · Q 아래 · 1.5초 멈추면 블록 · Space 해제') : '관전 중';
-  $('feedbackMessage').innerText = '';
-}
-function hsSetRole(seeker) {   // 선생님 단축키: A+F 술래, A+G 도망자
-  const H = hsState, ps = H.players.includes(myId) ? H.players : [...H.players, myId], sk = H.seekers.filter(i => i !== myId);
-  if (seeker) sk.push(myId);
-  hsState = { ...H, players: ps, seekers: sk }; hsCell = -1; hsBlock = false; hsAtt = 0; isDead = false; hsMk = ''; hsInfoKey = ''; hsDynKey = '';
-  updatePresence(); showToast(null, '역할 변경', seeker ? '🔍 술래가 되었어요' : '🏃 도망자가 되었어요', '#f59e0b');
-}
-const hsDown = {};
-addEventListener('keydown', e => {
-  if (/INPUT|TEXTAREA/.test((e.target.tagName || ''))) return;
-  const k = e.key.toLowerCase(); hsDown[k] = true;
-  if (isTeacher && (curStage === 'vote1' || curStage === 'vote3') && hsDown.a && e.key === 'Tab') {   // 투표 중 A+Tab: 숨바꼭질이 뽑히면 내가 무조건 술래
-    e.preventDefault(); hsForce = !hsForce; showToast(null, '술래 확정', hsForce ? '✅ 숨바꼭질이 되면 내가 술래예요' : '❌ 해제했어요', '#f59e0b'); return;
-  }
-  if (isTeacher && iAmHost && gameStarted && gameMode === 'hide' && hsState && hsDown.a && (k === 'f' || k === 'g')) { hsSetRole(k === 'f'); return; }
-  if (gameStarted && gameMode === 'hide') { if (k === ' ') hsRelease(); else if (['w', 'a', 's', 'd', 'e', 'q'].includes(k)) hsAct(); }
-});
-addEventListener('keyup', e => { hsDown[e.key.toLowerCase()] = false; });
-addEventListener('blur', () => { for (const k in hsDown) hsDown[k] = false; });
-
+/* 숨바꼭질 삭제됨 */
 /* ===== 모드 선택 연출: 버튼들이 사라지고 고른 모드만 커지며 가운데로 ===== */
-const MODE_INFO = [['showdown', '쇼다운', 'jMsj2Hr31RAw62EHKQQn'], ['bomb', '폭탄', 'HSFDVYouXjAjgw4uEs1i'], ['speedrun', '스피드런', 'Q9NfQk57PnnpP9SVvyUR'], ['onehit', '한방', 'ZvRjhpftKDfgK4zcyvLQ'], ['stack', '쌓기', 'PQVbThjT3zxxtSMb2Ji8'], ['blueprint', '도면보고 맞추기', 'qRCHU9udC89wwbegbVKw'], ['liar', '라이어', 'y46nReaY9L9cZkjd5x2m'], ['coop', '협동 쌓기', 'v889UjVZ57DW1nNmHPZK']];
+const MODE_INFO = [['showdown', '쇼다운', 'jMsj2Hr31RAw62EHKQQn'], ['bomb', '폭탄', 'iywtfPAAP1aULVTDai7Y'], ['speedrun', '스피드런', 'Q9NfQk57PnnpP9SVvyUR'], ['onehit', '한방', 'ZvRjhpftKDfgK4zcyvLQ'], ['stack', '쌓기', 'PQVbThjT3zxxtSMb2Ji8'], ['blueprint', '도면보고 맞추기', 'qRCHU9udC89wwbegbVKw'], ['liar', '라이어', 'y46nReaY9L9cZkjd5x2m'], ['coop', '협동 쌓기', 'v889UjVZ57DW1nNmHPZK']];
 function showModeReveal(mode) {
   const key = (mode === 'solo' || mode === 'duo') ? 'showdown' : mode, info = MODE_INFO.find(m => m[0] === key); if (!info) return;
   const nm = mode === 'solo' ? '솔로 쇼다운' : mode === 'duo' ? '듀오 쇼다운' : info[1];
@@ -2557,7 +2366,7 @@ function showModeReveal(mode) {
 }
 
 /* ===== 디버그: 모든 변수 표시 ===== */
-const DBG_VARS = ['myId', 'myNickname', 'isTeacher', 'iAmHost', 'hostAt', 'myScore', 'myTroll', 'myLives', 'isDead', 'diedAt', 'myVote', 'myLV', 'gameStarted', 'gameMode', 'phase', 'curStage', 'voteEnd', 'currentSession', 'endedSession', 'endedAt', 'resClosed', 'runEnd', 'teams', 'resultData', 'currentBlocks', 'hasGuessed', 'koState', 'koDeadline', 'koEndAt', 'specId', 'invincible', 'liarState', 'coopState', 'coopRound', 'coopReveal', 'stackH', 'stackT', 'stackCur', 'hsState', 'hsN', 'hsCell', 'hsForce', 'hsAtt', 'hsCatch', 'hsEnded', 'hsBlock', 'hsMoveAt', 'hsRole()', 'hsPhase()', 'isTargetSelectMode', 'pendingAttackType', 'isCameraFrozen', 'hasTripleScoreMultiplier', 'hasShiningEyesBuff', 'activeShiningEyesRound', 'hackMiss', 'cameraAngle', 'uiScale', 'clockOff', 'hostNow()', 'lastHostId', 'noTeacherSince', 'isSubscribed', 'settingsOpen', 'cfgTab', 'selectedImage', 'fakes.length', 'activeUsers.length', 'activeUsers', 'FK', 'S'];
+const DBG_VARS = ['myId', 'myNickname', 'isTeacher', 'iAmHost', 'hostAt', 'myScore', 'myTroll', 'myLives', 'isDead', 'diedAt', 'myVote', 'myLV', 'gameStarted', 'gameMode', 'phase', 'curStage', 'voteEnd', 'currentSession', 'endedSession', 'endedAt', 'resClosed', 'runEnd', 'teams', 'resultData', 'currentBlocks', 'hasGuessed', 'koState', 'koDeadline', 'koEndAt', 'specId', 'invincible', 'liarState', 'coopState', 'coopRound', 'coopReveal', 'stackH', 'stackT', 'stackCur', /**/ 'isTargetSelectMode', 'pendingAttackType', 'isCameraFrozen', 'hasTripleScoreMultiplier', 'hasShiningEyesBuff', 'activeShiningEyesRound', 'hackMiss', 'cameraAngle', 'uiScale', 'clockOff', 'hostNow()', 'lastHostId', 'noTeacherSince', 'isSubscribed', 'settingsOpen', 'cfgTab', 'selectedImage', 'fakes.length', 'activeUsers.length', 'activeUsers', 'FK', 'S'];
 function dbgVarsRender() {
   const el = $('dbgVars'); if (!el) return;
   const fmt = v => { try { if (v === undefined) return 'undefined'; if (typeof v === 'function') return 'ƒ'; const s = typeof v === 'object' ? JSON.stringify(v) : String(v); return s.length > 300 ? s.slice(0, 300) + '…(' + s.length + '자)' : s; } catch (er) { return String(v); } };
@@ -3091,7 +2900,7 @@ addEventListener('keydown', e => {
 const INFO_MODES = [
   [SC('jMsj2Hr31RAw62EHKQQn'), '솔로 쇼다운', ['개인전', '점수'], '블록 개수를 맞히면 점수 + 카드! 카드로 친구를 방해할 수도 있어요.', '정답 → 카드 고르기'],
   ['https://gcdnb.pbrd.co/images/B1HRT4kn89U_.png', '듀오 쇼다운', ['팀전', '2인 1조'], '2명씩 팀을 짜서 팀 점수로 대결! (홀수면 한 팀은 3명) 같은 팀끼리는 공격할 수 없어요.', '상대 팀만 지목할 수 있어요'],
-  [SC('HSFDVYouXjAjgw4uEs1i'), '폭탄', ['생존', '눈치'], '폭탄을 넘기세요! 시간이 끝나면 터져서 탈락. 빛나는 블록은 빼고 세요.', '넘길 때마다 시간 -30%'],
+  [SC('iywtfPAAP1aULVTDai7Y'), '폭탄', ['생존', '눈치'], '폭탄을 넘기세요! 시간이 끝나면 터져서 탈락. 빛나는 블록은 빼고 세요.', '넘길 때마다 시간 -30%'],
   [SC('Q9NfQk57PnnpP9SVvyUR'), '스피드런', ['개인전', '속도'], '블록이 아주 많아요. 15문제를 먼저 풀면 끝!', '카드 없이 바로 다음 문제'],
   [SC('ZvRjhpftKDfgK4zcyvLQ'), '한방', ['생존'], '한 번이라도 틀리면 바로 탈락. 끝까지 살아남으세요.', '탈락해도 ◀ ▶ 로 친구 관전'],
   [SC('PQVbThjT3zxxtSMb2Ji8'), '쌓기', ['개인전', '조작'], '위에서 본 모양대로 블록을 쌓아요.', 'W A S D 이동 · Space 쌓기 · Q 빼기'],
