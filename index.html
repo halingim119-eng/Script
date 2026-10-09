@@ -116,7 +116,7 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 #resultOverlay{--pw:min(1140px,98vw);position:fixed;inset:0;z-index:3000;display:none;flex-direction:column;align-items:center;justify-content:flex-start;background:radial-gradient(ellipse at 50% 25%,#ffffff 0%,#eef2ff 100%);overflow:hidden;font-family:'Malgun Gothic',sans-serif}
 #resultOverlay.active{display:flex;animation:resFade 1s ease}
 @keyframes resFade{from{opacity:0}to{opacity:1}}
-#fxCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+#fxCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8}
 .res-title{color:#1e293b;font-size:4.5vh;font-weight:bold;margin-top:2vh;height:6vh;text-shadow:0 2px 0 #fde68a}
 .podium{position:relative;width:var(--pw);height:60vh;margin-top:3vh;display:flex;gap:1.5vh;justify-content:center;align-items:flex-end}
 .pod-col{position:relative;flex:1 1 0;max-width:calc((var(--pw) - 3vh) / 3);height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
@@ -321,6 +321,45 @@ body.bshake{animation:shk .08s linear 14}
 #tutRoot kbd{display:inline-block;min-width:20px;padding:1px 6px;border:1px solid #cbd5e1;border-bottom-width:2px;border-radius:5px;background:#f8fafc;font:600 11px Consolas,monospace;color:#334155;text-align:center}
 .tut-tag{font-size:10px;font-weight:bold;color:#2563eb;background:#dbeafe;border-radius:8px;padding:1px 9px}
 .tut-dots{display:flex;gap:4px;align-items:center}
+.tut-c1{order:2}.tut-c2{order:1}
+#comboBadge{display:none;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:bold;color:#fff;background:#94a3b8;transition:background .2s}
+@keyframes cbBdg{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+#comboStage{display:none;position:absolute;inset:0;z-index:7;flex-direction:column;align-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 75%,#3b0764 0%,#12061f 55%,#030007 100%);opacity:0;transition:opacity .6s}
+#comboStage.on{display:flex}
+#comboStage.vis{opacity:1}
+.cb-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.cb-bg::before{content:"";position:absolute;left:50%;top:78%;width:200vmax;height:200vmax;margin:-100vmax 0 0 -100vmax;background:repeating-conic-gradient(rgba(251,146,60,.14) 0 6deg,transparent 6deg 18deg);-webkit-mask:radial-gradient(circle,#000 5%,transparent 60%);mask:radial-gradient(circle,#000 5%,transparent 60%);animation:tSpin 14s linear infinite}
+.cb-title{position:relative;margin-top:2.2vh;font-size:5.2vh;font-weight:900;letter-spacing:.3vh;background:linear-gradient(90deg,#fde047,#fb923c,#f43f5e,#fb923c,#fde047);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:rbs 2s linear infinite;filter:drop-shadow(0 0 1.4vh rgba(251,146,60,.7))}
+.cb-sub{position:relative;font-size:2.4vh;color:#e9d5ff;height:3.4vh;margin-top:.4vh;font-weight:bold}
+.cb-row{position:relative;display:flex;gap:4vh;align-items:flex-end;justify-content:center;margin-top:1.2vh;height:76vh}
+#comboStage.shk .cb-row{animation:cbSh .07s linear infinite}
+@keyframes cbSh{0%,100%{transform:translate(0,0)}25%{transform:translate(-.3vh,.2vh)}50%{transform:translate(.3vh,-.3vh)}75%{transform:translate(-.2vh,-.2vh)}}
+.cb-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;width:20vh;height:100%}
+.cb-num{font-size:6.4vh;font-weight:900;color:#93c5fd;font-variant-numeric:tabular-nums;text-shadow:0 0 1.6vh currentColor;height:8.4vh;line-height:8.4vh;transform-origin:bottom center}
+.cb-num.fin{animation:cbPop .5s cubic-bezier(.2,1.8,.4,1) both}
+@keyframes cbPop{0%{transform:scale(1)}40%{transform:scale(1.7)}100%{transform:scale(1.15)}}
+.cb-tower{position:relative;display:flex;flex-direction:column-reverse;align-items:center;justify-content:flex-start;width:12vh;height:36vh;border-bottom:.6vh solid #475569}
+.cb-blk{flex:none;width:100%;margin-top:.2vh;border-radius:.6vh;background:var(--c);box-shadow:inset 0 .5vh 0 rgba(255,255,255,.35),inset 0 -.4vh 0 rgba(0,0,0,.3),0 0 1vh var(--c);animation:cbBlk .2s ease-out}
+@keyframes cbBlk{from{transform:scaleX(1.25);filter:brightness(2)}to{transform:none;filter:none}}
+.cb-fl{flex:none;line-height:1;margin-bottom:-.5vh;animation:cbFlk .25s ease-in-out infinite alternate}
+@keyframes cbFlk{from{transform:scale(.9) rotate(-6deg)}to{transform:scale(1.15) rotate(6deg)}}
+.cb-av{width:13vh;height:13vh;min-width:60px;min-height:60px;margin-top:1.4vh;object-fit:contain;background:#fff;border-radius:50%;border:.7vh solid #64748b;filter:brightness(0);transform:scale(.8);transition:filter .5s,box-shadow .5s,transform .6s cubic-bezier(.2,1.6,.4,1)}
+.cb-col.on .cb-av{filter:none;transform:none}
+.cb-col.r1.on .cb-av{border-color:#facc15;box-shadow:0 0 5vh 1.4vh rgba(250,204,21,.85)}
+.cb-col.r2.on .cb-av{border-color:#e2e8f0;box-shadow:0 0 3vh .8vh rgba(226,232,240,.6)}
+.cb-col.r3.on .cb-av{border-color:#fb923c;box-shadow:0 0 3vh .8vh rgba(251,146,60,.6)}
+.cb-nm{height:3.6vh;line-height:3.6vh;margin-top:.8vh;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:2.8vh;font-weight:bold;color:#a78bfa}
+.cb-col.on .cb-nm{color:#fff}
+.cb-sc{height:3vh;font-size:2.2vh;font-weight:bold;color:#fbbf24}
+.cb-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 45%,rgba(220,38,38,.6) 100%);opacity:0}
+.cb-vig.hb{animation:cbHb .6s ease-in-out infinite}
+@keyframes cbHb{0%,100%{opacity:.1}50%{opacity:.9}}
+.cb-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.cb-flash.f{animation:cbFl .6s ease-out}
+@keyframes cbFl{0%{opacity:.8}100%{opacity:0}}
+.cb-ban{position:absolute;left:0;right:0;top:14vh;text-align:center;font-size:7vh;font-weight:900;opacity:0;pointer-events:none;background:linear-gradient(90deg,#f43f5e,#f59e0b,#fde047,#22c55e,#06b6d4,#a855f7,#f43f5e);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 2vh rgba(250,204,21,.9))}
+.cb-ban.on{opacity:1;animation:cbBan .6s cubic-bezier(.2,1.8,.4,1) both,rbs .8s linear infinite}
+@keyframes cbBan{from{transform:scale(.1) rotate(-12deg)}to{transform:none}}
 .tdot{width:7px;height:7px;border-radius:4px;background:#e2e8f0;cursor:pointer;transition:all .25s}
 .tdot.on{width:18px;background:#2563eb}
 .tut-pg{height:3px;background:#e2e8f0;border-radius:2px;overflow:hidden;flex:none}
@@ -553,7 +592,7 @@ body.bshake{animation:shk .08s linear 14}
 
     <div id="gameRankingUI" class="game-right-layout" style="display:none;">
       <div class="card tall-card">
-        <div class="board-title" id="rankingTitle">🏆 랭킹</div>
+        <div style="display:flex;align-items:center;gap:8px"><div class="board-title" id="rankingTitle">🏆 랭킹</div><div id="comboBadge"></div></div>
         <div class="rank-list" id="rankingList"></div><div id="chatBox"><div id="chatMsgs"></div><div class="chat-in"><input id="chatInput" maxlength="60" placeholder="메시지 입력" autocomplete="off"><button id="chatSend">전송</button></div></div>
       </div>
       <div class="card short-card">
@@ -573,6 +612,7 @@ body.bshake{animation:shk .08s linear 14}
   <div id="strobe"></div><div id="resBanner"></div>
   <div class="podium" id="podium"></div>
   <div class="podium troll-pod" id="trollPodium"></div>
+  <div id="comboStage"></div>
   <div class="res-panel" id="resPanel"><div class="res-list" id="resList"></div><button class="res-lobby" id="lobbyBtn">로비로</button></div>
 </div>
 <div class="modal-overlay" id="pwModalOverlay"><div class="pw-box"><div class="pw-title" id="pwTitle"></div><div id="pwChoices" style="width:100%;display:flex;flex-direction:column;gap:8px;"></div></div></div>
@@ -610,7 +650,7 @@ let selectedImage = characterImages[Math.floor(Math.random() * characterImages.l
 $('cardImage').src = selectedImage;
 
 let isTeacher = false, myNickname = '익명', gameStarted = false, myScore = 0;
-let myTroll = 0;   // 내가 다른 사람을 방해한 횟수
+let myTroll = 0, myCombo = 0, myMaxCombo = 0;   // 내가 다른 사람을 방해한 횟수
 let currentBlocks = [], currentSession = 0, hasGuessed = false, activeUsers = [];
 let pendingAttackType = null, isTargetSelectMode = false;
 let isCameraFrozen = false, hasTripleScoreMultiplier = false, hasShiningEyesBuff = false, activeShiningEyesRound = false;
@@ -618,6 +658,10 @@ let isCameraFrozen = false, hasTripleScoreMultiplier = false, hasShiningEyesBuff
 let phase = '', voteEnd = 0, myVote = '', curStage = '', gameMode = 'solo', teams = {}, resultData = null;
 let myLives = 3, isDead = false, diedAt = 0, koDeadline = 0, specId = '', specKey = '', specPanelKey = '', invincible = false, koEndAt = 0;
 const TEAM_NAMES = ['🔴 레드팀', '🔵 블루팀'], TEAM_COLORS = ['#ef4444', '#2563eb'];
+const TEAM_PAL = ['#ef4444', '#2563eb', '#16a34a', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
+const teamIds = (us = activeUsers) => [...new Set(us.map(u => teams[u.id]).filter(k => k !== undefined))].sort((a, b) => a - b);
+const teamColor = k => gameMode === 'knockout' ? TEAM_COLORS[k] : TEAM_PAL[k % TEAM_PAL.length];
+const teamName = (k, us = activeUsers) => gameMode === 'knockout' ? TEAM_NAMES[k] : '🤝 ' + (us.filter(u => teams[u.id] === k).map(u => u.nickname || '익명').join(' · ') || (k + 1) + '팀');
 let uiScale = 1, runEnd = 0, hackMiss = 0;
 const CFG_DEF = { voteSec: 10, score: 10, blkLo: 5, blkHi: 9, choices: 4, cam: 0.012, wrongMs: 2000, cards: true, koSec: 4, koLives: 3, koAutoEnd: true, hackProb: 30, hackPity: 2, hackMin: 10, hackMax: 60, hackMult: 2, coopSwap: 60, spSec: 90, spBlkLo: 11, spBlkHi: 17, spCam: 0.02, bpRevealMs: 3800, liarSec: 25, liarMax: 8, liarBp: 50, liarLeft: 2, liarChat: true, c_confusion: true, c_taunt: true, c_freeze: true, c_lightning: true, c_shining_eyes: true, glitchSec: 4, tauntSec: 2.5, freezeSec: 3 };
 /* 설정 정의: [키,이름,종류(n/b/c/t),기본값,최소,최대,증감,단위,CSS선택자,CSS속성] */
@@ -877,7 +921,7 @@ function liarResolve(users) {
 const FK = { mark: ',', vote: true, play: true, rate: 20, pts: 0, trRate: 10, seq: 0, last: 0, log: [] };
 let fakes = [];
 const FK_NAMES = ['민준','서연','지호','하은','도윤','서윤','시우','지우','예준','수아','주원','하윤','건우','지민','현우','다은','유준','채원','선우','지안'];
-const fakePub = f => ({ id: f.id, nickname: f.nickname, avatarUrl: f.avatarUrl, score: f.score, isTeacher: false, lives: f.lives, dead: f.dead, diedAt: f.diedAt, tr: f.tr || 0, vote: f.vote, lv: f.lv, cr: 0, cs: 0, joinedAt: f.joinedAt, hb: Date.now(), fk: 1, hc: f.hc == null ? -1 : f.hc, hk: f.hc >= 0 });
+const fakePub = f => ({ id: f.id, nickname: f.nickname, avatarUrl: f.avatarUrl, score: f.score, isTeacher: false, lives: f.lives, dead: f.dead, diedAt: f.diedAt, tr: f.tr || 0, cb: f.cb || 0, mc: f.mc || 0, vote: f.vote, lv: f.lv, cr: 0, cs: 0, joinedAt: f.joinedAt, hb: Date.now(), fk: 1, hc: f.hc == null ? -1 : f.hc, hk: f.hc >= 0 });
 const fakeLabel = us => isTeacher ? us.map(u => u.fk ? { ...u, nickname: (u.nickname || '익명') + FK.mark } : u) : us;   // 표시 기호는 선생님 화면에만
 function fkSet(n) {
   n = Math.max(0, Math.min(60, n | 0));
@@ -903,7 +947,7 @@ function fakeTick() {   // 가짜 유저가 투표하고 점수를 얻고 탈락
       if (!f.vote && now >= f.va) { const o = curStage === 'vote1' ? ['showdown', 'bomb', 'speedrun', 'onehit', 'stack', 'blueprint', 'liar', 'coop'] : ['solo', 'duo']; f.vote = curStage + ':' + o[Math.floor(Math.random() * o.length)]; ch = true; }
     } else if (!curStage && f.vs) { f.vs = ''; f.vote = ''; ch = true; }
     if (!gameStarted || !FK.play) return;
-    if (f.sess !== currentSession) { f.sess = currentSession; f.score = f.s0 || 0; f.tr = f.t0 || 0; f.dead = false; f.lives = f.l0 || maxLives(); f.lv = ''; f.kr = 0; f.hc = -1; ch = true; }
+    if (f.sess !== currentSession) { f.sess = currentSession; f.score = f.s0 || 0; f.tr = f.t0 || 0; f.cb = 0; f.mc = 0; f.dead = false; f.lives = f.l0 || maxLives(); f.lv = ''; f.kr = 0; f.hc = -1; ch = true; }
     if (gameMode === 'knockout' && koState) {
       if (f.kr !== koState.round) { f.kr = koState.round; f.lives = f.l0 || maxLives(); f.dead = false; ch = true; }
       else if (!f.dead && !koState.over && now > koState.startAt + 1500 && Math.random() < p / 2) { if (--f.lives <= 0) { f.lives = 0; f.dead = true; f.diedAt = now; } ch = true; }
@@ -916,7 +960,7 @@ function fakeTick() {   // 가짜 유저가 투표하고 점수를 얻고 탈락
       const L = liarState; if (!L || L.winner) return;
       const r = L.round, al = L.players.filter(i => !L.out.includes(i));
       if (al.includes(f.id) && !String(f.lv).startsWith(r + ':') && Math.random() < .3) { const c = al.filter(i => i !== f.id); f.lv = r + ':' + (c.length && Math.random() > .2 ? c[Math.floor(Math.random() * c.length)] : 'skip'); ch = true; }
-    } else if (!f.dead && ['solo', 'duo', 'speedrun', 'blueprint', 'stack'].includes(gameMode) && Math.random() < p * (gameMode === 'speedrun' ? 2 : 1)) { f.score += FK.pts || S.score; if (Math.random() * 100 < FK.trRate) f.tr = (f.tr || 0) + 1; ch = true; }
+    } else if (!f.dead && ['solo', 'duo', 'speedrun', 'blueprint', 'stack'].includes(gameMode) && Math.random() < p * (gameMode === 'speedrun' ? 2 : 1)) { f.cb = (f.cb || 0) + 1; f.mc = Math.max(f.mc || 0, f.cb); f.score += (FK.pts || S.score) + 0.5 * (f.cb - 1); if (Math.random() < .12) f.cb = 0; if (Math.random() * 100 < FK.trRate) f.tr = (f.tr || 0) + 1; ch = true; }
   });
   if (ch) sendSoon();
 }
@@ -1026,7 +1070,7 @@ function getMyPayload() {
     isTeacher, gameStarted: isTeacher && gameStarted,
     phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
     mode: isTeacher ? gameMode : '', teams: isTeacher ? teams : null, result: isTeacher ? resultData : null,
-    lives: myLives, dead: isDead, diedAt, tr: myTroll, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
+    lives: myLives, dead: isDead, diedAt, tr: myTroll, cb: myCombo, mc: myMaxCombo, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
     runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, bomb: isTeacher ? bombState : null, hs: isTeacher ? hsState : null, hc: hsCell, hk: hsBlock, lv: myLV, ko: isTeacher ? koState : null,
     vote: myVote,
     host: isTeacher && iAmHost, hostAt: isTeacher ? hostAt : 0, cfg: isTeacher ? cfgDiff() : null, coop: isTeacher ? coopState : null, cr: coopRound, cs: currentSession,
@@ -1109,7 +1153,7 @@ function startLocal(session) {
   const fresh = session !== currentSession;
   currentSession = session;
   gameStarted = true; myVote = ''; phase = isTeacher ? 'play' : phase; resultData = null; isTargetSelectMode = false;
-  if (fresh) { myLV = ''; myScore = 0; myTroll = 0; coopRound = 0; coopLog = []; coopReveal = false; myLives = maxLives(); hackMiss = 0; cameraAngle = Math.PI / 2; isDead = false; diedAt = 0; specId = ''; specKey = ''; specPanelKey = ''; playAt(session + 600, () => SFX.start()); if (hostNow() - session < 6000) showModeReveal(gameMode); }
+  if (fresh) { myLV = ''; myScore = 0; myTroll = 0; myCombo = 0; myMaxCombo = 0; coopRound = 0; coopLog = []; coopReveal = false; myLives = maxLives(); hackMiss = 0; cameraAngle = Math.PI / 2; isDead = false; diedAt = 0; specId = ''; specKey = ''; specPanelKey = ''; playAt(session + 600, () => SFX.start()); if (hostNow() - session < 6000) showModeReveal(gameMode); }
   closeResult();   // 시상식/투표 화면이 떠 있으면 닫고 게임 화면으로
   applyUIState(true);
   $('koHud').style.display = (['knockout', 'onehit', 'speedrun', 'liar', 'bomb'].includes(gameMode) && !isDead) ? 'block' : 'none';
@@ -1176,8 +1220,8 @@ function teacherTick(users) {
     let changed = false;
     users.forEach(u => {
       if (teams[u.id] !== undefined) return;
-      const c = [0, 0]; users.forEach(x => { if (teams[x.id] !== undefined) c[teams[x.id]]++; });
-      teams[u.id] = c[0] <= c[1] ? 0 : 1; changed = true;
+      const c = {}; users.forEach(x => { if (teams[x.id] !== undefined) c[teams[x.id]] = (c[teams[x.id]] || 0) + 1; }); const one = Object.keys(c).find(k => c[k] < 2);
+      teams[u.id] = one !== undefined ? +one : Math.max(-1, ...Object.keys(c).map(Number)) + 1; changed = true;
     });
     if (changed) sendSoon();
   }
@@ -1225,7 +1269,11 @@ function startMode(mode, users) {
   if (!isTeacher) return;
   gameMode = mode;
   teams = {};
-  if (mode === 'duo' || mode === 'knockout') {                               // 랜덤으로 섞어 반반 (홀수면 남는 1명은 랜덤 팀)
+  if (mode === 'duo') {   // 2명씩 팀 (홀수면 남는 1명은 마지막 팀에 합류 → 3명)
+    const ids = users.map(u => u.id).sort(() => Math.random() - 0.5), nt = Math.max(1, Math.floor(ids.length / 2));
+    ids.forEach((id, i) => { teams[id] = Math.min(Math.floor(i / 2), nt - 1); });
+  }
+  if (mode === 'knockout') {                               // 랜덤으로 섞어 반반 (홀수면 남는 1명은 랜덤 팀)
     const off = Math.random() < 0.5 ? 0 : 1;
     users.map(u => u.id).sort(() => Math.random() - 0.5).forEach((id, i) => { teams[id] = (i + off) % 2; });
   }
@@ -1260,7 +1308,7 @@ function startMode(mode, users) {
 
 async function teacherEndGame() {
   if (!isTeacher || !gameStarted) return;
-  resultData = buildResult(); resultData.troll = buildTroll(); resultData.troll.fx = [true, true, false]; const res = resultData;
+  resultData = buildResult(); resultData.troll = buildTroll(); resultData.combo = buildCombo(); resultData.troll.fx = [true, true, false]; const res = resultData;
   endGameLocal(); showResult(res); updatePresence();
   try { await room.send({ type: 'broadcast', event: 'game_control', payload: { action: 'end', result: res } }); } catch (err) {}
 }
@@ -1417,14 +1465,14 @@ function renderRankingList(users) {
     }).join('');
   } else if (duo) {
     $('rankingTitle').innerHTML = `🏆 팀 랭킹`;
-    html = [0, 1].map(k => {
+    html = teamIds(users).map(k => {
       const m = users.filter(u => teams[u.id] === k);
       return { k, m, score: gameMode === 'knockout' ? ((koState && koState.wins[k]) || 0) : m.reduce((s, u) => s + (u.score || 0), 0) };
     }).sort((a, b) => b.score - a.score).map((t, i) => `
-      <div class="rank-item" style="border:2px solid ${TEAM_COLORS[t.k]};">
-        <div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2'][i]}">${i + 1}등</span>
-          <span>${TEAM_NAMES[t.k]}${teams[myId] === t.k ? ' (내 팀)' : ''}</span>
-          <span style="color:#94a3b8;font-size:11px;">${gameMode === 'knockout' ? '생존 ' + t.m.filter(u => !u.dead).length + '/' + t.m.length : t.m.length + '명'}</span></div>
+      <div class="rank-item" style="border:2px solid ${teamColor(t.k)};">
+        <div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc'}">${i + 1}등</span>
+          <span>${esc(teamName(t.k, users))}${teams[myId] === t.k ? ' (내 팀)' : ''}</span>
+          <span style="color:#94a3b8;font-size:11px;">${gameMode === 'knockout' ? '생존 ' + t.m.filter(u => !u.dead).length + '/' + t.m.length : '🔥' + Math.max(0, ...t.m.map(u => u.cb || 0)) + ' · ' + t.m.length + '명'}</span></div>
         <span style="color:#334155;font-size:14px;">${gameMode === 'knockout' ? '🏆' + t.score + '승' : t.score + '점'}</span>
       </div>`).join('');
   } else {
@@ -1433,7 +1481,7 @@ function renderRankingList(users) {
       const cls = ['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc';
       return `<div class="rank-item">
         <div class="user-info"><span class="rank-badge ${cls}">${i + 1}등</span>${av(u)}<span>${esc(u.nickname || '익명')}</span></div>
-        <span style="color:#64748b;font-size:12px;">${ko ? (u.dead ? '💀 ' : '❤️'.repeat(Math.max(0, u.lives ?? 3)) + ' ') : ''}${u.score || 0}점</span>
+        <span style="color:#64748b;font-size:12px;">${ko ? (u.dead ? '💀 ' : '❤️'.repeat(Math.max(0, u.lives ?? 3)) + ' ') : ''}${(u.cb || 0) > 0 ? '🔥' + u.cb + ' ' : ''}${u.score || 0}점</span>
       </div>`;
     }).join('');
   }
@@ -1484,15 +1532,15 @@ function setupChoices(correct) {
       const sess = currentSession;
       if (num === correct) {
         btn.classList.add('correct'); SFX.correct();
-        let gain = S.score;
-        if (hasTripleScoreMultiplier) { gain = S.score * S.triple; hasTripleScoreMultiplier = false; fb.innerText = '정답! ⚡벼락치기 (+' + gain + '점)'; }
+        let gain = S.score + (gameMode === 'speedrun' ? 0 : 0.5 * myCombo); myCombo++; myMaxCombo = Math.max(myMaxCombo, myCombo);
+        if (hasTripleScoreMultiplier) { gain *= S.triple; hasTripleScoreMultiplier = false; fb.innerText = '정답! ⚡벼락치기 (+' + gain + '점)'; }
         else fb.innerText = gameMode === 'speedrun' ? '정답! ⚡' : '정답! 카드를 고르세요';
         fb.style.color = '#22c55e';
         myScore += gain; updatePresence();
         if (gameMode === 'speedrun') setTimeout(() => { if (gameStarted && sess === currentSession) nextProblem(); }, 350);   // 스피드런: 카드 없이 바로 다음 문제
         else setTimeout(openCardModal, S.cardDelay);   // 카드를 고르면 다음 문제로 넘어감
       } else {
-        btn.classList.add('wrong'); SFX.wrong();
+        btn.classList.add('wrong'); SFX.wrong(); myCombo = 0; sendSoon();
         fb.innerText = `땡! 정답은 ${correct}개`; fb.style.color = '#ef4444';
         if (gameMode === 'onehit' || gameMode === 'bomb') { myLives = 0; renderHud(); die(); updatePresence(); return; }
         if (gameMode === 'knockout' && S.koWrongLife > 0) { myLives -= S.koWrongLife; renderHud(); if (myLives <= 0) { myLives = 0; die(); updatePresence(); return; } updatePresence(); }   // 한방: 틀리면 즉시 탈락
@@ -1613,7 +1661,7 @@ function stackAct(k) {
   let same = true; for (let x = 0; x < 3; x++) for (let y = 0; y < 3; y++) if (stackH[x][y] !== stackT[x][y]) same = false;
   if (gameMode === 'coop') { if (k === 'submit') coopSubmit(same); return; }
   if (!same) return;
-  hasGuessed = true; SFX.correct(); myScore += S.score; updatePresence();
+  hasGuessed = true; SFX.correct(); myScore += S.score + 0.5 * myCombo; myCombo++; myMaxCombo = Math.max(myMaxCombo, myCombo); updatePresence();
   const fb = $('feedbackMessage'); fb.innerText = '완성! 카드를 고르세요'; fb.style.color = '#22c55e';
   setTimeout(openCardModal, S.cardDelay);
 }
@@ -1960,6 +2008,9 @@ const SFX = (() => {
     siren: n => { for (let i = 0; i < n; i++) { T(700, .3, 'sawtooth', .06, i * .6, 1300); T(1300, .3, 'sawtooth', .06, i * .6 + .3, 700); } }
   });
   Object.assign(X, {
+    cbTick: p => { T(500 + p * 1100, .05, 'square', .05); T(1000 + p * 2200, .04, 'triangle', .03, .01); },
+    cbLock: r => { K(0, .7, 190, 35, .3); Z(.3, .25, 0, 'lowpass', 4000, 200); CH(r === 0 ? [523, 659, 784, 1047] : [440, 554, 659], .6, 0, .09, 'sawtooth', 3400); BL(r === 0 ? 2093 : 1568, .04, .07, .7); },
+    cbSlam: () => { K(0, 1, 140, 22, .7); Z(1.2, .4, 0, 'lowpass', 2600, 60); Z(.8, .2, .05, 'highpass', 5000, 9500); T(55, .9, 'sawtooth', .12, 0, 25); },
     podRise: () => { V(150, .5, 0, .09, 'sawtooth', 3200, 700); T(300, .45, 'triangle', .07, 0, 1400); Z(.5, .1, 0, 'highpass', 1500, 8000); },
     podHit: r => { K(0, .8, 180, 32, .35); Z(.3, .32, 0, 'lowpass', 4000, 200); CH(r === 0 ? [523, 659, 784, 1047] : r === 1 ? [440, 554, 659] : [392, 494, 587], .55, 0, .09, 'sawtooth', 3400); BL(r === 0 ? 2093 : r === 1 ? 1760 : 1568, .04, .07, .7); BL(r === 0 ? 2637 : 2093, .11, .05, .7); Z(.5, .1, .03, 'highpass', 5000, 9500); }
   });
@@ -2013,8 +2064,8 @@ function buildResult() {
   const us = collectUsers().filter(u => gameMode !== 'hide' || (hsState && hsState.players.includes(u.id))), duo = gameMode === 'duo' || gameMode === 'knockout', ko = gameMode === 'knockout' || gameMode === 'onehit' || gameMode === 'bomb';
   const r = { session: currentSession, at: hostNow(), mode: gameMode, duo };
   if (duo) {
-    r.teams = [0, 1].map(k => { const m = us.filter(u => teams[u.id] === k); return { k, m: m.map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: u.score || 0 })), score: gameMode === 'knockout' ? ((koState && koState.wins[k]) || 0) : m.reduce((s, u) => s + (u.score || 0), 0) }; }).sort((a, b) => b.score - a.score);
-    r.podium = r.teams.map(t => ({ n: TEAM_NAMES[t.k], a: (t.m[0] || {}).a, s: t.score }));
+    r.teams = teamIds(us).map(k => { const m = us.filter(u => teams[u.id] === k); return { k, name: teamName(k, us), color: teamColor(k), m: m.map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: u.score || 0 })), score: gameMode === 'knockout' ? ((koState && koState.wins[k]) || 0) : m.reduce((s, u) => s + (u.score || 0), 0) }; }).sort((a, b) => b.score - a.score);
+    r.podium = r.teams.map(t => ({ n: t.name, a: (t.m[0] || {}).a, s: t.score }));
   } else {
     r.list = us.map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, s: (u.score || 0) + ((liarState && liarState.pts && liarState.pts[u.id]) || 0), dead: u.dead, d: u.diedAt || 0 }))
       .sort((a, b) => ko ? ((a.dead ? 1 : 0) - (b.dead ? 1 : 0) || b.d - a.d || b.s - a.s) : b.s - a.s);
@@ -2034,7 +2085,77 @@ function buildTroll() {
   }
   return { podium: us.slice(0, 3) };
 }
-const podHtml = (p, r, tr) => `<div class="pod-col r${r}"><div class="beam"></div><img class="pod-avatar" src="${esc(p.a || characterImages[0])}" alt=""><div class="pod-name">${esc(p.n)}</div><div class="pod-score">${tr ? '' : p.s + '점'}</div><div class="pod-block">${r}</div></div>`;
+const podHtml = (p, r, tr) => `<div class="pod-col r${r}"><div class="beam"></div><img class="pod-avatar" src="${esc(p.a || characterImages[0])}" alt=""><div class="pod-name">${esc(p.n)}</div><div class="pod-score">${tr ? '😈 ' + (p.tr ? p.tr + '번 방해' : '운명의 트롤') : p.s + '점'}</div><div class="pod-block">${r}</div></div>`;
+/* ===== 콤보 HUD ===== */
+let lastCb = -1;
+function comboHud() {
+  const b = $('comboBadge'); if (!b) return;
+  const on = gameStarted && !['liar', 'coop', 'hide'].includes(gameMode);
+  b.style.display = on ? 'inline-block' : 'none'; if (!on) { lastCb = -1; return; }
+  if (myCombo === lastCb) return;
+  const c = myCombo, up = c > lastCb; lastCb = c;
+  b.style.background = c >= 10 ? '#dc2626' : c >= 5 ? '#f59e0b' : c >= 1 ? '#2563eb' : '#94a3b8';
+  b.textContent = c ? '🔥 ' + c + '콤보 · +' + (c * 0.5) + '점' : '콤보 0';
+  if (up && c) { b.style.animation = 'none'; void b.offsetWidth; b.style.animation = 'cbBdg .35s ease'; }
+}
+setInterval(comboHud, 120);
+/* ===== 콤보 단상식: 블록 탑 레이스 → 3등·2등 확정 → 심장박동 → 1등 대폭발 ===== */
+let cbRun = 0;
+function cbReset() { cbRun++; const s = $('comboStage'); if (s) { s.className = ''; s.innerHTML = ''; } }
+function buildCombo() {
+  const us = collectUsers().filter(u => (u.mc || 0) >= 2).sort((a, b) => (b.mc || 0) - (a.mc || 0) || (b.score || 0) - (a.score || 0)).slice(0, 3);
+  return us.length ? us.map(u => ({ n: u.nickname || '익명', a: u.avatarUrl, c: u.mc })) : null;
+}
+function cbStart(L) {
+  const s = $('comboStage'); if (!s) return;
+  const tk = ++cbRun, N = L.length, c = L.map(x => x.c), c1 = c[0], c2 = N > 1 ? c[1] : 0, R = 6200, sp = N > 1 ? .5 : .06;
+  const BH = Math.max(.5, Math.min(5, 30 / c1 - .2)), COL = ['#facc15', '#cbd5e1', '#fb923c'];
+  const heat = f => 'hsl(' + (210 + 150 * Math.min(1, f)) + ',95%,60%)';
+  const T2 = (f, d) => setTimeout(() => { if (tk === cbRun) f(); }, d);
+  s.innerHTML = '<div class="cb-bg"></div><div class="cb-title">🔥 COMBO 단상식</div><div class="cb-sub" id="cbSub">가장 긴 콤보를 쌓은 사람은?</div><div class="cb-row">'
+    + [1, 0, 2].filter(i => L[i]).map(i => `<div class="cb-col r${i + 1}" id="cbc${i}"><div class="cb-num" id="cbn${i}">0</div><div class="cb-tower" id="cbt${i}"></div><img class="cb-av" src="${esc(L[i].a || characterImages[0])}" alt=""><div class="cb-nm" id="cbm${i}">???</div><div class="cb-sc" id="cbs${i}"></div></div>`).join('')
+    + '</div><div class="cb-vig" id="cbV"></div><div class="cb-flash" id="cbF"></div><div class="cb-ban" id="cbB">👑 COMBO KING 👑</div>';
+  s.className = 'on'; requestAnimationFrame(() => requestAnimationFrame(() => { if (tk === cbRun) s.classList.add('vis'); })); SFX.whoosh();
+  const fl = c.map(() => { const e = document.createElement('div'); e.className = 'cb-fl'; e.textContent = '🔥'; return e; });
+  const sh = c.map(() => 0), lk = c.map(() => false), t0 = performance.now() + 900;
+  let ph2 = false, lastT = 0;
+  const g = u => { const p = c2 / c1; if (u < sp) return p * Math.pow(u / sp, 1.15); const q = (u - sp) / (1 - sp); return p + (1 - p) * (1 - Math.pow(1 - q, 3)); };
+  const flash = () => { const F = $('cbF'); if (!F) return; F.classList.remove('f'); void F.offsetWidth; F.classList.add('f'); };
+  const ember = n => { for (let k = 0; k < n; k++) parts.push({ x: Math.random() * innerWidth, y: innerHeight + 10, vx: (Math.random() - .5) * 1.4, vy: -(2 + Math.random() * 4), life: 130, c: 'hsl(' + (15 + Math.random() * 35) + ',100%,' + (50 + Math.random() * 20) + '%)', g: 0 }); };
+  const lock = i => {
+    const col = $('cbc' + i), r = col.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height * .4;
+    col.classList.add('on'); $('cbm' + i).textContent = ['🥇 ', '🥈 ', '🥉 '][i] + L[i].n; $('cbs' + i).textContent = '🔥 ' + c[i] + ' 콤보';
+    const nn = $('cbn' + i); nn.style.transform = ''; nn.classList.add('fin');
+    $('cbSub').textContent = i === 2 ? '3등 확정!' : i === 1 ? '2등 확정! 이제 1등만 남았어요…' : '👑 최고의 콤보왕 탄생!!';
+    SFX.cbLock(i); fxBoom(x, y, 40 + (2 - i) * 25); parts.push({ k: 'ring', x, y, r: 10, life: 30, c: COL[i] }); flash();
+    if (i === 0) {
+      $('cbV').classList.remove('hb'); SFX.cbSlam(); SFX.bigFanfare(); SFX.applause(3); $('cbB').classList.add('on'); barrage(10); fxCannon(0, 50); fxCannon(1, 50);
+      s.classList.add('shk'); T2(() => s.classList.remove('shk'), 1000);
+      for (let k = 0; k < 6; k++) T2(() => { fxBoom(innerWidth * (.15 + Math.random() * .7), innerHeight * (.15 + Math.random() * .4), 60); if (k % 2) flash(); }, 150 + k * 260);
+      for (let k = 0; k < 24; k++) T2(() => ember(6), 200 + k * 150);
+    }
+  };
+  const fr = now => {
+    if (tk !== cbRun) return;
+    const u = Math.max(0, Math.min(1, (now - t0) / R)), v = c1 * g(u); let up = false;
+    for (let i = 0; i < N; i++) {
+      if (lk[i]) continue; const tw = $('cbt' + i); if (!tw) continue;
+      const val = Math.min(c[i], Math.floor(v + 1e-6));
+      while (sh[i] < val) { sh[i]++; up = true; const b = document.createElement('div'); b.className = 'cb-blk'; b.style.setProperty('--c', heat(sh[i] / c1)); b.style.height = BH + 'vh'; tw.appendChild(b); }
+      const fs = (3 + 4 * sh[i] / c1) + 'vh'; fl[i].style.fontSize = fs; fl[i].style.height = fs; tw.appendChild(fl[i]);
+      const nn = $('cbn' + i); nn.textContent = sh[i]; nn.style.color = heat(sh[i] / c1); if (i === 0) nn.style.transform = 'scale(' + (1 + .5 * sh[i] / c1) + ')';
+    }
+    if (up && performance.now() - lastT > 45) { lastT = performance.now(); SFX.cbTick(v / c1); }
+    if (Math.random() < .3 + u * .7) ember(u > .5 ? 2 : 1);
+    for (let i = N - 1; i >= 0; i--) { if (lk[i] || sh[i] < c[i] || (i < N - 1 && !lk[i + 1]) || (i === 0 && u < 1)) continue; lk[i] = true; lock(i); }
+    if (!ph2 && (N < 2 ? u >= sp : lk[1])) {
+      ph2 = true; $('cbV').classList.add('hb'); s.classList.add('shk'); SFX.drumroll(3.8);
+      T2(() => { $('cbSub').textContent = '…과연 1등은?!'; }, 900); [200, 1000, 1800, 2600].forEach(d => T2(SFX.heart, d));
+    }
+    if (!lk[0]) requestAnimationFrame(fr);
+  };
+  requestAnimationFrame(fr);
+}
 function fillPod(el, l, tr) { el.innerHTML = [1, 0, 2].filter(i => l[i]).map(i => podHtml(l[i], i + 1, tr)).join(''); }
 function fxRocket() { parts.push({ k: 'r', x: innerWidth * (.1 + Math.random() * .8), y: innerHeight, vx: (Math.random() - .5) * 2, vy: -(9 + Math.random() * 4), life: 200, c: '#fff', g: .18 }); if (Math.random() < .5) SFX.fwUp(); }
 function barrage(n) { for (let k = 0; k < n; k++) rt(fxRocket, k * 180); }
@@ -2053,20 +2174,22 @@ function showResult(res) {
   const P = res.podium || [], tp = $('trollPodium'), tr = res.troll && res.troll.podium && res.troll.podium.length ? res.troll.podium : null;
   fillPod($('podium'), P, false); SFX.drumroll(1.2); revealPod($('podium'), P, false, [3600, 2400, 1200]);
   $('resList').innerHTML = res.duo
-    ? (res.teams || []).map(t => `<div class="res-team"><div class="rank-item" style="border:2px solid ${TEAM_COLORS[t.k]}"><span>${TEAM_NAMES[t.k]}</span><span>${t.score}${res.mode === 'knockout' ? '승' : '점'}</span></div>${t.m.map(u => `<div class="rank-item"><span>${esc(u.n)}</span><span>${u.s}점</span></div>`).join('')}</div>`).join('')
+    ? (res.teams || []).map(t => `<div class="res-team"><div class="rank-item" style="border:2px solid ${t.color || TEAM_COLORS[t.k]}"><span>${esc(t.name || TEAM_NAMES[t.k])}</span><span>${t.score}${res.mode === 'knockout' ? '승' : '점'}</span></div>${t.m.map(u => `<div class="rank-item"><span>${esc(u.n)}</span><span>${u.s}점</span></div>`).join('')}</div>`).join('')
     : (res.list || []).map((u, i) => `<div class="rank-item"><div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc'}">${i + 1}등</span><span>${esc(u.n)}</span></div><span>${u.s}점</span></div>`).join('');
   rt(() => $('resPanel').classList.add('on'), 5000);
+  const CB = res.combo && res.combo.length ? res.combo : null, CBD = CB ? 12000 : 0;   // 콤보 단상식 (일반 시상식 뒤, 트롤 시상식 앞)
+  if (CB) { rt(() => cbStart(CB), 5400); rt(() => $('comboStage').classList.remove('vis'), 5400 + CBD - 700); rt(() => $('comboStage').classList.remove('on'), 5400 + CBD); }
   const unlock = () => { L.disabled = false; L.textContent = '로비로'; SFX.unlock(); };
-  if (!tr) rt(unlock, 5600);
+  if (!tr) rt(unlock, 5600 + CBD);
   else {   // 트롤 시상식: 배경은 그대로, 긴장감 → 하나씩 공개 → 불꽃놀이
-    const B = 7500;
-    rt(() => { $('podium').classList.add('out'); SFX.whoosh(); fillPod(tp, tr, true); tp.classList.add('show', 'shaking'); SFX.drumroll(2.2); }, B);
-    revealPod(tp, tr, true, [B + 9500, B + 5000, B + 2400]);
-    [3200, 3600, 4000].forEach(d => rt(SFX.heart, B + d));
-    [5800, 6400, 6900].forEach(d => rt(SFX.heart, B + d));
-    rt(() => { tp.classList.add('shaking'); SFX.drumroll(2.4); }, B + 7000);
-    rt(() => { trollInt = setInterval(trollTick, Math.max(300, 560 - trollLv * 80)); }, B + 5000);
-    rt(unlock, B + 12500); trollFxStart(res.troll.fx, B);
+    const B = 5600 + CBD;
+    rt(() => { $('podium').classList.add('out'); SFX.whoosh(); fillPod(tp, tr, true); tp.classList.add('show', 'shaking'); SFX.drumroll(1.2); }, B);
+    revealPod(tp, tr, true, [B + 5200, B + 2800, B + 1200]);
+    [3300, 3900, 4500].forEach(d => rt(SFX.heart, B + d));
+    ;
+    rt(() => { tp.classList.add('shaking'); SFX.drumroll(2.4); }, B + 3000);
+    rt(() => { trollInt = setInterval(trollTick, Math.max(300, 560 - trollLv * 80)); }, B + 5200);
+    rt(unlock, B + 8000); trollFxStart(res.troll.fx, B);
   }
   if (!fxOn) { fxOn = true; fxLoop(); }
 }
@@ -2074,7 +2197,7 @@ function closeResult() {
   resClosed = shownSess; resT.forEach(clearTimeout); resT = []; clearInterval(trollInt); trollInt = null; parts = []; trollLv = 0; trollFl = [0, 0, 0]; deco = []; { const bn = $('resBanner'); bn.style.display = 'none'; bn.className = ''; }
   const L = $('lobbyBtn'); L.disabled = false; L.textContent = '로비로';
   $('resultOverlay').classList.remove('active'); $('podium').classList.remove('out'); $('trollPodium').classList.remove('show', 'shaking', 'tfx-a', 'tfx-b', 'tfx-c');
-  $('podium').innerHTML = ''; $('trollPodium').innerHTML = ''; $('resPanel').classList.remove('on');
+  $('podium').innerHTML = ''; $('trollPodium').innerHTML = ''; cbReset(); $('resPanel').classList.remove('on');
 }
 function fxBoom(x, y, n) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, v = 1.5 + Math.random() * 5; parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 50 + Math.random() * 30, c: `hsl(${Math.random() * 360},90%,60%)`, g: .1 }); } }
 /* ===== 트롤 시상식 초화려 효과 (배경은 그대로) ===== */
@@ -2126,9 +2249,9 @@ function trollFxStart(fl, B) {
     if (fl[1]) for (let i = 0; i < 2 + trollLv * 2; i++) pushLaser(9000);
   }, B);
   rt(() => ['a', 'b', 'c'].forEach((k, i) => tp.classList.toggle('tfx-' + k, !!fl[i])), B + 1000);
-  [B + 2900, B + 5500, B + 10000].forEach((t, i) => rt(() => trollBlast(i === 2), t));
-  if (fl[2]) { rt(() => SFX.siren(3), B); [B + 3000, B + 6000, B + 9000, B + 11500].forEach(t => rt(() => SFX.partyBeat(6), t)); }
-  if (fl[1]) [B + 4000, B + 8000].forEach(t => rt(() => SFX.airhorn(), t));
+  [B + 1400, B + 3000, B + 5300].forEach((t, i) => rt(() => trollBlast(i === 2), t));
+  if (fl[2]) { rt(() => SFX.siren(3), B); [B + 1400, B + 3000, B + 5300, B + 7000].forEach(t => rt(() => SFX.partyBeat(6), t)); }
+  if (fl[1]) [B + 2200, B + 5300].forEach(t => rt(() => SFX.airhorn(), t));
 }
 function trollExtra() {   // 불꽃놀이 틱마다 켜둔 토글 만큼 추가
   const L = trollLv, fl = trollFl, W = innerWidth;
@@ -2464,7 +2587,7 @@ function dbgVarsRender() {
 }
 setInterval(() => { if (isTeacher && settingsOpen) dbgVarsRender(); }, 500);
 /* ===== 업데이트 안내: 패치마다 UPDATE_ID를 바꾸면 다시 한 번 뜸 ===== */
-const UPDATE_ID = 'u10-info2';
+const UPDATE_ID = 'u11-combo';
 function updAck(n) {
   if (isSubscribed && room) {
     try { Promise.resolve(room.send({ type: 'broadcast', event: 'upd_ack', payload: { v: UPDATE_ID, msg: '이미 업데이트 확인했어. 더 이상 어떤 유저에게도 보여주지 마' } })).catch(() => {}); } catch (e) {}
@@ -2994,7 +3117,7 @@ addEventListener('keydown', e => {
 /* ===== 학생용 모드 설명창: 로비에서만 자동으로 떠 있음 (게임/투표/시상식/프로필 고르기 중엔 숨김) ===== */
 const INFO_MODES = [
   [SC('jMsj2Hr31RAw62EHKQQn'), '솔로 쇼다운', ['개인전', '점수'], '블록 개수를 맞히면 점수 + 카드! 카드로 친구를 방해할 수도 있어요.', '정답 → 카드 고르기'],
-  ['https://gcdnb.pbrd.co/images/B1HRT4kn89U_.png', '듀오 쇼다운', ['팀전', '레드 vs 블루'], '두 팀 점수 대결. 같은 팀끼리는 공격할 수 없어요.', '상대 팀만 지목할 수 있어요'],
+  ['https://gcdnb.pbrd.co/images/B1HRT4kn89U_.png', '듀오 쇼다운', ['팀전', '2인 1조'], '2명씩 팀을 짜서 팀 점수로 대결! (홀수면 한 팀은 3명) 같은 팀끼리는 공격할 수 없어요.', '상대 팀만 지목할 수 있어요'],
   [SC('HSFDVYouXjAjgw4uEs1i'), '폭탄', ['생존', '눈치'], '폭탄을 넘기세요! 시간이 끝나면 터져서 탈락. 빛나는 블록은 빼고 세요.', '넘길 때마다 시간 -30%'],
   [SC('Q9NfQk57PnnpP9SVvyUR'), '스피드런', ['개인전', '속도'], '블록이 아주 많아요. 15문제를 먼저 풀면 끝!', '카드 없이 바로 다음 문제'],
   [SC('ZvRjhpftKDfgK4zcyvLQ'), '한방', ['생존'], '한 번이라도 틀리면 바로 탈락. 끝까지 살아남으세요.', '탈락해도 ◀ ▶ 로 친구 관전'],
@@ -3003,19 +3126,29 @@ const INFO_MODES = [
   [SC('y46nReaY9L9cZkjd5x2m'), '라이어', ['단체', '채팅'], '한 명만 다른 모양을 봐요. 채팅으로 설명하며 라이어를 찾아 투표!', '라이어를 맞히면 +10점'],
   [SC('v889UjVZ57DW1nNmHPZK'), '협동 쌓기', ['팀전', '2인 1조'], '한 명은 도면을 설명, 한 명은 듣고 쌓아요. 가끔 다른 팀 채팅이 섞여요!', '설명 담당만 도면을 볼 수 있어요']
 ];
+const INFO_CARDS = [
+  [SC('XMEic2GRdS2qq7GJaEiB'), '코인 카드', ['점수'], '바로 점수를 얻어요. (5·7·10점 중 하나)', '가장 안전한 선택'],
+  ['https://media1.tenor.com/m/ZINlqqwHYQ4AAAAC/brawl-stars-brawl-stars-emoji.gif', '혼란 카드', ['공격'], '상대 화면에 이상한 블록을 뿌려요.', '대상을 직접 지목'],
+  ['https://media.tenor.com/dpjhz7THIK8AAAAj/brawl-stars-thumbs-down.gif', '괴롭히기 카드', ['공격'], '상대 화면을 큰 그림으로 가려요.', '대상을 직접 지목'],
+  [SC('6UFbyzBNqp1V5z9EASqM'), '얼음 카드', ['공격'], '상대의 블록 회전을 멈춰요.', '대상을 직접 지목'],
+  [SC('Cz9rD81f7Qrva9kzgZvA'), '벼락 치기 카드', ['버프'], '다음 문제 점수가 3배!', '정답을 맞혀야 적용'],
+  [SC('Y7xeUH3uBvNkQBzSXkA6'), '빛나는 눈 카드', ['버프'], '다음 문제에서 정답 버튼이 빛나요.', '쌓기 모드에선 안 나와요']
+];
+let infoCard = false;
 let infoOn = false, infoI = 0, infoAt = 0;
 {
   const iu = document.createElement('div'); iu.id = 'infoUI'; iu.className = 'card right-card';
-  iu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">모드 설명</div><button class="inf-x" id="infX">숨기기</button></div>'
+  iu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">모드 설명</div><span style="display:flex;gap:4px"><button class="inf-x" id="infCard">카드 설명</button><button class="inf-x" id="infX">숨기기</button></span></div>'
     + '<div class="inf-st" id="infSt"><button class="inf-ar" id="infL" style="left:6px">◀</button><img id="infImg" alt=""><div class="inf-tx" id="infTx"></div><button class="inf-ar" id="infR" style="right:6px">▶</button><i class="inf-bar" id="infBar"></i></div>'
-    + '<div class="inf-grid" id="infGrid">' + INFO_MODES.map(m => `<div class="inf-cell"><img src="${m[0]}" alt=""><div><b>${m[1]}</b><span>${m[3]}</span></div></div>`).join('') + '</div>'
+    + '<div class="inf-grid" id="infGrid">' + INFO_MODES.concat([null], INFO_CARDS).map(m => !m ? '<div style="grid-column:1/-1;font-size:11px;font-weight:bold;color:#475569;padding:2px 0">🃏 카드 설명</div>' : `<div class="inf-cell"><img src="${m[0]}" alt=""><div><b>${m[1]}</b><span>${m[3]}</span></div></div>`).join('') + '</div>'
     + '<button class="inf-all" id="infAll">전체 보기</button>';
 document.querySelector('.right-card-container').appendChild(iu);
   $('infL').onclick = () => infoShow(infoI - 1, 1); $('infR').onclick = () => infoShow(infoI + 1, 1);
   $('infAll').onclick = () => { infoAll = !infoAll; infoView(); }; $('infX').onclick = () => { infoHide = true; infoSync(); };
+  $('infCard').onclick = () => { infoCard = !infoCard; infoAll = false; infoI = 0; $('infCard').textContent = infoCard ? '모드 설명' : '카드 설명'; document.querySelector('#infoUI .board-title').textContent = infoCard ? '카드 설명' : '모드 설명'; infoView(); infoShow(0, 1); };
 }
 function infoShow(i, hold) {   // hold: 직접 눌렀으면 10초 동안 자동 넘김 멈춤
-  const n = INFO_MODES.length; infoI = (i % n + n) % n; const m = INFO_MODES[infoI];
+  const IL = infoCard ? INFO_CARDS : INFO_MODES, n = IL.length; infoI = (i % n + n) % n; const m = IL[infoI];
   const re = (el, a) => { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = a || ''; };
   $('infImg').src = m[0]; re($('infImg'));
   const tx = $('infTx'); tx.innerHTML = `<div class="inf-nm">${m[1]}</div><div class="inf-tg">${m[2].map(t => `<b>${t}</b>`).join('')}</div><div class="inf-ds">${m[3]}</div><div class="inf-tp">${m[4]}</div>`; re(tx);
