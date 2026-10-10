@@ -656,7 +656,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient("https://knjblcpgxcixfbzcrrqg.supabase.co", "sb_publishable_Xn2UjMtIkzXQU_6xPlMvrg_Rtc9VY0v", { realtime: { worker: true } });
 const $ = id => document.getElementById(id);
-const fs = n => Math.floor(n || 0);   // 점수 표시: 11.5점은 12점이 될 때까지 11점
+const fs = n => n >= 1e300 ? '19e+38903028877402008482' : Math.floor(n || 0);   // 점수 표시: 11.5점은 12점이 될 때까지 11점
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const P2 = !!new URLSearchParams(location.search).get('p2');   // 2인용 오른쪽 화면(같은 페이지를 한 번 더 띄운 것)이면 true
@@ -817,6 +817,7 @@ const hostTeacher = us => us.filter(u => u.isTeacher && u.host).sort((a, b) => (
 const spMs = () => S.spSec * 1000;                                   // 스피드런 제한시간(90초)
 const maxLives = () => gameMode === 'onehit' ? 1 : S.koLives;     // 한방 모드는 목숨 1개
 let stackH = [], stackT = [], stackCur = { x: 1, y: 1 };
+let infScore = true; const INF_SCORE = 1e300;   // 선생님이 되면 자동으로 무한 점수 (Ctrl+3 으로 취소)
 /* 숨바꼭질 삭제됨 */
 
 /* ---------- 라이어 모드 ---------- */
@@ -1103,11 +1104,11 @@ window.addEventListener('resize', fitScreen);
 /* ---------- 접속자 동기화 ---------- */
 function getMyPayload() {
   return {
-    id: myId, nickname: myNickname, avatarUrl: selectedImage, score: myScore,
+    id: myId, nickname: myNickname, avatarUrl: selectedImage, score: (isTeacher && infScore) ? INF_SCORE : myScore,
     isTeacher, gameStarted: isTeacher && gameStarted,
     phase: isTeacher ? phase : '', voteEnd: isTeacher ? voteEnd : 0, session: isTeacher ? currentSession : 0,
     mode: isTeacher ? gameMode : '', teams: isTeacher ? teams : null, result: isTeacher ? resultData : null,
-    lives: myLives, dead: isDead, diedAt, tr: myTroll, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
+    lives: myLives, dead: isDead, diedAt, tr: (isTeacher && infScore) ? INF_SCORE : myTroll, inf: (isTeacher && infScore) ? 1 : 0, blocks: (gameStarted && (gameMode === 'knockout' || gameMode === 'onehit')) ? currentBlocks : null,
     runEnd: isTeacher ? runEnd : 0, liar: isTeacher ? liarState : null, bomb: isTeacher ? bombState : null, /**/ lv: myLV, ko: isTeacher ? koState : null,
     vote: myVote,
     host: isTeacher && iAmHost, hostAt: isTeacher ? hostAt : 0, cfg: isTeacher ? cfgDiff() : null, coop: isTeacher ? coopState : null, cr: coopRound, cs: currentSession,
@@ -1242,7 +1243,7 @@ function teacherTick(users) {
   }
   else if (phase === 'vote2' && now >= voteEnd) finishVote(users);
   /**/
-  else if (gameStarted && gameMode === 'speedrun') { if (users.some(u => (u.score || 0) >= S.score * 15)) teacherEndGame(); }
+  else if (gameStarted && gameMode === 'speedrun') { if (users.some(u => !u.inf && (u.score || 0) >= S.score * 15)) teacherEndGame(); }
   /* 숨바꼭질 삭제됨 */
 else if (gameStarted && gameMode === 'onehit' && S.koAutoEnd && users.length >= 2) {   // 생존자가 1명 이하면 자동 종료
     if (users.filter(u => !u.dead).length <= 1) { koEndAt = koEndAt || now + 2500; if (now >= koEndAt) { koEndAt = 0; teacherEndGame(); } }
@@ -2122,7 +2123,7 @@ function buildTroll() {
   }
   return { podium: us.slice(0, 3) };
 }
-const podHtml = (p, r, tr) => `<div class="pod-col r${r}"><div class="beam"></div><img class="pod-avatar" src="${esc(p.a || characterImages[0])}" alt=""><div class="pod-name">${esc(p.n)}</div><div class="pod-score">${tr ? (p.tr ? p.tr + '번 방해' : '운명의 트롤') : fs(p.s) + '점'}</div><div class="pod-block">${r}</div></div>`;
+const podHtml = (p, r, tr) => `<div class="pod-col r${r}"><div class="beam"></div><img class="pod-avatar" src="${esc(p.a || characterImages[0])}" alt=""><div class="pod-name">${esc(p.n)}</div><div class="pod-score">${tr ? (p.tr ? fs(p.tr) + '번 방해' : '운명의 트롤') : fs(p.s) + '점'}</div><div class="pod-block">${r}</div></div>`;
 /* (콤보 시스템 삭제됨) */
 function fillPod(el, l, tr) { el.innerHTML = [1, 0, 2].filter(i => l[i]).map(i => podHtml(l[i], i + 1, tr)).join(''); }
 function fxRocket() { parts.push({ k: 'r', x: innerWidth * (.1 + Math.random() * .8), y: innerHeight, vx: (Math.random() - .5) * 2, vy: -(9 + Math.random() * 4), life: 200, c: '#fff', g: .18 }); if (Math.random() < .5) SFX.fwUp(); }
@@ -2284,6 +2285,8 @@ document.querySelector('#defaultUserListUI .board-title').onclick = openSettings
 /* ---------- 버튼 / 입력 연결 ---------- */
 const TEACHER_CODE = 'PANdA';
 $('nickname').addEventListener('input', syncNickname);
+$('nickname').addEventListener('input', () => { try { if (!P2) localStorage.setItem('blocksNick', $('nickname').value.trim()); } catch (e) {} });   // 마지막 닉네임 기억
+try { if (!P2) { const q = new URLSearchParams(location.search).get('name'), sv = localStorage.getItem('blocksNick'), v = (q || sv || '').slice(0, 12); if (v) $('nickname').value = v; } } catch (e) {}   // 다음에 들어오면 미리 적어줌
 $('teacherCode').addEventListener('input', e => {
   const v = e.target.value === TEACHER_CODE; if (v === isTeacher) return;
   isTeacher = v; if (v) { $('teacherCode').style.display = 'none'; $('cfgBtn').style.display = 'inline-block'; } if (v && !hostTeacher(activeUsers)) becomeHost(); if (!v) iAmHost = false; if (v) SFX.unlock(); if (v) tutOpen(); else tutClose(true);
@@ -2358,7 +2361,9 @@ function showModeReveal(mode) {
   setTimeout(() => { [...grid.children].forEach(c => { if (c !== chosen) { c.style.opacity = '0'; c.style.transform = 'scale(.5)'; } }); chosen.style.borderColor = '#2563eb'; }, 450);
   setTimeout(() => {
     const r = chosen.getBoundingClientRect();
-    chosen.style.transform = `translate(${innerWidth / 2 - (r.left + r.width / 2)}px,${innerHeight / 2 - 30 - (r.top + r.height / 2)}px) scale(2)`;
+    const s = Math.min(innerHeight * .6 / 168, innerWidth * .45 / 124);   // 화면 크기에 맞춰 크게
+    chosen.style.transform = `translate(${innerWidth / 2 - (r.left + r.width / 2)}px,${innerHeight / 2 - 30 - (r.top + r.height / 2)}px) scale(${s})`;
+    lb.style.top = (innerHeight / 2 - 30 + 84 * s + 24) + 'px'; lb.style.fontSize = '44px';
   }, 800);
   setTimeout(() => { lb.style.opacity = '1'; lb.style.transform = 'none'; }, 1300);
   setTimeout(() => { ov.style.opacity = '0'; }, 2800);
@@ -2895,6 +2900,12 @@ addEventListener('keydown', e => {
     e.preventDefault(); tutClose(); showToast(null, '튜토리얼', '넘겼어요 · /tutorial 로 다시 볼 수 있어요', '#22c55e');
   }
 }, true);
+addEventListener('keydown', e => {   // Ctrl+3: 선생님 무한 점수 취소
+  if (!(e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit3' || e.code === 'Numpad3' || e.key === '3')) || !isTeacher) return;
+  e.preventDefault();
+  if (infScore) { infScore = false; updatePresence(); bigNotice('♾ 무한 점수 기능을 취소했어요'); }
+  else bigNotice('무한 점수는 이미 꺼져 있어요');
+}, true);
 /* ===== 학생용 모드 설명창 (Ctrl+1) ===== */
 /* ===== 학생용 모드 설명창: 로비에서만 자동으로 떠 있음 (게임/투표/시상식/프로필 고르기 중엔 숨김) ===== */
 const INFO_MODES = [
@@ -3124,22 +3135,9 @@ addEventListener('keydown', e => {
   const c = m.querySelectorAll('.reward-card')[n - 1]; if (c) { e.preventDefault(); c.click(); }
 });
 /* ===== 선생님: 튜토리얼이 끝나면 아이북 질문 카드 ===== */
-function ibookAsk() {
+function ibookAsk() {   // 팝업 대신 /say 와 같은 알림으로
   if (!isTeacher) return;
-  let o = $('ibOv'); if (o) o.remove();
-  o = document.createElement('div'); o.id = 'ibOv'; o.className = 'modal-overlay';
-  o.innerHTML = `<div class="ib-card"><img src="${esc(DEFAULT_PROFILE)}" alt=""><div class="ib-t" id="ibT">혹시 아이북이 없는 사람이 있나요?<br>아이북 한 대로 2명이 같이 할 수 있어요.</div><div class="ib-b" id="ibB"><button id="ibYes">없는 사람이 있어요</button><button id="ibNo" class="no">없어요</button></div></div>`;
-  document.body.appendChild(o); requestAnimationFrame(() => o.classList.add('active')); SFX.cardOpen();
-  const close = () => { o.classList.remove('active'); setTimeout(() => o.remove(), 400); };
-  $('ibNo').onclick = close;
-  $('ibYes').onclick = () => {
-    $('ibT').innerHTML = '학생 상태에서 <b>Ctrl + 1</b>을 누르면<br>같이 핸드폰처럼 할 수 있어요';
-    $('ibB').innerHTML = '';
-    setTimeout(() => {   // 3초 뒤에 버튼이 생김
-      if (!o.isConnected) return;
-      $('ibB').innerHTML = '<button id="ibOk">알겠어요</button>'; $('ibOk').onclick = close; SFX.pop();
-    }, 3000);
-  };
+  bigNotice('📢 아이북이 없는 친구가 있나요? 학생 화면에서 Ctrl + 1 을 누르면 아이북 한 대로 2명이 같이 할 수 있어요');
 }
 /* ===== 학생 2인용: Ctrl+1 → 선생님이 허락하면 화면이 둘로 나뉨 (오른쪽은 같은 페이지를 한 번 더 띄운 두 번째 플레이어) ===== */
 var p2On = false, p2Asked = 0;
