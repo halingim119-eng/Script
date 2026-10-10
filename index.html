@@ -857,7 +857,7 @@ const playAt = (t, fn) => { const d = t - hostNow(); if (d <= 0 || d > 2000) fn(
 function pingHost() { for (let i = 0; i < 4; i++) setTimeout(() => { try { Promise.resolve(room.send({ type: 'broadcast', event: 'ping', payload: { id: myId, t0: Date.now() } })).catch(() => {}); } catch (e) {} }, i * 250); }
 function scheduleTicks(stage, end) {   // 카운트다운 소리를 선생님 시계 기준 같은 시각에 재생
   const key = stage + end; if (key === tickKey) return; tickKey = key;
-  for (let k = Math.ceil((end - hostNow()) / 1000); k >= 1; k--) {
+  for (let k = Math.min(120, Math.ceil((end - hostNow()) / 1000)); k >= 1; k--) {
     const d = end - k * 1000 - hostNow();
     if (d > -150) setTimeout(() => { if (tickKey === key) SFX.tick(); }, Math.max(0, d));
   }
@@ -1208,7 +1208,14 @@ function collectUsers() {
   return list.sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0) || String(a.id).localeCompare(String(b.id)));
 }
 
-function renderAll() {
+let raBusy = false, raAgain = false;
+function renderAll() {   // 겹쳐서 부르면 바로 다시 돌지 않고 한 박자 뒤에 한 번만 (무한 재귀로 멈추는 것 방지)
+  if (raBusy) { raAgain = true; return; }
+  raBusy = true;
+  try { renderAllInner(); } finally { raBusy = false; }
+  if (raAgain) { raAgain = false; setTimeout(renderAll, 0); }
+}
+function renderAllInner() {
   const users = collectUsers();
   activeUsers = users; applyCfgCss();
   const host = hostTeacher(users), rt = users.find(u => u.isTeacher && u.result && u.result.session === currentSession);
@@ -1609,7 +1616,7 @@ function setupChoices(correct) {
   box.style.gridTemplateColumns = ''; $('quizTitle').innerText = '쌓기나무는 모두 몇 개?'; specPanelKey = '';
   toggleOutline(activeShiningEyesRound);
   const set = new Set([correct]);
-  while (set.size < S.choices) {
+  let guard = 0; while (set.size < S.choices && guard++ < 200) {
     const d = Math.random() < 0.7 ? (Math.random() < 0.5 ? 1 : -1) : (Math.random() < 0.5 ? 2 : -2);
     if (correct + d > 0) set.add(correct + d);
   }
@@ -2071,8 +2078,8 @@ const SFX = (() => {
     hit: () => { Z(.1, .4, 0, 'bandpass', 2500, 400); K(0, .5, 260, 50, .12); T(1400, .04, 'square', .08, 0, 500); },
     boom: () => { Z(1, .45, 0, 'lowpass', 2200, 60); K(0, .8, 120, 25, .6); T(70, .7, 'sawtooth', .1, 0, 25); },
     sparkle: () => { for (let i = 0; i < 4; i++) BL(1500 + Math.random() * 2000, i * .04, .03, .2); },
-    fw: () => { const n = performance.now(); if (n - (X._fw || 0) < 180) return; X._fw = n; Z(.35, .2, 0, 'lowpass', 4500, 300); K(0, .2, 200, 60, .1); for (let i = 0; i < 4; i++) Z(.03, .06, .08 + i * .04 + Math.random() * .03, 'highpass', 5000 + Math.random() * 3000); },
-    fwUp: () => T(500, .45, 'sine', .05, 0, 2400),
+    fw: () => { const n = performance.now(); if (n - (X._fw || 0) < 180) return; X._fw = n; if (quietFx) return; Z(.35, .2, 0, 'lowpass', 4500, 300); K(0, .2, 200, 60, .1); for (let i = 0; i < 4; i++) Z(.03, .06, .08 + i * .04 + Math.random() * .03, 'highpass', 5000 + Math.random() * 3000); },
+    fwUp: () => { if (!quietFx) T(500, .45, 'sine', .05, 0, 2400); },
     whoosh: () => Z(.45, .16, 0, 'bandpass', 300, 3500),
     heart: () => { K(0, .5, 90, 35, .12); K(.2, .4, 80, 32, .12); },
     drumroll: d => { const n = Math.floor(d * 16); for (let i = 0; i < n; i++) { Z(.05, .05 + .2 * i / n, i / 16, 'bandpass', 1800, 1500); if (i % 4 === 0) K(i / 16, .1 + .2 * i / n, 130, 70, .08); } },
@@ -2149,7 +2156,7 @@ function forceView() {}
 setInterval(koTick, 100);
 
 /* ---------- 결과 / 시상식 ---------- */
-let resTok = 0, rankAud = [], shownSess = 0, resT = [], trollInt = null, parts = [], fxOn = false, lastTk = 0;
+var quietFx = false; let resTok = 0, rankAud = [], shownSess = 0, resT = [], trollInt = null, parts = [], fxOn = false, lastTk = 0;
 const rt = (f, d) => resT.push(setTimeout(f, d));
 /* ===== 등수별 소리: 소리가 끝나고 2초 뒤에 단상이 올라옴 (3등 → 2등 → 1등) ===== */
 const RANK_SND = [
@@ -2178,16 +2185,15 @@ function rankSound(r, tok) {   // 등수 소리를 재생하고, 전부 끝나�
     });
   });
 }
-async function runPodium(P, tok) {   // 소리와 단상이 동시에 → 6초 뒤(소리가 안 끝나도) 다음 등수 (3등 → 2등 → 1등)
+async function runPodium(P, tok) {   // 소리 없이 단상만: 3등 → 2등 → 1등, 6초 간격
   const sl = ms => new Promise(r => resT.push(setTimeout(r, ms)));
   await sl(900);
   const order = [2, 1, 0].filter(i => P[i]);
   for (let k = 0; k < order.length; k++) {
     if (resTok !== tok) return false;
     const i = order[k], one = []; one[i] = P[i];
-    rankSound(i, tok);                                   // 소리 재생 (끝날 때까지 기다리지 않음)
-    revealPod($('podium'), one, false, [0, 0, 0]);       // 같은 순간에 단상 올라옴
-    if (k < order.length - 1) await sl(6000);            // 6초 뒤 다음 등수
+    revealPod($('podium'), one, false, [0, 0, 0]);
+    if (k < order.length - 1) await sl(6000);
   }
   return resTok === tok;
 }
@@ -2223,10 +2229,10 @@ function fxRocket() { parts.push({ k: 'r', x: innerWidth * (.1 + Math.random() *
 function barrage(n) { for (let k = 0; k < n; k++) rt(fxRocket, k * 180); }
 function revealPod(el, l, tr, T) {   // T[i]: i등(0=1등)이 공개되는 시각
   [2, 1, 0].filter(i => l[i]).forEach(i => rt(() => {
-    const c = el.querySelector('.r' + (i + 1)); if (!c) return; c.classList.add('on'); SFX.podRise();
-    rt(() => { SFX.podHit(i); if (tr) parts.push({ k: 'ring', x: innerWidth / 2, y: innerHeight * .6, r: 10, life: 30, c: ['#facc15', '#60a5fa', '#fb923c'][i] }); }, 500);
+    const c = el.querySelector('.r' + (i + 1)); if (!c) return; c.classList.add('on'); if (tr) SFX.podRise();
+    rt(() => { if (tr) SFX.podHit(i); if (tr) parts.push({ k: 'ring', x: innerWidth / 2, y: innerHeight * .6, r: 10, life: 30, c: ['#facc15', '#60a5fa', '#fb923c'][i] }); }, 500);
     if (tr) { el.classList.add('shaking'); rt(() => el.classList.remove('shaking'), i === 0 ? 2200 : 1000); }
-    if (i === 0) { SFX.bigFanfare(); SFX.applause(2); barrage(tr ? 8 : 6); }
+    if (i === 0) { if (tr) { SFX.bigFanfare(); SFX.applause(2); } barrage(tr ? 8 : 6); }
   }, T[i]));
 }
 function showResult(res) {
@@ -2234,14 +2240,14 @@ function showResult(res) {
   shownSess = res.session; closeResult(); shownSess = res.session; o.classList.add('active');
   const L = $('lobbyBtn'); L.disabled = true; L.textContent = '🔒 시상식 진행 중...';   // 시상식이 끝날 때까지 로비로 못 감
   const P = res.podium || [], tp = $('trollPodium'), tr = res.troll && res.troll.podium && res.troll.podium.length ? res.troll.podium : null;
-  fillPod($('podium'), P, false); SFX.drumroll(1.2); const tok = ++resTok;
+  quietFx = true; fillPod($('podium'), P, false); const tok = ++resTok;
   $('resList').innerHTML = res.duo
     ? (res.teams || []).map(t => `<div class="res-team"><div class="rank-item" style="border:2px solid ${t.color || TEAM_COLORS[t.k]}"><span>${esc(t.name || TEAM_NAMES[t.k])}</span><span>${res.mode === 'knockout' ? t.score + '승' : fs(t.score) + '점'}</span></div>${t.m.map(u => `<div class="rank-item"><span>${esc(u.n)}</span><span>${fs(u.s)}점</span></div>`).join('')}</div>`).join('')
     : (res.list || []).map((u, i) => `<div class="rank-item"><div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc'}">${i + 1}등</span><span>${esc(u.n)}</span></div><span>${fs(u.s)}점</span></div>`).join('');
   runPodium(P, tok).then(ok => { if (ok) rt(afterPodium, 3800); });   // 시상대가 다 올라온 뒤에 랭킹/트롤 진행
   function afterPodium() {
   $('resPanel').classList.add('on');
-  /* 순서: 점수 → 트롤 */
+  quietFx = false;   /* 순서: 점수 → 트롤 (트롤 단상은 원래 소리 그대로) */
   const unlock = () => { L.disabled = false; L.textContent = '로비로'; SFX.unlock(); };
   /* 시상식이 다 끝나면 로비로 버튼이 풀림 */
   if (tr) {   // 트롤 시상식: 배경은 그대로, 긴장감 → 하나씩 공개 → 불꽃놀이
@@ -2259,7 +2265,7 @@ function showResult(res) {
 if (!fxOn) { fxOn = true; fxLoop(); }
 }
 function closeResult() {
-  resClosed = shownSess; resTok++; rankAud.forEach(a => { try { a.pause(); } catch (e) {} }); rankAud = []; resT.forEach(clearTimeout); resT = []; clearInterval(trollInt); trollInt = null; parts = []; trollLv = 0; trollFl = [0, 0, 0]; deco = []; { const bn = $('resBanner'); bn.style.display = 'none'; bn.className = ''; }
+  quietFx = false; resClosed = shownSess; resTok++; rankAud.forEach(a => { try { a.pause(); } catch (e) {} }); rankAud = []; resT.forEach(clearTimeout); resT = []; clearInterval(trollInt); trollInt = null; parts = []; trollLv = 0; trollFl = [0, 0, 0]; deco = []; { const bn = $('resBanner'); bn.style.display = 'none'; bn.className = ''; }
   const L = $('lobbyBtn'); L.disabled = false; L.textContent = '로비로';
   $('resultOverlay').classList.remove('active'); $('podium').classList.remove('out'); $('trollPodium').classList.remove('show', 'shaking', 'tfx-a', 'tfx-b', 'tfx-c'); ;
   $('podium').innerHTML = ''; $('trollPodium').innerHTML = ''; $('resPanel').classList.remove('on');
@@ -2510,7 +2516,7 @@ function showModeReveal(mode) {
   const lb = document.createElement('div');
   lb.style.cssText = 'position:fixed;left:0;right:0;top:calc(50% + 190px);text-align:center;font:bold 30px Malgun Gothic,sans-serif;color:#1e293b;opacity:0;transform:translateY(12px);transition:all .5s';
   lb.textContent = '🎮 ' + nm + ' 모드';
-  ov.appendChild(grid); ov.appendChild(lb); document.body.appendChild(ov);
+  ov.appendChild(grid); ov.appendChild(lb); document.body.appendChild(ov); setTimeout(() => { if (ov.isConnected) ov.remove(); }, 4500);
   setTimeout(() => { [...grid.children].forEach(c => { if (c !== chosen) { c.style.opacity = '0'; c.style.transform = 'scale(.5)'; } }); chosen.style.borderColor = '#2563eb'; }, 450);
   setTimeout(() => {
     const r = chosen.getBoundingClientRect();
@@ -3381,10 +3387,10 @@ try {
     } catch (e) {}
   };
   let tm = 0;
-  const later = () => { if (!tm) tm = setTimeout(() => { tm = 0; sweep(document); }, 50); };
+  const later = () => { if (!tm) tm = setTimeout(() => { tm = 0; sweep(document); }, 800); };
   new MutationObserver(ms => { for (const m of ms) if (m.type === 'attributes' || [...m.addedNodes].some(n => n.nodeType === 1)) { later(); break; } })
     .observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['title', 'aria-label', 'alt'] });
-  setInterval(() => sweep(document), 1500);
+  setInterval(() => sweep(document), 4000);
   sweep(document);
 } catch (e) { console.error(e); }
 /* ===== 비밀 선생님 모드: Ctrl+F1 → 화면 아래에 작게 빛나는 점 → PANdA 입력 → 선생님 권한 (닉네임에 (선생님) 없음 · 내 콘솔 채팅은 다른 선생님에게 안 보냄) ===== */
