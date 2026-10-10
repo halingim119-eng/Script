@@ -2178,18 +2178,16 @@ function rankSound(r, tok) {   // 등수 소리를 재생하고, 전부 끝나�
     });
   });
 }
-async function runPodium(P, tok) {   // 3등 소리 → 2초 → 3등 단상 → 2등 소리 → 2초 → 2등 단상 → 1등 …
+async function runPodium(P, tok) {   // 소리와 단상이 동시에 → 6초 뒤(소리가 안 끝나도) 다음 등수 (3등 → 2등 → 1등)
   const sl = ms => new Promise(r => resT.push(setTimeout(r, ms)));
   await sl(900);
-  for (const i of [2, 1, 0]) {
-    if (!P[i]) continue;
+  const order = [2, 1, 0].filter(i => P[i]);
+  for (let k = 0; k < order.length; k++) {
     if (resTok !== tok) return false;
-    await rankSound(i, tok);
-    if (resTok !== tok) return false;
-    await sl(2000);
-    if (resTok !== tok) return false;
-    const one = []; one[i] = P[i];
-    revealPod($('podium'), one, false, [0, 0, 0]);
+    const i = order[k], one = []; one[i] = P[i];
+    rankSound(i, tok);                                   // 소리 재생 (끝날 때까지 기다리지 않음)
+    revealPod($('podium'), one, false, [0, 0, 0]);       // 같은 순간에 단상 올라옴
+    if (k < order.length - 1) await sl(6000);            // 6초 뒤 다음 등수
   }
   return resTok === tok;
 }
