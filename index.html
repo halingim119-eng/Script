@@ -66,7 +66,9 @@ body{background:#f1f5f9;width:100vw;height:100vh;display:flex;align-items:center
 .user-info{display:flex;align-items:center;gap:10px}
 .user-avatar-mini{width:32px;height:32px;border-radius:50%;object-fit:contain;background:#fff;border:1px solid #cbd5e1}
 .user-name{font-size:14px;font-weight:600;color:#334155}
-.profile-grid-container{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding-right:4px}
+.profile-scroll{flex:1;min-height:0;overflow-y:auto;padding-right:4px;display:flex;flex-direction:column;gap:10px}
+.profile-grid-container{flex:none;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.profile-scroll>.cp-box{margin-top:4px;margin-bottom:4px}
 .profile-thumb-card{background:#f8fafc;border:2px solid #e2e8f0;border-radius:10px;padding:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .profile-thumb-card:hover{border-color:#2563eb;background:#eff6ff;transform:scale(1.03)}
 .profile-thumb-img{width:100%;height:65px;object-fit:contain}
@@ -2147,8 +2149,50 @@ function forceView() {}
 setInterval(koTick, 100);
 
 /* ---------- 결과 / 시상식 ---------- */
-let shownSess = 0, resT = [], trollInt = null, parts = [], fxOn = false, lastTk = 0;
+let resTok = 0, rankAud = [], shownSess = 0, resT = [], trollInt = null, parts = [], fxOn = false, lastTk = 0;
 const rt = (f, d) => resT.push(setTimeout(f, d));
+/* ===== 등수별 소리: 소리가 끝나고 2초 뒤에 단상이 올라옴 (3등 → 2등 → 1등) ===== */
+const RANK_SND = [
+  ['MvZBHYrqa9Jjh5uDJDAq.ogg', 'N9rcTkzKE8c6RQAYGR8Q.ogg', 'VbNpJyDnJ7Vwoy8HdE4P.wav'],   // 1등
+  ['MvZBHYrqa9Jjh5uDJDAq.ogg', 'N9rcTkzKE8c6RQAYGR8Q.ogg', 'rZ7s4hj1gNWniiEU6DbC.wav'],   // 2등
+  ['MvZBHYrqa9Jjh5uDJDAq.ogg', 'N9rcTkzKE8c6RQAYGR8Q.ogg', '2KmT9ns8fGgu7HMs6LfN.wav']    // 3등
+].map(a => a.map(f => 'https://media.ffycdn.net/eu/supercell/' + f + '?width={width}&format=mp3'));
+const RANK_OFF = [0, 1000, 1400];   // 앞 소리 시작 기준 (1초, 0.4초 뒤)
+function rankSound(r, tok) {   // 등수 소리를 재생하고, 전부 끝나면(또는 실패하면) 끝남
+  return new Promise(res => {
+    const urls = RANK_SND[r], vol = (S.sfxOn === false || sfxMute) ? 0 : (S.vol == null ? 100 : S.vol) / 100;
+    let left = urls.length, fin = false;
+    const done = () => { if (fin) return; fin = true; res(); };
+    setTimeout(done, 12000);   // 안전장치
+    urls.forEach((u, k) => {
+      let a, ended = false;
+      const end = () => { if (ended) return; ended = true; if (--left <= 0) done(); };
+      try { a = new Audio(); a.preload = 'auto'; a.volume = vol; } catch (e) { end(); return; }
+      rankAud.push(a);
+      a.addEventListener('ended', end); a.addEventListener('error', end);
+      a.src = u;
+      resT.push(setTimeout(() => {
+        if (resTok !== tok) return;
+        try { const p = a.play(); if (p && p.catch) p.catch(end); } catch (e) { end(); }
+      }, RANK_OFF[k]));
+    });
+  });
+}
+async function runPodium(P, tok) {   // 3등 소리 → 2초 → 3등 단상 → 2등 소리 → 2초 → 2등 단상 → 1등 …
+  const sl = ms => new Promise(r => resT.push(setTimeout(r, ms)));
+  await sl(900);
+  for (const i of [2, 1, 0]) {
+    if (!P[i]) continue;
+    if (resTok !== tok) return false;
+    await rankSound(i, tok);
+    if (resTok !== tok) return false;
+    await sl(2000);
+    if (resTok !== tok) return false;
+    const one = []; one[i] = P[i];
+    revealPod($('podium'), one, false, [0, 0, 0]);
+  }
+  return resTok === tok;
+}
 function buildResult() {
   const us = collectUsers(), duo = gameMode === 'duo' || gameMode === 'knockout', ko = gameMode === 'knockout' || gameMode === 'onehit' || gameMode === 'bomb';
   const r = { session: currentSession, at: hostNow(), mode: gameMode, duo };
@@ -2192,16 +2236,18 @@ function showResult(res) {
   shownSess = res.session; closeResult(); shownSess = res.session; o.classList.add('active');
   const L = $('lobbyBtn'); L.disabled = true; L.textContent = '🔒 시상식 진행 중...';   // 시상식이 끝날 때까지 로비로 못 감
   const P = res.podium || [], tp = $('trollPodium'), tr = res.troll && res.troll.podium && res.troll.podium.length ? res.troll.podium : null;
-  fillPod($('podium'), P, false); SFX.drumroll(1.2); revealPod($('podium'), P, false, [3600, 2400, 1200]);
+  fillPod($('podium'), P, false); SFX.drumroll(1.2); const tok = ++resTok;
   $('resList').innerHTML = res.duo
     ? (res.teams || []).map(t => `<div class="res-team"><div class="rank-item" style="border:2px solid ${t.color || TEAM_COLORS[t.k]}"><span>${esc(t.name || TEAM_NAMES[t.k])}</span><span>${res.mode === 'knockout' ? t.score + '승' : fs(t.score) + '점'}</span></div>${t.m.map(u => `<div class="rank-item"><span>${esc(u.n)}</span><span>${fs(u.s)}점</span></div>`).join('')}</div>`).join('')
     : (res.list || []).map((u, i) => `<div class="rank-item"><div class="user-info"><span class="rank-badge ${['rank-1', 'rank-2', 'rank-3'][i] || 'rank-etc'}">${i + 1}등</span><span>${esc(u.n)}</span></div><span>${fs(u.s)}점</span></div>`).join('');
-  rt(() => $('resPanel').classList.add('on'), 5000);
+  runPodium(P, tok).then(ok => { if (ok) rt(afterPodium, 3800); });   // 시상대가 다 올라온 뒤에 랭킹/트롤 진행
+  function afterPodium() {
+  $('resPanel').classList.add('on');
   /* 순서: 점수 → 트롤 */
   const unlock = () => { L.disabled = false; L.textContent = '로비로'; SFX.unlock(); };
   /* 시상식이 다 끝나면 로비로 버튼이 풀림 */
   if (tr) {   // 트롤 시상식: 배경은 그대로, 긴장감 → 하나씩 공개 → 불꽃놀이
-    const B = 5600;
+    const B = 600;
     rt(() => { $('podium').classList.add('out'); SFX.whoosh(); fillPod(tp, tr, true); tp.classList.add('show', 'shaking'); SFX.drumroll(1.2); }, B);
     revealPod(tp, tr, true, [B + 5200, B + 2800, B + 1200]);
     [3300, 3900, 4500].forEach(d => rt(SFX.heart, B + d));
@@ -2210,11 +2256,12 @@ function showResult(res) {
     rt(unlock, B + 8000);
     trollFxStart(res.troll.fx, B);
   }
-  if (!tr) rt(unlock, 5600);
+  if (!tr) rt(unlock, 600);
+  }
 if (!fxOn) { fxOn = true; fxLoop(); }
 }
 function closeResult() {
-  resClosed = shownSess; resT.forEach(clearTimeout); resT = []; clearInterval(trollInt); trollInt = null; parts = []; trollLv = 0; trollFl = [0, 0, 0]; deco = []; { const bn = $('resBanner'); bn.style.display = 'none'; bn.className = ''; }
+  resClosed = shownSess; resTok++; rankAud.forEach(a => { try { a.pause(); } catch (e) {} }); rankAud = []; resT.forEach(clearTimeout); resT = []; clearInterval(trollInt); trollInt = null; parts = []; trollLv = 0; trollFl = [0, 0, 0]; deco = []; { const bn = $('resBanner'); bn.style.display = 'none'; bn.className = ''; }
   const L = $('lobbyBtn'); L.disabled = false; L.textContent = '로비로';
   $('resultOverlay').classList.remove('active'); $('podium').classList.remove('out'); $('trollPodium').classList.remove('show', 'shaking', 'tfx-a', 'tfx-b', 'tfx-c'); ;
   $('podium').innerHTML = ''; $('trollPodium').innerHTML = ''; $('resPanel').classList.remove('on');
@@ -2405,6 +2452,7 @@ $('cpUrl').addEventListener('input', () => cpMsg(''));
 $('cpSite').onclick = () => { try { window.open(CP_SITE, '_blank', 'noopener'); } catch (e) {} };
 $('changeProfileBtn').addEventListener('click', () => { $('cpPrev').src = selectedImage; cpMsg(''); cpShow(0); });
 setInterval(() => { if ($('profilePickerUI').style.display === 'flex' && Date.now() >= cpAt) cpShow(cpI + 1); }, 400);
+{ const sc = document.createElement('div'); sc.className = 'profile-scroll'; sc.id = 'profileScroll'; const g = $('profileGrid'); g.parentNode.insertBefore(sc, g); sc.appendChild(g); sc.appendChild($('cpBox')); }   // 커스텀 프로필은 목록과 같이 스크롤 (맨 아래)
 $('cpPrev').src = selectedImage; cpShow(0);
 $('profileGrid').innerHTML = profileImages.map(u => `<div class="profile-thumb-card" data-u="${esc(u)}"><img class="profile-thumb-img" src="${esc(u)}" alt=""></div>`).join('');
 $('profileGrid').onclick = e => { const c = e.target.closest('[data-u]'); if (!c) return; selectedImage = c.dataset.u; $('cardImage').src = selectedImage; $('closeProfilePickerBtn').onclick(); updatePresence(); };
