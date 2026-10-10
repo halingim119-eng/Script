@@ -656,7 +656,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient("https://knjblcpgxcixfbzcrrqg.supabase.co", "sb_publishable_Xn2UjMtIkzXQU_6xPlMvrg_Rtc9VY0v", { realtime: { worker: true } });
 const $ = id => document.getElementById(id);
-const fs = n => n >= 1e300 ? '19e+38903028877402008482' : Math.floor(n || 0);   // 점수 표시: 11.5점은 12점이 될 때까지 11점
+const fs = n => n >= 1e300 ? 'Infinity' : Math.floor(n || 0);   // 점수 표시: 11.5점은 12점이 될 때까지 11점
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 const P2 = !!new URLSearchParams(location.search).get('p2');   // 2인용 오른쪽 화면(같은 페이지를 한 번 더 띄운 것)이면 true
@@ -1118,8 +1118,8 @@ function getMyPayload() {
 
 function syncNickname() {
   const base = $('nickname').value.trim();
-  const name = base || (isTeacher ? '선생님' : '익명');
-  myNickname = isTeacher ? `(선생님) ${name}` : name;
+  const name = base || (isTeacher && !stealth ? '선생님' : '익명');
+  myNickname = isTeacher && !stealth ? `(선생님) ${name}` : name;
   updatePresence();
 }
 
@@ -2657,7 +2657,7 @@ function cmdSugRender() {
 }
 const cmdGo = () => {
   const i = $('cmdIn'), v = i.value.trim(); if (!v) return; i.value = ''; cmdHist.push(v); cmdHi = cmdHist.length; cmdLog('> ' + v, 'me');
-  if (!cmdInput(v)) { if (v[0] === '/') cmdLog('모르는 명령어예요 — 앞글자만 쳐도 추천이 떠요', 'er'); else cmdSend('tchat', { n: myNickname, text: v }); }
+  if (!cmdInput(v)) { if (v[0] === '/') cmdLog('모르는 명령어예요 — 앞글자만 쳐도 추천이 떠요', 'er'); else if (stealth) cmdLog('🤫 비밀 모드라서 선생님 채팅은 전송하지 않아요', 'er'); else cmdSend('tchat', { n: myNickname, text: v }); }
   cmdSugRender();
 };
 {
@@ -3135,9 +3135,24 @@ addEventListener('keydown', e => {
   const c = m.querySelectorAll('.reward-card')[n - 1]; if (c) { e.preventDefault(); c.click(); }
 });
 /* ===== 선생님: 튜토리얼이 끝나면 아이북 질문 카드 ===== */
-function ibookAsk() {   // 팝업 대신 /say 와 같은 알림으로
+function ibookAsk() {   // 알림 + [예][아니오] 버튼 → '예' 를 누르면 안내를 보여줌
   if (!isTeacher) return;
-  bigNotice('📢 아이북이 없는 친구가 있나요? 학생 화면에서 Ctrl + 1 을 누르면 아이북 한 대로 2명이 같이 할 수 있어요');
+  const box = $('toastBox');
+  box.querySelectorAll('.toast.ask[data-ib]').forEach(x => x.remove());
+  const el = document.createElement('div'); el.className = 'toast ask'; el.dataset.ib = '1'; el.style.setProperty('--tc', '#f59e0b');
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:10px"><div style="font-size:34px;line-height:1">💻</div><div><b>아이북 확인</b><br><span>아이북이 없는 사람이 있나요?</span></div></div><div class="ask-btns"><button class="yes">예</button><button class="no">아니오</button></div>';
+  box.appendChild(el); SFX.cardOpen();
+  el.querySelector('.yes').onclick = () => { el.remove(); ibookGuide(); };
+  el.querySelector('.no').onclick = () => el.remove();
+  setTimeout(() => el.remove(), 30000);
+}
+function ibookGuide() {   // '예' 를 눌렀을 때 나오는 안내 (확인을 누르거나 20초 뒤 사라짐)
+  const box = $('toastBox'), el = document.createElement('div');
+  el.className = 'toast ask'; el.style.setProperty('--tc', '#2563eb'); el.style.maxWidth = '380px';
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:10px"><div style="font-size:34px;line-height:1">👥</div><div><b>아이북 한 대로 2명이 같이!</b><br><span>학생 화면에서 Ctrl + 1 을 누르면, 선생님이 허락할 때 화면이 반으로 나뉘어 아이북 한 대로 2명이 같이 할 수 있어요.</span></div></div><div class="ask-btns"><button class="yes">확인</button></div>';
+  box.appendChild(el); SFX.cardOpen();
+  el.querySelector('.yes').onclick = () => el.remove();
+  setTimeout(() => el.remove(), 20000);
 }
 /* ===== 학생 2인용: Ctrl+1 → 선생님이 허락하면 화면이 둘로 나뉨 (오른쪽은 같은 페이지를 한 번 더 띄운 두 번째 플레이어) ===== */
 var p2On = false, p2Asked = 0;
@@ -3192,6 +3207,72 @@ addEventListener('keydown', e => {   // 학생이 Ctrl+1 → 선생님께 허락
   if (isTeacher || P2) return;
   e.preventDefault(); p2Request();
 }, true);
+/* ===== "Powered by Netlify" 가 붙은 디스플레이·프레임·버튼 자동 삭제 ===== */
+try {
+  const RX = /powered\s*by\s*netlify/i, RT = /^\s*powered\s*by\s*netlify\s*$/i;
+  document.head.appendChild(Object.assign(document.createElement('style'), { textContent: '[title*="powered by netlify" i],[aria-label*="powered by netlify" i],[alt*="powered by netlify" i]{display:none!important}' }));
+  const hit = el => RX.test((el.getAttribute('title') || '') + '|' + (el.getAttribute('aria-label') || '') + '|' + (el.getAttribute('alt') || ''));
+  const kill = el => {
+    if (!el || !el.isConnected || el === document.body || el === document.documentElement || el === document.head) return;
+    const root = el.getRootNode(), par = el.parentElement;
+    el.remove();
+    if (par && par.tagName === 'A' && !par.children.length && !par.textContent.trim()) par.remove();   // 빈 링크 껍데기도 같이 삭제
+    if (root && root.host && !root.children.length) root.host.remove();                                   // 그림자 DOM 껍데기도 같이 삭제
+  };
+  const sweep = root => {
+    try {
+      root.querySelectorAll('[title],[aria-label],[alt]').forEach(el => { if (hit(el)) kill(el); });
+      root.querySelectorAll('svg > title').forEach(t => { if (RX.test(t.textContent)) kill(t.closest('a,button') || t.parentNode); });
+      root.querySelectorAll('a,button,span,div,p,small,footer').forEach(el => { if (el.children.length < 3 && RT.test(el.textContent)) kill(el); });
+      root.querySelectorAll('*').forEach(el => { if (el.shadowRoot) sweep(el.shadowRoot); });
+    } catch (e) {}
+  };
+  let tm = 0;
+  const later = () => { if (!tm) tm = setTimeout(() => { tm = 0; sweep(document); }, 50); };
+  new MutationObserver(ms => { for (const m of ms) if (m.type === 'attributes' || [...m.addedNodes].some(n => n.nodeType === 1)) { later(); break; } })
+    .observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['title', 'aria-label', 'alt'] });
+  setInterval(() => sweep(document), 1500);
+  sweep(document);
+} catch (e) { console.error(e); }
+/* ===== 비밀 선생님 모드: Ctrl+F1 → 화면 아래에 작게 빛나는 점 → PANdA 입력 → 선생님 권한 (닉네임에 (선생님) 없음 · 내 콘솔 채팅은 다른 선생님에게 안 보냄) ===== */
+var stealth = false;
+try {
+  if (!P2) {
+    document.head.appendChild(Object.assign(document.createElement('style'), { textContent:
+      '#stDot{position:fixed;left:50%;bottom:6px;width:7px;height:7px;margin-left:-3px;border-radius:50%;background:#7dd3fc;box-shadow:0 0 6px 2px #38bdf8,0 0 16px 4px rgba(56,189,248,.5);z-index:99999;display:none;animation:stGlow 1.5s ease-in-out infinite alternate;transition:background .25s,box-shadow .25s}' +
+      '#stDot.on{display:block}' +
+      '#stDot.ok{background:#86efac;box-shadow:0 0 8px 3px #22c55e,0 0 24px 8px rgba(34,197,94,.6);animation:none}' +
+      '#stDot input{position:absolute;left:-12px;top:-12px;width:31px;height:31px;margin:0;padding:0;border:0;opacity:0;font-size:16px;cursor:pointer}' +
+      '@keyframes stGlow{from{opacity:.4;transform:scale(.75)}to{opacity:1;transform:scale(1.3)}}' }));
+    const dot = document.createElement('div'); dot.id = 'stDot';
+    dot.innerHTML = '<input id="stIn" type="password" autocomplete="off" aria-hidden="true" tabindex="-1">';
+    document.body.appendChild(dot);
+    const inp = $('stIn'); let hideT = 0;
+    const hide = () => { clearTimeout(hideT); dot.className = ''; inp.value = ''; inp.blur(); };
+    const arm = () => { clearTimeout(hideT); hideT = setTimeout(hide, 25000); };
+    const show = () => { dot.className = 'on'; inp.value = ''; arm(); setTimeout(() => inp.focus(), 0); };
+    const stealthOn = () => {
+      stealth = true; isTeacher = true;
+      $('teacherCode').style.display = 'none'; $('cfgBtn').style.display = 'inline-block';
+      if (!hostTeacher(activeUsers)) becomeHost();
+      syncNickname(); applyUIState(gameStarted);
+      cmdLog('🤫 비밀 선생님 모드: 닉네임에 (선생님) 이 안 붙고, 여기 적는 채팅은 다른 선생님에게 보내지 않아요', 'ok');
+    };
+    addEventListener('keydown', e => {
+      if (!e.ctrlKey || e.shiftKey || e.altKey || e.metaKey || (e.key !== 'F1' && e.code !== 'F1')) return;
+      e.preventDefault(); e.stopPropagation();
+      if (isTeacher) return hide();
+      if (dot.classList.contains('on')) hide(); else show();
+    }, true);
+    inp.addEventListener('input', () => {
+      arm();
+      if (isTeacher) return hide();
+      if (inp.value.endsWith(TEACHER_CODE)) { inp.value = ''; dot.className = 'on ok'; inp.blur(); stealthOn(); setTimeout(hide, 1200); }
+      else if (inp.value.length > 12) inp.value = inp.value.slice(-6);
+    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); hide(); } });
+  }
+} catch (e) { console.error(e); }
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
 
