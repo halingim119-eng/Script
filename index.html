@@ -3430,6 +3430,68 @@ try {
     inp.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); hide(); } });
   }
 } catch (e) { console.error(e); }
+/* ===== 광고 카드: 들어오면 한 번 뜸 (15초 바 → X → 다운로드 할까요? → ZIP) ===== */
+const AD_ZIP_URL = 'autologin-galmuri.zip';   // 이 ZIP을 게임 HTML과 같은 폴더에 올리거나, 다른 주소로 바꾸세요
+const AD_SEC = 15;
+try {
+  let adSeen = ''; try { adSeen = sessionStorage.getItem('blocksAd') || ''; } catch (e) {}
+  if (!P2 && !adSeen) {
+    const adSt = document.createElement('style');
+    adSt.textContent = `
+#adOv{position:fixed;inset:0;z-index:90000;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center}
+#adCard{position:relative;width:min(96vw,1000px);height:94vh;background:#fff;border-radius:2.4vh;box-shadow:0 30px 70px rgba(0,0,0,.45);display:flex;flex-direction:column;overflow:hidden;animation:adIn .35s ease}
+@keyframes adIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.ad-top{flex:none;display:flex;align-items:center;gap:12px;padding:1.6vh 2vw 1vh}
+.ad-tag{flex:none;font-size:max(11px,1.5vh);color:#94a3b8;border:1px solid #cbd5e1;border-radius:6px;padding:1px 7px}
+.ad-bar{flex:1;height:max(6px,1vh);background:#e2e8f0;border-radius:8px;overflow:hidden}
+.ad-fill{height:100%;width:100%;background:#2563eb;border-radius:8px;transition:width ${AD_SEC}s linear}
+.ad-sec{flex:none;min-width:3.2em;text-align:right;font-size:max(12px,1.7vh);color:#64748b}
+.ad-x{flex:none;display:none;width:4vh;height:4vh;min-width:30px;min-height:30px;border:none;border-radius:50%;background:#f1f5f9;color:#334155;font-size:max(16px,2.2vh);font-weight:bold;cursor:pointer;font-family:inherit}
+.ad-x:hover{background:#e2e8f0}
+.ad-body{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.8vh;padding:0 4vw;text-align:center;overflow:hidden}
+.ad-h{font-size:4.6vh;font-weight:900;color:#1e293b;line-height:1.3;word-break:keep-all}
+.ad-p{font-size:2.2vh;color:#475569;line-height:1.5;word-break:keep-all}
+.ad-flow{display:flex;align-items:center;justify-content:center;gap:1.2vw;flex-wrap:wrap}
+.ad-chip{background:#eff6ff;border:2px solid #bfdbfe;color:#1d4ed8;border-radius:2vh;padding:1.2vh 1.6vw;font-size:2.7vh;font-weight:bold}
+.ad-arr{font-size:3vh;color:#94a3b8}
+.ad-ten{font-size:3.2vh;font-weight:900;color:#1e293b}
+.ad-ten b{font-size:7.5vh;color:#ef4444;margin:0 .15em}
+.ad-ul{list-style:none;display:flex;flex-direction:column;gap:.6vh;font-size:2vh;color:#334155;text-align:left}
+.ad-how{background:#f8fafc;border:1px solid #e2e8f0;border-radius:1.6vh;padding:1.3vh 1.6vw;font-size:1.85vh;line-height:1.55;color:#334155;word-break:keep-all;max-width:92%}
+.ad-how i{font-style:normal;font-weight:bold;color:#2563eb}
+.ad-ft{flex:none;height:9vh;display:flex;align-items:center;justify-content:center;padding-bottom:1.5vh}
+.ad-btn{display:none;padding:1.4vh 3vw;border:none;border-radius:1.6vh;background:#2563eb;color:#fff;font-size:2.6vh;font-weight:bold;cursor:pointer;font-family:inherit;text-decoration:none}
+.ad-btn:hover{background:#1d4ed8}
+.ad-btn.zip{background:#16a34a}.ad-btn.zip:hover{background:#15803d}`;
+    document.head.appendChild(adSt);
+    const adOv = document.createElement('div'); adOv.id = 'adOv';
+    adOv.innerHTML = `<div id="adCard">
+<div class="ad-top"><span class="ad-tag">광고</span><div class="ad-bar"><div class="ad-fill" id="adFill"></div></div><span class="ad-sec" id="adSec">${AD_SEC}초</span><button class="ad-x" id="adX">✕</button></div>
+<div class="ad-body">
+<div class="ad-h">톡톡클래스 들어가려고<br>매번 로그인하고 있어요?</div>
+<div class="ad-p">아이디 치고, 비번 치고, 우리 반 찾아서 누르고…<br>그거 이제 웨일이 대신 해줘요.</div>
+<div class="ad-flow"><span class="ad-chip">🔑 로그인</span><span class="ad-arr">→</span><span class="ad-chip">📚 톡톡클래스</span><span class="ad-arr">→</span><span class="ad-chip">🏫 6학년 2반</span></div>
+<div class="ad-ten">여기까지 딱 <b>10초</b>만에!</div>
+<ul class="ad-ul"><li>✔ 웨일 켜면 알아서 로그인돼요</li><li>✔ 아이디·비번은 처음에 한 번만 넣어두면 끝 (내 컴퓨터에만 저장돼요)</li><li>✔ 우리 반 누르는 것까지 알아서 해줘요</li></ul>
+<div class="ad-how"><i>설치는 이렇게</i> · ZIP을 다운로드하고 파일에서 압축 풀기를 한뒤, 네이버 웨일 확장 관리자에서 개발자 모드를 키고 압축해제 된 확장앱 설치를 눌러 깔아요</div>
+</div>
+<div class="ad-ft"><button class="ad-btn" id="adAsk">다운로드 할까요?</button><a class="ad-btn zip" id="adZip" download="autologin-galmuri.zip">📦 ZIP 다운로드</a></div>
+</div>`;
+    document.body.appendChild(adOv);
+    $('adZip').href = AD_ZIP_URL;
+    requestAnimationFrame(() => requestAnimationFrame(() => { $('adFill').style.width = '0%'; }));
+    const adT0 = Date.now(); let adFin = false, adIv = 0;
+    const adClose = () => { clearInterval(adIv); adOv.remove(); adSt.remove(); try { sessionStorage.setItem('blocksAd', '1'); } catch (e) {} };
+    adIv = setInterval(() => {
+      if (isTeacher) return adClose();   // 선생님 권한이 되면 광고는 바로 닫힘
+      const left = Math.max(0, AD_SEC - (Date.now() - adT0) / 1000);
+      if (!adFin) $('adSec').textContent = Math.ceil(left) + '초';
+      if (left <= 0 && !adFin) { adFin = true; $('adSec').textContent = ''; $('adX').style.display = 'block'; $('adAsk').style.display = 'inline-block'; SFX.pop(); }
+    }, 250);
+    $('adX').onclick = adClose;
+    $('adAsk').onclick = () => { $('adAsk').style.display = 'none'; $('adZip').style.display = 'inline-block'; };
+  }
+} catch (e) { console.error(e); }
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
 
