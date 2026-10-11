@@ -3462,10 +3462,10 @@ try {
 #adOv .ad-btn{display:none;padding:8px 22px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:14px;font-weight:bold;cursor:pointer;font-family:inherit;text-decoration:none}
 #adOv .ad-btn:hover{background:#1d4ed8}
 #adOv .ad-btn.zip{background:#16a34a}#adOv .ad-btn.zip:hover{background:#15803d}
-#adOv .ad-vid{flex:none;display:none;width:368px;height:170px;max-width:100%;align-self:center;border-radius:8px;overflow:hidden;background:#0f172a}
-#adOv .ad-vid iframe{width:100%;height:100%;border:0;display:block}
-#adOv.vid .ad-vid{display:block}
-#adOv.vid .ad-p,#adOv.vid .ad-ul{display:none}`;
+#adOv .ad-ul li{font-weight:bold;font-size:13px}
+#adOv .ad-ul li::before{content:"✔ ";color:#16a34a}
+#adOv .ad-imgs{flex:none;display:flex;gap:8px;width:100%;justify-content:center}
+#adOv .ad-imgs img{flex:1;min-width:0;max-width:49%;max-height:130px;object-fit:contain;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc}`;
   document.head.appendChild(adSt);
   let adIv = 0;
   const adClose = () => { clearInterval(adIv); adIv = 0; const o = $('adOv'); if (o) o.remove(); };
@@ -3476,10 +3476,12 @@ try {
     ov.innerHTML = `<div class="ad-top"><span class="ad-tag">광고 아닌 광고</span><div class="ad-bar"><div class="ad-fill" id="adFill"></div></div><span class="ad-sec" id="adSec">${AD_SEC}초</span><button class="ad-x" id="adX">✕</button></div>
 <div class="ad-body">
 <div class="ad-h">웨일로 톡톡클래스에 자동 로그인해주는 도구</div>
+<ul class="ad-ul"><li>키기만 하면 바로 로그인</li><li>한번 설치하면 끝</li><li>공유방 링크들도 자동으로</li></ul>
 <div class="ad-how"><i>설치는 이렇게</i> · ZIP을 다운로드하고 파일에서 압축 풀기를 한뒤, 네이버 웨일 확장 관리자에서 개발자 모드를 키고 압축해제 된 확장앱 설치를 눌러 깔아요</div>
+<div class="ad-imgs"><img src="https://gcdnb.pbrd.co/images/TrNiVDj58ti8.png" alt=""><img src="https://gcdnb.pbrd.co/images/SwW1zhnHKo5c.png" alt=""></div>
 </div>
 <div class="ad-ft"><button class="ad-btn" id="adAsk">다운로드 할까요?</button><a class="ad-btn zip" id="adZip" download="autologin-galmuri.zip">ZIP 다운로드</a></div>
-<div class="ad-vid" id="adVid"></div>`;
+`;
     $('profilePickerUI').appendChild(ov);
     $('adZip').href = AD_ZIP_URL;
     requestAnimationFrame(() => requestAnimationFrame(() => { const f = $('adFill'); if (f) f.style.width = '0%'; }));
@@ -3499,7 +3501,7 @@ try {
       setTimeout(() => { if (!ok && ov.isConnected) { box.remove(); ov.classList.remove('vid'); } }, 8000);
     };
     $('adX').onclick = adClose;
-    $('adAsk').onclick = () => { $('adAsk').style.display = 'none'; $('adZip').style.display = 'inline-block'; adVideo(); };
+    $('adAsk').onclick = () => { $('adAsk').style.display = 'none'; $('adZip').style.display = 'inline-block'; };
   };
   $('changeProfileBtn').addEventListener('click', adOpen);
 } catch (e) { console.error(e); }
