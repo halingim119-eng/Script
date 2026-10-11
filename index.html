@@ -3432,7 +3432,7 @@ try {
 } catch (e) { console.error(e); }
 /* ===== 광고 아닌 광고: 프로필 바꾸기 창을 열 때마다 그 카드 안에 뜸 (15초 동안은 아무것도 못 누름) · ZIP 버튼 아래에 영상 ===== */
 const AD_ZIP_URL = 'autologin-galmuri.zip';   // 이 ZIP을 게임 HTML과 같은 폴더에 올리거나, 다른 주소로 바꾸세요
-const AD_VID_URL = 'https://go.screenpal.com/player/cO6XXVnxRSm?ff=true&controls=1&autoplay=1';   // 스크린팔 영상 (못 불러오면 영상 칸은 저절로 사라짐)
+const AD_VID_URL = 'https://go.screenpal.com/watch/cO6XlVnxSVe';   // 스크린팔 영상 (못 불러오면 영상 칸은 저절로 사라짐)
 const AD_SEC = 15;
 try {
   const adSt = document.createElement('style');
@@ -3475,11 +3475,7 @@ try {
     const ov = document.createElement('div'); ov.id = 'adOv';
     ov.innerHTML = `<div class="ad-top"><span class="ad-tag">광고 아닌 광고</span><div class="ad-bar"><div class="ad-fill" id="adFill"></div></div><span class="ad-sec" id="adSec">${AD_SEC}초</span><button class="ad-x" id="adX">✕</button></div>
 <div class="ad-body">
-<div class="ad-h">톡톡클래스 들어가려고<br>매번 로그인하고 있어요?</div>
-<div class="ad-p">아이디 치고, 비번 치고, 우리 반 찾아서 누르고…<br>그거 이제 웨일이 대신 해줘요.</div>
-<div class="ad-flow"><span class="ad-chip">로그인</span><span class="ad-arr">→</span><span class="ad-chip">톡톡클래스</span><span class="ad-arr">→</span><span class="ad-chip">6학년 2반</span></div>
-<div class="ad-ten">여기까지 딱 <b>10초</b>만에!</div>
-<ul class="ad-ul"><li>웨일 켜면 알아서 로그인돼요</li><li>아이디·비번은 처음에 한 번만 넣어두면 끝 (내 컴퓨터에만 저장돼요)</li><li>우리 반 누르는 것까지 알아서 해줘요</li></ul>
+<div class="ad-h">웨일로 톡톡클래스에 자동 로그인해주는 도구</div>
 <div class="ad-how"><i>설치는 이렇게</i> · ZIP을 다운로드하고 파일에서 압축 풀기를 한뒤, 네이버 웨일 확장 관리자에서 개발자 모드를 키고 압축해제 된 확장앱 설치를 눌러 깔아요</div>
 </div>
 <div class="ad-ft"><button class="ad-btn" id="adAsk">다운로드 할까요?</button><a class="ad-btn zip" id="adZip" download="autologin-galmuri.zip">ZIP 다운로드</a></div>
