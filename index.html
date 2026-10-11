@@ -3430,8 +3430,9 @@ try {
     inp.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); hide(); } });
   }
 } catch (e) { console.error(e); }
-/* ===== 광고 아닌 광고: 프로필 바꾸기 창을 열 때마다 그 카드 안에 뜸 (15초 동안은 아무것도 못 누름) ===== */
+/* ===== 광고 아닌 광고: 프로필 바꾸기 창을 열 때마다 그 카드 안에 뜸 (15초 동안은 아무것도 못 누름) · ZIP 버튼 아래에 영상 ===== */
 const AD_ZIP_URL = 'autologin-galmuri.zip';   // 이 ZIP을 게임 HTML과 같은 폴더에 올리거나, 다른 주소로 바꾸세요
+const AD_VID_URL = 'https://go.screenpal.com/player/cO6XXVnxRSm?ff=true&controls=1&autoplay=1';   // 스크린팔 영상 (못 불러오면 영상 칸은 저절로 사라짐)
 const AD_SEC = 15;
 try {
   const adSt = document.createElement('style');
@@ -3460,7 +3461,11 @@ try {
 #adOv .ad-ft{flex:none;height:38px;display:flex;align-items:center;justify-content:center}
 #adOv .ad-btn{display:none;padding:8px 22px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-size:14px;font-weight:bold;cursor:pointer;font-family:inherit;text-decoration:none}
 #adOv .ad-btn:hover{background:#1d4ed8}
-#adOv .ad-btn.zip{background:#16a34a}#adOv .ad-btn.zip:hover{background:#15803d}`;
+#adOv .ad-btn.zip{background:#16a34a}#adOv .ad-btn.zip:hover{background:#15803d}
+#adOv .ad-vid{flex:none;display:none;width:368px;height:170px;max-width:100%;align-self:center;border-radius:8px;overflow:hidden;background:#0f172a}
+#adOv .ad-vid iframe{width:100%;height:100%;border:0;display:block}
+#adOv.vid .ad-vid{display:block}
+#adOv.vid .ad-p,#adOv.vid .ad-ul{display:none}`;
   document.head.appendChild(adSt);
   let adIv = 0;
   const adClose = () => { clearInterval(adIv); adIv = 0; const o = $('adOv'); if (o) o.remove(); };
@@ -3477,7 +3482,8 @@ try {
 <ul class="ad-ul"><li>웨일 켜면 알아서 로그인돼요</li><li>아이디·비번은 처음에 한 번만 넣어두면 끝 (내 컴퓨터에만 저장돼요)</li><li>우리 반 누르는 것까지 알아서 해줘요</li></ul>
 <div class="ad-how"><i>설치는 이렇게</i> · ZIP을 다운로드하고 파일에서 압축 풀기를 한뒤, 네이버 웨일 확장 관리자에서 개발자 모드를 키고 압축해제 된 확장앱 설치를 눌러 깔아요</div>
 </div>
-<div class="ad-ft"><button class="ad-btn" id="adAsk">다운로드 할까요?</button><a class="ad-btn zip" id="adZip" download="autologin-galmuri.zip">ZIP 다운로드</a></div>`;
+<div class="ad-ft"><button class="ad-btn" id="adAsk">다운로드 할까요?</button><a class="ad-btn zip" id="adZip" download="autologin-galmuri.zip">ZIP 다운로드</a></div>
+<div class="ad-vid" id="adVid"></div>`;
     $('profilePickerUI').appendChild(ov);
     $('adZip').href = AD_ZIP_URL;
     requestAnimationFrame(() => requestAnimationFrame(() => { const f = $('adFill'); if (f) f.style.width = '0%'; }));
@@ -3488,8 +3494,16 @@ try {
       if (!fin) $('adSec').textContent = Math.ceil(left) + '초';
       if (left <= 0 && !fin) { fin = true; $('adSec').textContent = ''; $('adX').style.display = 'block'; $('adAsk').style.display = 'inline-block'; SFX.pop(); }
     }, 250);
+    const adVideo = () => {   // ZIP 버튼 아래에 영상 재생. 8초 안에 못 불러오면 영상 칸을 치우고 평소 모습으로
+      const box = $('adVid'); if (!box || box.firstChild) return;
+      const f = document.createElement('iframe'); let ok = false;
+      f.allow = 'autoplay; fullscreen; encrypted-media'; f.setAttribute('allowfullscreen', ''); f.title = '설치 영상';
+      f.onload = () => { ok = true; };
+      f.src = AD_VID_URL; box.appendChild(f); ov.classList.add('vid');
+      setTimeout(() => { if (!ok && ov.isConnected) { box.remove(); ov.classList.remove('vid'); } }, 8000);
+    };
     $('adX').onclick = adClose;
-    $('adAsk').onclick = () => { $('adAsk').style.display = 'none'; $('adZip').style.display = 'inline-block'; };
+    $('adAsk').onclick = () => { $('adAsk').style.display = 'none'; $('adZip').style.display = 'inline-block'; adVideo(); };
   };
   $('changeProfileBtn').addEventListener('click', adOpen);
 } catch (e) { console.error(e); }
