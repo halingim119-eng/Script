@@ -3578,6 +3578,7 @@ function cgIntro() {   // 매칭 직후 5초: MP3 2번 → 5초가 되면 3번�
 }
 /* ----- 시작 / 매칭 ----- */
 function cgOpen() {
+  if (isTeacher) return;   // 선생님에게는 초성 대결이 아예 안 보임
   if (CG.s !== 'idle') return;
   if (gameStarted || curStage) return showToast(null, '게임하기', '지금은 할 수 없어요', '#94a3b8');
   if (!isSubscribed || !room) return showToast(null, '게임하기', '연결 중이에요. 잠시 뒤에 다시 눌러 주세요', '#94a3b8');
@@ -3697,6 +3698,32 @@ $('cgGo').onclick = () => cgSubmit($('cgIn').value);
 $('cgIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) cgSubmit($('cgIn').value); });
 $('cgAgain').onclick = () => { cgLeave(false); cgOpen(); };
 $('cgBye').onclick = () => cgLeave(false);
+document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
+body.tch #cgOpenBtn,body.tch #cgOpenBtn2{display:none!important}
+#cgBox{background:radial-gradient(circle at 15% 0%,#c7d2fe 0,transparent 45%),radial-gradient(circle at 100% 100%,#fbcfe8 0,transparent 45%),#f5f3ff;border:2px solid #c7d2fe;box-shadow:inset 0 0 40px rgba(255,255,255,.7),0 6px 18px rgba(99,102,241,.15)}
+.cg-head{font-size:16px;color:#4c1d95}
+.cg-pill{border-width:2px;box-shadow:0 3px 0 #c7d2fe;font-size:13px}
+.cg-pill.tm{box-shadow:0 3px 0 #fecdd3}
+.cg-bar{height:14px;border:2px solid #fff;box-shadow:0 2px 8px rgba(99,102,241,.25)}
+.cg-bar i{background:linear-gradient(90deg,#38bdf8,#6366f1,#d946ef)}
+.cg-ch{gap:10px}
+.cg-ch b{width:62px;height:76px;font-size:44px;border-radius:18px;background:linear-gradient(160deg,#818cf8,#c026d3);border:3px solid rgba(255,255,255,.6);box-shadow:0 7px 0 #4c1d95,0 16px 26px rgba(124,58,237,.4);text-shadow:0 3px 0 rgba(0,0,0,.25)}
+.cg-msg{font-size:13px;font-weight:bold;color:#6d28d9}
+.cg-p{border-width:3px;border-radius:18px;box-shadow:0 4px 0 #c7d2fe;padding:7px 10px}
+.cg-p.ok{box-shadow:0 4px 0 #86efac,0 0 0 4px rgba(34,197,94,.18)}
+.cg-p img{width:42px;height:42px;border-width:3px}
+.cg-vs>em{font-size:15px;text-shadow:0 2px 0 #fecdd3}
+.cg-in input{font-size:19px;padding:12px 18px;border-width:3px;box-shadow:0 4px 0 #c7d2fe}
+.cg-in button{font-size:15px;padding:0 26px}
+.cg-ic{border-radius:24px;padding:16px 10px;position:relative;overflow:hidden}
+.cg-ic::after{content:"";position:absolute;top:-40%;left:-60%;width:40%;height:180%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);transform:rotate(18deg);animation:cgShine 1.6s .8s ease-in-out 2}
+@keyframes cgShine{to{left:140%}}
+.cg-ic img{width:108px;height:108px;box-shadow:0 6px 16px rgba(99,102,241,.25)}
+.cg-it{font-size:24px;text-shadow:0 3px 0 #e0e7ff}
+.cg-cdn{font-size:34px;color:#7c3aed;text-shadow:0 3px 0 #ddd6fe}
+.cg-rt{font-size:44px;text-shadow:0 4px 0 #ddd6fe}
+` }));
+setInterval(() => document.body.classList.toggle('tch', !!isTeacher), 300);
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
 
