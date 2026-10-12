@@ -3377,10 +3377,30 @@ const cgLen = r => Math.min(CG_MAXLEN, 2 + Math.floor((r - 1) / 2));      // 2�
 const cgMs = r => Math.max(12000, CG_ROUND_MS - (r - 1) * 500);            // 라운드가 갈수록 시간도 조금씩 줄어듦
 const CG = { s: 'idle', mid: '', host: false, opp: null, inv: null, acc: null, r: 0, ch: '', endAt: 0, tot: CG_ROUND_MS, done: {}, wordOf: {}, used: [], over: null, seen: 0, nextAt: 0, lastFind: 0, lastHb: 0, lastPush: 0, lastTk: 0, t0: 0, dis: true, last: '', tm: [], aud: [] };
 let cgSet = null, cgCnt = null, cgByLen = null, cgLoadP = null;
+function cgPg(pct, got, total, text) {   // 단어 목록 다운로드 진행도 + 지금까지 받은 글자 표시
+  const b = $('cgLoadBox'); if (!b) return;
+  $('cgPgFill').style.width = pct + '%';
+  $('cgPgTxt').textContent = total ? pct + '%  (' + Math.round(got / 1024) + ' / ' + Math.round(total / 1024) + ' KB)' : Math.round(got / 1024) + ' KB 받는 중…';
+  const d = $('cgDl'); d.textContent = text; d.scrollTop = d.scrollHeight;
+}
+async function cgFetch() {
+  const r = await fetch(CG_URL); if (!r.ok) throw new Error('HTTP ' + r.status);
+  const total = +r.headers.get('content-length') || 0;
+  if (!r.body || !r.body.getReader) { const t = await r.text(); cgPg(100, t.length, t.length, t.slice(-1200)); return t; }
+  const rd = r.body.getReader(), dec = new TextDecoder('utf-8'); let got = 0, text = '', raf = 0, fin = false;
+  const draw = () => { raf = 0; if (fin) return; cgPg(total ? Math.min(99, Math.floor(got / total * 100)) : 0, got, total, text.slice(-1200)); };
+  for (;;) {
+    const { done, value } = await rd.read(); if (done) break;
+    got += value.length; text += dec.decode(value, { stream: true });
+    if (!raf) raf = requestAnimationFrame(draw);
+  }
+  fin = true; text += dec.decode(); cgPg(100, got, total || got, text.slice(-1200));
+  return text;
+}
 function cgLoad() {   // words.file 을 한 번만 불러와서 단어 집합 / 초성별 개수 / 글자수별 목록을 만듦
   if (cgSet) return Promise.resolve();
   if (cgLoadP) return cgLoadP;
-  cgLoadP = fetch(CG_URL).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(t => {
+  cgLoadP = cgFetch().then(t => {
     const set = new Set(), cnt = new Map(), byLen = {}; let arr;
     try { arr = JSON.parse(t.replace(/^\uFEFF/, '')); } catch (e) { arr = t.split(/\r?\n/).map(x => x.trim().replace(/^["',\s]+|["',\s]+$/g, '')); }
     if (!Array.isArray(arr)) arr = Object.values(arr || {});
@@ -3494,7 +3514,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 {
   const b = document.createElement('div'); b.id = 'cgBox';
   b.innerHTML = `<div class="cg-head"><span>🎮 초성 대결 <small style="font-size:11px;color:#818cf8">1:1</small></span><button class="inf-x" id="cgExit">나가기</button></div>
-<div id="cgSearch"><div class="cg-radar"><i></i><i></i><i></i><span>🎮</span></div><div id="cgSTxt">상대를 찾는 중…</div><div class="cg-sub">게임하기를 누른 다른 친구와 1:1로 연결돼요</div><button class="inf-x" id="cgCancel">취소</button></div>
+<div id="cgSearch"><div class="cg-radar"><i></i><i></i><i></i><span>🎮</span></div><div id="cgSTxt">상대를 찾는 중…</div><div id="cgLoadBox"><div class="cg-pgbar"><i id="cgPgFill"></i></div><div id="cgPgTxt">0%</div><pre id="cgDl"></pre></div><div class="cg-sub">게임하기를 누른 다른 친구와 1:1로 연결돼요</div><button class="inf-x" id="cgCancel">취소</button></div>
 <div id="cgIntro"><div class="cg-it">🎉 상대를 찾았어요!</div><div class="cg-ib"><div class="cg-ic me"><img id="cgIMe" alt=""><b id="cgIMeN"></b><span>나</span></div><div class="cg-iv">VS</div><div class="cg-ic op"><img id="cgIOp" alt=""><b id="cgIOpN"></b><span>상대</span></div></div><div class="cg-cdn" id="cgCdn">5</div></div>
 <div id="cgPlay">
 <div class="cg-top"><span class="cg-pill" id="cgRound"></span><span class="cg-pill tm" id="cgTimer"></span></div>
@@ -3509,7 +3529,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 }
 function cgShow() {
   const u = $('infoUI'); if (u) u.classList.toggle('cg-on', CG.s !== 'idle');
-  cgWide = CG.s === 'play' || CG.s === 'over' || CG.s === 'intro';   // 매칭되면 위 카드가 접히며 세로로 넓어짐
+  cgWide = CG.s === 'play' || CG.s === 'over' || CG.s === 'intro' || (CG.s === 'load' && !cgSet);   // 매칭되면 위 카드가 접히며 세로로 넓어짐
   cgRender(); infoSync();
 }
 function cgRender() {
@@ -3528,7 +3548,7 @@ function cgRender() {
   if (!play) return;
   const dm = !!CG.done[myId], dp = !!CG.done[op.id], both = dm && dp, fin = both || s === 'over', o = CG.over;
   const ck = CG.r + ':' + CG.ch, ce = $('cgCh');
-  if (ce.dataset.k !== ck) { ce.dataset.k = ck; ce.innerHTML = CG.ch ? [...CG.ch].map((c, i) => `<b style="animation-delay:${i * .07}s">${c}</b>`).join('') : '<b>?</b>'; }
+  if (ce.dataset.k !== ck) { ce.dataset.k = ck; ce.innerHTML = CG.ch ? [...CG.ch].map((c, i) => `<b style="animation-delay:${i * .03}s">${c}</b>`).join('') : '<b>?</b>'; }
   $('cgRound').textContent = CG.r ? '🔥 ' + CG.r + '라운드 · ' + CG.ch.length + '글자' : '준비 중…';
   $('cgMeImg').src = selectedImage; $('cgMeName').textContent = myNickname + ' (나)';
   $('cgOpImg').src = op.a || characterImages[0]; $('cgOpName').textContent = op.n || '상대';
@@ -3551,7 +3571,7 @@ function cgBar() {
   if (CG.s !== 'play' || !CG.opp) return;
   const both = CG.done[myId] && CG.done[CG.opp.id], l = Math.max(0, CG.endAt - Date.now()), f = $('cgBar');
   if (both) { f.style.width = '100%'; $('cgTimer').textContent = ''; return; }
-  f.style.width = Math.min(100, l / (CG.tot || CG_ROUND_MS) * 100) + '%'; f.style.background = l < 5000 ? 'linear-gradient(90deg,#f43f5e,#fb7185)' : '';
+  f.style.width = Math.min(100, l / (CG.tot || CG_ROUND_MS) * 100) + '%'; f.style.background = l < 5000 ? '#f43f5e' : '';
   const sc = Math.ceil(l / 1000); $('cgTimer').textContent = '⏱ ' + sc + '초';
   if (l > 0 && sc <= 3 && sc !== CG.lastTk) { CG.lastTk = sc; SFX.tick(); }
 }
@@ -3571,7 +3591,7 @@ function cgIntro() {   // 매칭 직후 5초: MP3 2번 → 5초가 되면 3번�
   const ce = $('cgCh'); ce.dataset.k = ''; ce.innerHTML = '';
   $('cgIntro').classList.remove('out'); $('cgCdn').textContent = Math.round(CG_INTRO_MS / 1000);
   cgSnd(0);
-  at(CG_INTRO_MS / 2, () => cgSnd(0));
+  /* 첫 번째 MP3는 5초 동안 한 번만 재생 */
   for (let k = 1; k < CG_INTRO_MS / 1000; k++) at(k * 1000, () => { $('cgCdn').textContent = CG_INTRO_MS / 1000 - k; });
   at(CG_INTRO_MS, () => { cgSnd(1); $('cgIntro').classList.add('out'); });
   at(CG_INTRO_MS + CG_INTRO_OUT, () => { CG.s = 'play'; CG.seen = Date.now(); cgShow(); if (CG.host) cgNextRound(); });
@@ -3584,8 +3604,10 @@ function cgOpen() {
   if (!isSubscribed || !room) return showToast(null, '게임하기', '연결 중이에요. 잠시 뒤에 다시 눌러 주세요', '#94a3b8');
   infoHide = false; if (settingsOpen) closeSettings(); if (cmdOn) cmdOpen(false);
   Object.assign(CG, { s: 'load', inv: null, acc: null, over: null, opp: null, mid: '', lastFind: 0, dis: true, t0: Date.now() });
-  $('cgSTxt').textContent = '단어 목록 불러오는 중…'; cgShow();
-  cgLoad().then(() => { if (CG.s !== 'load') return; CG.s = 'search'; CG.t0 = Date.now(); cgSend({ t: 'find', id: myId, n: myNickname, a: selectedImage }); CG.lastFind = Date.now(); cgShow(); })
+  $('cgSTxt').textContent = '단어 목록 불러오는 중…';
+  { const nl = !cgSet; $('cgSearch').classList.toggle('ld', nl); $('cgLoadBox').style.display = nl ? 'block' : 'none'; $('cgPgFill').style.width = '0%'; $('cgPgTxt').textContent = '0%'; $('cgDl').textContent = ''; }
+  cgShow();
+  cgLoad().then(() => { if (CG.s !== 'load') return; $('cgSearch').classList.remove('ld'); $('cgLoadBox').style.display = 'none'; CG.s = 'search'; CG.t0 = Date.now(); cgSend({ t: 'find', id: myId, n: myNickname, a: selectedImage }); CG.lastFind = Date.now(); cgShow(); })
     .catch(e => { if (CG.s !== 'load') return; CG.s = 'idle'; cgShow(); showToast(null, '단어 파일 오류', 'words.file 을 불러오지 못했어요 (' + e.message + ')', '#ef4444'); });
 }
 function cgLeave(notify) {
@@ -3722,6 +3744,30 @@ body.tch #cgOpenBtn,body.tch #cgOpenBtn2{display:none!important}
 .cg-it{font-size:24px;text-shadow:0 3px 0 #e0e7ff}
 .cg-cdn{font-size:34px;color:#7c3aed;text-shadow:0 3px 0 #ddd6fe}
 .cg-rt{font-size:44px;text-shadow:0 4px 0 #ddd6fe}
+` }));
+document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
+#cgBox{background:#fff;border:2px solid #e2e8f0;box-shadow:none}
+.cg-bar{box-shadow:none;border:1px solid #e2e8f0;background:#f1f5f9}
+.cg-bar i{background:#4f46e5}
+.cg-pill,.cg-pill.tm{box-shadow:none}
+.cg-ch{gap:8px}
+.cg-ch b{width:68px;height:86px;font-size:50px;border-radius:16px;background:#4f46e5;border:none;text-shadow:none;box-shadow:0 6px 0 #3730a3;animation:cgTile .18s cubic-bezier(.2,1.6,.4,1) both}
+.cg-p,.cg-p.ok{box-shadow:none}
+.cg-in input{box-shadow:none}
+.cg-in button,.cg-bt button{background:#4f46e5;box-shadow:0 4px 0 #3730a3}
+.cg-in button:disabled{background:#cbd5e1;box-shadow:0 4px 0 #94a3b8}
+.cg-bt button.no,.cg-head button.no{background:#94a3b8;box-shadow:0 4px 0 #64748b}
+.cg-ic,.cg-ic.op{box-shadow:none}
+.cg-ic::after{display:none}
+.cg-ic img{box-shadow:none}
+.cg-it,.cg-cdn,.cg-rt,.cg-iv,.cg-vs>em{text-shadow:none}
+#cgEnd{background:rgba(255,255,255,.97)}
+#cgSearch.ld .cg-radar,#cgSearch.ld .cg-sub{display:none}
+#cgLoadBox{display:none;width:100%;max-width:470px;padding:0 6px}
+.cg-pgbar{height:12px;background:#e2e8f0;border-radius:8px;overflow:hidden}
+.cg-pgbar i{display:block;height:100%;width:0;background:#4f46e5;border-radius:8px;transition:width .1s linear}
+#cgPgTxt{margin-top:6px;font-size:14px;font-weight:900;color:#3730a3}
+#cgDl{margin:6px 0 0;height:104px;overflow:auto;text-align:left;font:11px/1.45 Consolas,monospace;color:#334155;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px;white-space:pre-wrap;word-break:break-all}
 ` }));
 setInterval(() => document.body.classList.toggle('tch', !!isTeacher), 300);
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
