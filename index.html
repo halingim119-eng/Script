@@ -3368,12 +3368,14 @@ try {
 var cgWide = false;
 const CG_URL = 'words.file';                       // 단어 목록 파일 (게임 HTML과 같은 폴더)
 const CG_MAXLEN = 6;                               // 가장 긴 초성 길이
-const CG_ROUND_MS = 20000, CG_GRACE_MS = 6000, CG_FIND_MS = 1500;   // 라운드 시간 / 먼저 맞힌 뒤 상대 유예 / 매칭 신호 간격
+const CG_ROUND_MS = 20000, CG_GRACE_MS = 6000, CG_FIND_MS = 1500;
+const CG_SND = ['brawl-stars-starting-match-sound-effect-made-with-Voicemod.mp3', 'round-begin-brawl-stars.mp3'];   // 0: 매칭 소리(2번) / 1: 5초 뒤 라운드 시작 소리
+const CG_INTRO_MS = 5000, CG_INTRO_OUT = 900;   // 매칭 화면 유지 시간 / 사라지는 애니메이션 시간   // 라운드 시간 / 먼저 맞힌 뒤 상대 유예 / 매칭 신호 간격
 const CG_CHO = [...'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'];
 const cgCho = w => { let r = ''; for (let i = 0; i < w.length; i++) { const n = w.charCodeAt(i) - 44032; if (n < 0 || n > 11171) return ''; r += CG_CHO[(n / 588) | 0]; } return r; };
 const cgLen = r => Math.min(CG_MAXLEN, 2 + Math.floor((r - 1) / 2));      // 2라운드마다 초성이 1글자씩 길어짐
 const cgMs = r => Math.max(12000, CG_ROUND_MS - (r - 1) * 500);            // 라운드가 갈수록 시간도 조금씩 줄어듦
-const CG = { s: 'idle', mid: '', host: false, opp: null, inv: null, acc: null, r: 0, ch: '', endAt: 0, tot: CG_ROUND_MS, done: {}, wordOf: {}, used: [], over: null, seen: 0, nextAt: 0, lastFind: 0, lastHb: 0, lastPush: 0, lastTk: 0, t0: 0, dis: true, last: '' };
+const CG = { s: 'idle', mid: '', host: false, opp: null, inv: null, acc: null, r: 0, ch: '', endAt: 0, tot: CG_ROUND_MS, done: {}, wordOf: {}, used: [], over: null, seen: 0, nextAt: 0, lastFind: 0, lastHb: 0, lastPush: 0, lastTk: 0, t0: 0, dis: true, last: '', tm: [], aud: [] };
 let cgSet = null, cgCnt = null, cgByLen = null, cgLoadP = null;
 function cgLoad() {   // words.file 을 한 번만 불러와서 단어 집합 / 초성별 개수 / 글자수별 목록을 만듦
   if (cgSet) return Promise.resolve();
@@ -3411,57 +3413,94 @@ function cgCheck(w) {
   return '';
 }
 const cgSend = p => { try { if (room) Promise.resolve(room.send({ type: 'broadcast', event: 'cg', payload: p })).catch(() => {}); } catch (e) {} };
-function cgFb(t, ok) { const f = $('cgFb'); if (!f) return; f.textContent = t || ''; f.style.color = ok === true ? '#16a34a' : ok === false ? '#dc2626' : '#64748b'; }
+function cgFb(t, ok) { const f = $('cgFb'); if (!f) return; f.textContent = t || ''; if (ok === false) { const i = $('cgIn'); if (i) { i.classList.remove('shk'); void i.offsetWidth; i.classList.add('shk'); } } f.style.color = ok === true ? '#16a34a' : ok === false ? '#dc2626' : '#64748b'; }
 /* ----- 화면 ----- */
 document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
-.cg-hint{flex:none;text-align:center;font-size:12px;font-weight:bold;color:#b45309;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:3px 6px;word-break:keep-all}
-#cgBox{display:none;flex:1;min-height:0;flex-direction:column;gap:6px;position:relative}
+#cgBox{display:none;flex:1;min-height:0;flex-direction:column;gap:8px;position:relative;overflow:hidden;padding:10px 12px;border-radius:14px;border:1px solid #e0e7ff;background:linear-gradient(160deg,#eef2ff 0%,#faf5ff 55%,#fff1f2 100%)}
 #infoUI.cg-on #cgBox{display:flex}
 #infoUI.cg-on>:not(.board-header):not(#cgBox){display:none!important}
 #infoUI.cg-on>.board-header{display:none}
-.cg-head{display:flex;justify-content:space-between;align-items:center;flex:none;font-size:14px;font-weight:bold;color:#1e293b}
-#cgSearch{flex:1;min-height:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#475569;font-size:14px;font-weight:bold;text-align:center}
-.cg-spin{width:46px;height:46px;border:5px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:tSpin 1s linear infinite}
-.cg-sub{font-size:11px;font-weight:normal;color:#94a3b8;word-break:keep-all}
-#cgPlay{flex:1;min-height:0;display:none;flex-direction:column;gap:6px}
-.cg-ch{flex:none;text-align:center;font-size:46px;line-height:1.25;font-weight:900;color:#1e293b;letter-spacing:6px;background:linear-gradient(135deg,#eef2ff,#fdf4ff);border:2px solid #c7d2fe;border-radius:16px;padding:6px 0}
-.cg-rd{flex:none;display:flex;justify-content:space-between;font-size:12px;font-weight:bold;color:#475569}
-.cg-bar{flex:none;height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden}
-.cg-bar i{display:block;height:100%;width:100%;background:#2563eb;border-radius:6px;transition:width .25s linear,background .3s}
-.cg-vs{flex:none;display:flex;align-items:center;gap:6px}
-.cg-vs>em{font-style:normal;font-size:12px;font-weight:900;color:#94a3b8}
-.cg-p{flex:1;min-width:0;display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:10px;background:#f8fafc;border:2px solid #e2e8f0}
-.cg-p.ok{border-color:#22c55e;background:#f0fdf4}
-.cg-p img{width:34px;height:34px;border-radius:50%;object-fit:contain;background:#fff;flex:none}
+.cg-head{display:flex;justify-content:space-between;align-items:center;flex:none;font-size:15px;font-weight:900;color:#3730a3}
+.cg-head .inf-x{background:rgba(255,255,255,.85)}
+#cgSearch{flex:1;min-height:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#3730a3;font-size:16px;font-weight:900;text-align:center}
+.cg-radar{position:relative;width:96px;height:96px;display:flex;align-items:center;justify-content:center;font-size:38px}
+.cg-radar i{position:absolute;inset:0;border:3px solid #6366f1;border-radius:50%;opacity:0;animation:cgRing 2.1s ease-out infinite}
+.cg-radar i:nth-child(2){animation-delay:.7s}
+.cg-radar i:nth-child(3){animation-delay:1.4s}
+@keyframes cgRing{0%{transform:scale(.3);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+.cg-sub{font-size:11px;font-weight:normal;color:#818cf8;word-break:keep-all}
+#cgIntro{flex:1;min-height:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.cg-it{font-size:22px;font-weight:900;color:#4338ca;letter-spacing:1px;animation:cgDrop .5s cubic-bezier(.2,1.4,.4,1) both}
+.cg-ib{display:flex;align-items:center;justify-content:center;gap:12px;width:100%}
+.cg-ic{flex:1;max-width:210px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 10px;border-radius:20px;background:#fff;border:3px solid #c7d2fe;box-shadow:0 10px 24px rgba(79,70,229,.18)}
+.cg-ic.me{animation:cgInL .7s cubic-bezier(.2,1.2,.4,1) both}
+.cg-ic.op{border-color:#fda4af;box-shadow:0 10px 24px rgba(244,63,94,.18);animation:cgInR .7s .15s cubic-bezier(.2,1.2,.4,1) both}
+.cg-ic img{width:96px;height:96px;border-radius:50%;object-fit:contain;background:#f8fafc;border:4px solid #e0e7ff}
+.cg-ic.op img{border-color:#fecdd3}
+.cg-ic b{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;color:#1e293b}
+.cg-ic span{font-size:11px;font-weight:bold;color:#6366f1;background:#eef2ff;border-radius:10px;padding:1px 10px}
+.cg-ic.op span{color:#e11d48;background:#fff1f2}
+.cg-iv{flex:none;font-size:34px;font-weight:900;color:#f43f5e;text-shadow:0 3px 0 #fecdd3;animation:cgVs .6s .45s cubic-bezier(.2,1.8,.4,1) both}
+.cg-cdn{font-size:28px;font-weight:900;color:#818cf8;animation:cgPulse 1s ease-in-out infinite}
+#cgIntro.out .cg-ic.me{animation:cgOutL .85s cubic-bezier(.6,0,.9,.4) forwards}
+#cgIntro.out .cg-ic.op{animation:cgOutR .85s cubic-bezier(.6,0,.9,.4) forwards}
+#cgIntro.out .cg-iv,#cgIntro.out .cg-it,#cgIntro.out .cg-cdn{animation:cgFade .6s ease forwards}
+@keyframes cgInL{from{opacity:0;transform:translateX(-70px) scale(.7)}to{opacity:1;transform:none}}
+@keyframes cgInR{from{opacity:0;transform:translateX(70px) scale(.7)}to{opacity:1;transform:none}}
+@keyframes cgOutL{to{opacity:0;transform:translate(-40px,60px) scale(.35) rotate(-6deg)}}
+@keyframes cgOutR{to{opacity:0;transform:translate(40px,60px) scale(.35) rotate(6deg)}}
+@keyframes cgVs{from{opacity:0;transform:scale(.1) rotate(-30deg)}to{opacity:1;transform:none}}
+@keyframes cgDrop{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:none}}
+@keyframes cgFade{to{opacity:0;transform:scale(.5)}}
+@keyframes cgPulse{50%{transform:scale(1.25)}}
+#cgPlay{flex:1;min-height:0;display:none;flex-direction:column;gap:8px}
+.cg-top{flex:none;display:flex;justify-content:space-between;align-items:center}
+.cg-pill{font-size:12px;font-weight:900;color:#4338ca;background:#fff;border:2px solid #c7d2fe;border-radius:20px;padding:3px 12px}
+.cg-pill.tm{color:#be123c;border-color:#fecdd3;min-width:64px;text-align:center}
+.cg-bar{flex:none;height:10px;background:rgba(255,255,255,.9);border:1px solid #e0e7ff;border-radius:8px;overflow:hidden}
+.cg-bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#6366f1,#a855f7);border-radius:8px;transition:width .25s linear,background .3s}
+.cg-stage{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.cg-ch{display:flex;gap:8px;justify-content:center}
+.cg-ch b{width:56px;height:68px;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:900;color:#fff;border-radius:14px;background:linear-gradient(160deg,#6366f1,#a855f7);box-shadow:0 5px 0 #4338ca,0 10px 18px rgba(79,70,229,.3);animation:cgTile .45s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes cgTile{from{opacity:0;transform:translateY(-24px) scale(.5) rotate(-12deg)}to{opacity:1;transform:none}}
+.cg-msg{font-size:12px;text-align:center;color:#6b7280;word-break:keep-all;min-height:16px}
+.cg-vs{flex:none;display:flex;align-items:center;gap:8px}
+.cg-vs>em{font-style:normal;font-size:12px;font-weight:900;color:#f43f5e}
+.cg-p{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:14px;background:#fff;border:2px solid #e0e7ff;transition:all .25s}
+.cg-p.ok{border-color:#22c55e;background:#f0fdf4;box-shadow:0 0 0 3px rgba(34,197,94,.15)}
+.cg-p img{width:38px;height:38px;border-radius:50%;object-fit:contain;background:#f8fafc;flex:none;border:2px solid #e0e7ff}
 .cg-p div{min-width:0}
 .cg-p b{display:block;font-size:12px;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cg-p span{display:block;font-size:11px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cg-msg{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;font-size:12px;text-align:center;color:#475569;word-break:keep-all}
-.cg-in{display:flex;gap:6px;flex:none}
-.cg-in input{flex:1;min-width:0;padding:9px 12px;border:2px solid #cbd5e1;border-radius:10px;font-size:15px;outline:none;background:#fff;margin:0}
-.cg-in input:focus{border-color:#2563eb}
-.cg-in button{flex:none;padding:0 16px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-weight:bold;font-size:13px;cursor:pointer;font-family:inherit}
-.cg-in button:disabled{background:#94a3b8;cursor:not-allowed}
+.cg-p.ok span{color:#16a34a;font-weight:bold}
+.cg-in{flex:none;display:flex;gap:8px}
+.cg-in input{flex:1;min-width:0;padding:11px 16px;border:3px solid #c7d2fe;border-radius:999px;font-size:17px;font-weight:bold;text-align:center;outline:none;background:#fff;margin:0;color:#1e293b;transition:border-color .2s,box-shadow .2s}
+.cg-in input:focus{border-color:#6366f1;box-shadow:0 0 0 4px rgba(99,102,241,.18)}
+.cg-in input:disabled{background:#f1f5f9;color:#94a3b8}
+.cg-in input.shk{animation:cgShk .35s}
+@keyframes cgShk{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.cg-in button{flex:none;padding:0 22px;border:none;border-radius:999px;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;font-weight:900;font-size:14px;cursor:pointer;font-family:inherit;box-shadow:0 4px 0 #4338ca;transition:transform .1s,box-shadow .1s}
+.cg-in button:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #4338ca}
+.cg-in button:disabled{background:#cbd5e1;box-shadow:0 4px 0 #94a3b8;cursor:not-allowed}
 .cg-fb{flex:none;height:18px;font-size:12px;font-weight:bold;text-align:center}
-#cgEnd{display:none;position:absolute;inset:0;z-index:5;background:rgba(255,255,255,.95);border-radius:12px;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center}
-#cgEnd.on{display:flex}
-.cg-rt{font-size:34px;font-weight:900;color:#1e293b}
+#cgEnd{display:none;position:absolute;inset:0;z-index:5;background:rgba(255,255,255,.94);backdrop-filter:blur(3px);flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center}
+#cgEnd.on{display:flex;animation:cgDrop .4s ease}
+.cg-rt{font-size:38px;font-weight:900;color:#4338ca}
 .cg-rs{font-size:13px;color:#475569;padding:0 14px;word-break:keep-all}
-.cg-bt{display:flex;gap:8px;margin-top:4px}
-.cg-bt button{padding:9px 18px;border:none;border-radius:10px;background:#2563eb;color:#fff;font-weight:bold;font-size:13px;cursor:pointer;font-family:inherit}
-.cg-bt button.no,.cg-head button.no{background:#94a3b8;color:#fff}
+.cg-bt{display:flex;gap:8px;margin-top:6px}
+.cg-bt button{padding:10px 22px;border:none;border-radius:999px;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;font-weight:900;font-size:13px;cursor:pointer;font-family:inherit;box-shadow:0 4px 0 #4338ca}
+.cg-bt button.no,.cg-head button.no{background:#94a3b8;box-shadow:0 4px 0 #64748b;color:#fff}
 ` }));
 {
   const b = document.createElement('div'); b.id = 'cgBox';
-  b.innerHTML = `<div class="cg-head"><span>🎮 초성 대결 (1:1)</span><button class="inf-x" id="cgExit">나가기</button></div>
-<div id="cgSearch"><div class="cg-spin"></div><div id="cgSTxt">상대를 찾는 중…</div><div class="cg-sub">게임하기를 누른 다른 친구와 1:1로 연결돼요</div><button class="inf-x" id="cgCancel">취소</button></div>
+  b.innerHTML = `<div class="cg-head"><span>🎮 초성 대결 <small style="font-size:11px;color:#818cf8">1:1</small></span><button class="inf-x" id="cgExit">나가기</button></div>
+<div id="cgSearch"><div class="cg-radar"><i></i><i></i><i></i><span>🎮</span></div><div id="cgSTxt">상대를 찾는 중…</div><div class="cg-sub">게임하기를 누른 다른 친구와 1:1로 연결돼요</div><button class="inf-x" id="cgCancel">취소</button></div>
+<div id="cgIntro"><div class="cg-it">🎉 상대를 찾았어요!</div><div class="cg-ib"><div class="cg-ic me"><img id="cgIMe" alt=""><b id="cgIMeN"></b><span>나</span></div><div class="cg-iv">VS</div><div class="cg-ic op"><img id="cgIOp" alt=""><b id="cgIOpN"></b><span>상대</span></div></div><div class="cg-cdn" id="cgCdn">5</div></div>
 <div id="cgPlay">
-<div class="cg-ch" id="cgCh">…</div>
-<div class="cg-hint" id="cgHint" style="display:none"></div>
-<div class="cg-rd"><span id="cgRound"></span><span id="cgTimer"></span></div>
+<div class="cg-top"><span class="cg-pill" id="cgRound"></span><span class="cg-pill tm" id="cgTimer"></span></div>
 <div class="cg-bar"><i id="cgBar"></i></div>
+<div class="cg-stage"><div class="cg-ch" id="cgCh"></div><div class="cg-msg" id="cgMsg"></div></div>
 <div class="cg-vs"><div class="cg-p" id="cgPMe"><img id="cgMeImg" alt=""><div><b id="cgMeName"></b><span id="cgMeSt"></span></div></div><em>VS</em><div class="cg-p" id="cgPOp"><img id="cgOpImg" alt=""><div><b id="cgOpName"></b><span id="cgOpSt"></span></div></div></div>
-<div class="cg-msg" id="cgMsg"></div>
 <div class="cg-in"><input id="cgIn" maxlength="12" placeholder="초성에 맞는 단어 입력" autocomplete="off"><button id="cgGo">제출</button></div>
 <div class="cg-fb" id="cgFb"></div>
 </div>
@@ -3470,20 +3509,27 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 }
 function cgShow() {
   const u = $('infoUI'); if (u) u.classList.toggle('cg-on', CG.s !== 'idle');
-  cgWide = CG.s === 'play' || CG.s === 'over';   // 매칭되면 위 카드가 접히며 세로로 넓어짐
+  cgWide = CG.s === 'play' || CG.s === 'over' || CG.s === 'intro';   // 매칭되면 위 카드가 접히며 세로로 넓어짐
   cgRender(); infoSync();
 }
 function cgRender() {
   if (!$('cgBox')) return;
-  const s = CG.s, play = s === 'play' || s === 'over';
+  const s = CG.s, play = s === 'play' || s === 'over', op = CG.opp;
   $('cgSearch').style.display = (s === 'load' || s === 'search') ? 'flex' : 'none';
+  $('cgIntro').style.display = s === 'intro' ? 'flex' : 'none';
   $('cgPlay').style.display = play ? 'flex' : 'none';
   $('cgEnd').classList.toggle('on', s === 'over');
-  if (!play || !CG.opp) return;
-  const op = CG.opp, dm = !!CG.done[myId], dp = !!CG.done[op.id], both = dm && dp, fin = both || s === 'over', o = CG.over;
-  $('cgCh').textContent = CG.ch ? [...CG.ch].join(' ') : '…';
-  { const h = $('cgHint'), a = (isTeacher && CG.ch) ? cgAnswers(CG.ch) : []; h.style.display = a.length ? '' : 'none'; if (a.length) h.textContent = '👑 선생님용 정답: ' + a.join(' · '); }
-  $('cgRound').textContent = CG.r ? CG.r + '라운드 · ' + CG.ch.length + '글자 초성' : '준비 중…';
+  if (!op) return;
+  if (s === 'intro') {
+    $('cgIMe').src = selectedImage; $('cgIMeN').textContent = myNickname;
+    $('cgIOp').src = op.a || characterImages[0]; $('cgIOpN').textContent = op.n || '상대';
+    return;
+  }
+  if (!play) return;
+  const dm = !!CG.done[myId], dp = !!CG.done[op.id], both = dm && dp, fin = both || s === 'over', o = CG.over;
+  const ck = CG.r + ':' + CG.ch, ce = $('cgCh');
+  if (ce.dataset.k !== ck) { ce.dataset.k = ck; ce.innerHTML = CG.ch ? [...CG.ch].map((c, i) => `<b style="animation-delay:${i * .07}s">${c}</b>`).join('') : '<b>?</b>'; }
+  $('cgRound').textContent = CG.r ? '🔥 ' + CG.r + '라운드 · ' + CG.ch.length + '글자' : '준비 중…';
   $('cgMeImg').src = selectedImage; $('cgMeName').textContent = myNickname + ' (나)';
   $('cgOpImg').src = op.a || characterImages[0]; $('cgOpName').textContent = op.n || '상대';
   const st = (id, d) => d ? (fin && CG.wordOf[id] ? '✔ ' + CG.wordOf[id] : '✔ 정답!') : (o && o.loser === id ? '❌ 못 맞힘' : '생각 중…');
@@ -3501,17 +3547,34 @@ function cgRender() {
     $('cgRs').textContent = o.left ? '상대가 나갔어요' : o.draw ? '둘 다 시간 안에 답하지 못했어요' : (lose ? '시간 안에 답하지 못했어요' : '상대가 시간 안에 답하지 못했어요') + ' (' + CG.r + '라운드)';
   }
 }
-function cgAnswers(ch) {   // 선생님에게 보여줄 완성된 정답 예시 (이미 나온 단어는 제외)
-  if (CG.hk !== ch) { CG.hk = ch; const out = []; for (const w of (cgByLen && cgByLen[ch.length]) || []) { if (cgCho(w) === ch) { out.push(w); if (out.length >= 10) break; } } CG.hv = out; }
-  return (CG.hv || []).filter(w => !CG.used.includes(w)).slice(0, 4);
-}
 function cgBar() {
   if (CG.s !== 'play' || !CG.opp) return;
   const both = CG.done[myId] && CG.done[CG.opp.id], l = Math.max(0, CG.endAt - Date.now()), f = $('cgBar');
   if (both) { f.style.width = '100%'; $('cgTimer').textContent = ''; return; }
-  f.style.width = Math.min(100, l / (CG.tot || CG_ROUND_MS) * 100) + '%'; f.style.background = l < 5000 ? '#ef4444' : '#2563eb';
+  f.style.width = Math.min(100, l / (CG.tot || CG_ROUND_MS) * 100) + '%'; f.style.background = l < 5000 ? 'linear-gradient(90deg,#f43f5e,#fb7185)' : '';
   const sc = Math.ceil(l / 1000); $('cgTimer').textContent = '⏱ ' + sc + '초';
   if (l > 0 && sc <= 3 && sc !== CG.lastTk) { CG.lastTk = sc; SFX.tick(); }
+}
+function cgSnd(i) {
+  try {
+    const a = new Audio(CG_SND[i]); a.preload = 'auto';
+    a.volume = (S.sfxOn === false || sfxMute) ? 0 : (S.vol == null ? 100 : S.vol) / 100;
+    CG.aud.push(a); if (CG.aud.length > 8) CG.aud.shift();
+    const p = a.play(); if (p && p.catch) p.catch(() => {});
+  } catch (e) {}
+}
+function cgStopAll() { CG.tm.forEach(clearTimeout); CG.tm = []; CG.aud.forEach(a => { try { a.pause(); } catch (e) {} }); CG.aud = []; }
+function cgIntro() {   // 매칭 직후 5초: MP3 2번 → 5초가 되면 3번째 재생 + 프로필/닉네임이 사라지며 게임 시작
+  const mid = CG.mid, ok = () => CG.s === 'intro' && CG.mid === mid;
+  cgStopAll();
+  const at = (ms, f) => CG.tm.push(setTimeout(() => { if (ok()) f(); }, ms));
+  const ce = $('cgCh'); ce.dataset.k = ''; ce.innerHTML = '';
+  $('cgIntro').classList.remove('out'); $('cgCdn').textContent = Math.round(CG_INTRO_MS / 1000);
+  cgSnd(0);
+  at(CG_INTRO_MS / 2, () => cgSnd(0));
+  for (let k = 1; k < CG_INTRO_MS / 1000; k++) at(k * 1000, () => { $('cgCdn').textContent = CG_INTRO_MS / 1000 - k; });
+  at(CG_INTRO_MS, () => { cgSnd(1); $('cgIntro').classList.add('out'); });
+  at(CG_INTRO_MS + CG_INTRO_OUT, () => { CG.s = 'play'; CG.seen = Date.now(); cgShow(); if (CG.host) cgNextRound(); });
 }
 /* ----- 시작 / 매칭 ----- */
 function cgOpen() {
@@ -3525,14 +3588,13 @@ function cgOpen() {
     .catch(e => { if (CG.s !== 'load') return; CG.s = 'idle'; cgShow(); showToast(null, '단어 파일 오류', 'words.file 을 불러오지 못했어요 (' + e.message + ')', '#ef4444'); });
 }
 function cgLeave(notify) {
-  if (CG.s === 'play' && notify !== false) cgSend({ t: 'quit', mid: CG.mid, from: myId });
-  Object.assign(CG, { s: 'idle', inv: null, acc: null, over: null, opp: null, mid: '', nextAt: 0 });
+  if ((CG.s === 'play' || CG.s === 'intro') && notify !== false) cgSend({ t: 'quit', mid: CG.mid, from: myId });
+  cgStopAll(); Object.assign(CG, { s: 'idle', inv: null, acc: null, over: null, opp: null, mid: '', nextAt: 0 });
   cgShow();
 }
 function cgBegin(mid, host, opp) {
-  Object.assign(CG, { s: 'play', mid, host, opp, inv: null, acc: null, r: 0, ch: '', endAt: Date.now() + CG_ROUND_MS, tot: CG_ROUND_MS, done: {}, wordOf: {}, used: [], over: null, seen: Date.now(), nextAt: 0, lastHb: 0, lastPush: 0, dis: true });
-  SFX.start(); cgShow(); cgFb('');
-  if (host) cgNextRound();
+  Object.assign(CG, { s: 'intro', mid, host, opp, inv: null, acc: null, r: 0, ch: '', endAt: Date.now() + CG_ROUND_MS, tot: CG_ROUND_MS, done: {}, wordOf: {}, used: [], over: null, seen: Date.now(), nextAt: 0, lastHb: 0, lastPush: 0, dis: true });
+  cgShow(); cgFb(''); cgIntro();
 }
 function cgNextRound() {   // 진행(호스트)만 문제를 정함
   Object.values(CG.wordOf).forEach(w => CG.used.push(w));
@@ -3546,7 +3608,7 @@ function cgPush() {
 }
 function cgSetOver(o) {
   if (CG.s === 'over') return;
-  CG.over = o; CG.s = 'over';
+  cgStopAll(); CG.over = o; CG.s = 'over';
   if (o.draw) SFX.pop(); else if (o.loser === myId) SFX.die(); else SFX.correct();
   cgShow();
 }
@@ -3576,7 +3638,7 @@ function cgSubmit(w) {
 function cgRecv(p) {
   if (!p || !p.t || CG.s === 'idle') return;
   const s = CG.s;
-  if (s === 'play' && p.mid === CG.mid) CG.seen = Date.now();
+  if ((s === 'play' || s === 'intro') && p.mid === CG.mid) CG.seen = Date.now();
   if (p.t === 'find') {
     if (s !== 'search' || p.id === myId || CG.inv || CG.acc) return;
     if (myId < p.id) { CG.inv = { to: p.id, at: Date.now(), mid: myId + '_' + Date.now().toString(36) }; cgSend({ t: 'inv', from: myId, to: p.id, mid: CG.inv.mid }); }   // id가 작은 쪽이 먼저 초대
@@ -3592,7 +3654,7 @@ function cgRecv(p) {
     if (p.guest !== myId || s !== 'search' || !CG.acc || CG.acc.from !== p.host || CG.acc.mid !== p.mid) return;
     cgBegin(p.mid, false, { id: p.host, n: p.hn, a: p.ha });
   } else if (p.t === 'st') {
-    if (CG.host || p.mid !== CG.mid || s !== 'play') return;
+    if (CG.host || p.mid !== CG.mid || (s !== 'play' && s !== 'intro')) return;
     const nr = p.r !== CG.r;
     CG.r = p.r; CG.ch = p.ch; CG.tot = p.tot || CG_ROUND_MS; CG.endAt = Date.now() + (p.left || 0); CG.done = p.done || {}; CG.wordOf = p.wordOf || {}; CG.used = p.used || [];
     if (nr) { $('cgIn').value = ''; cgFb(''); SFX.newq(); }
@@ -3602,7 +3664,7 @@ function cgRecv(p) {
   } else if (p.t === 'rej') {
     if (p.to === myId && p.mid === CG.mid && s === 'play') { cgFb(p.msg, false); SFX.wrong(); $('cgIn').value = CG.last || ''; }
   } else if (p.t === 'quit') {
-    if (s === 'play' && p.mid === CG.mid && CG.opp && p.from === CG.opp.id) cgSetOver({ loser: CG.opp.id, left: 1 });
+    if ((s === 'play' || s === 'intro') && p.mid === CG.mid && CG.opp && p.from === CG.opp.id) cgSetOver({ loser: CG.opp.id, left: 1 });
   }
 }
 setInterval(() => {
@@ -3614,6 +3676,9 @@ setInterval(() => {
     if (CG.inv && now - CG.inv.at > 3000) CG.inv = null;
     if (CG.acc && now - CG.acc.at > 4000) CG.acc = null;
     $('cgSTxt').textContent = '상대를 찾는 중… (' + Math.floor((now - CG.t0) / 1000) + '초)';
+  } else if (CG.s === 'intro' && CG.opp) {
+    if (now - CG.lastHb > 3000) { CG.lastHb = now; cgSend({ t: 'hb', mid: CG.mid, from: myId }); }
+    if (now - CG.seen > 15000) return cgSetOver({ loser: CG.opp.id, left: 1 });
   } else if (CG.s === 'play' && CG.opp) {
     if (now - CG.lastHb > 3000) { CG.lastHb = now; cgSend({ t: 'hb', mid: CG.mid, from: myId }); }
     if (now - CG.seen > 15000) return cgSetOver({ loser: CG.opp.id, left: 1 });   // 상대 연결이 끊김
