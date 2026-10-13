@@ -3027,12 +3027,12 @@ let infoOn = false, infoI = 0, infoAt = 0;
     + '<div id="lcBox"><div id="lcMsgs"><div class="chat-sys" id="lcEmpty">아직 대화가 없어요. 먼저 인사해 보세요!</div></div><div id="lcEmoPanel"></div><div class="lc-in"><input id="lcIn" maxlength="60" placeholder="메시지 입력 (3초에 한 번)" autocomplete="off"><button id="lcEmo">이모지</button><button id="lcSend">전송</button></div></div>';
 document.querySelector('.right-card-container').appendChild(iu);
   $('infL').onclick = () => infoShow(infoI - 1, 1); $('infR').onclick = () => infoShow(infoI + 1, 1);
-  $('infAll').onclick = () => { infoAll = !infoAll; infoView(); }; $('infX').onclick = () => { infoHide = true; infoSync(); };
+  $('infAll').onclick = () => { if (infoGame) { cgOpen(INFO_GAMES[infoI][5]); return; } infoAll = !infoAll; infoView(); }; $('infX').onclick = () => { infoHide = true; infoSync(); };
   $('infCard').onclick = () => { infoCard = !infoCard; infoAll = false; infoI = 0; $('infCard').textContent = infoCard ? '모드 설명' : '카드 설명'; document.querySelector('#infoUI .board-title').textContent = infoCard ? '카드 설명' : '모드 설명'; infoView(); infoShow(0, 1); };
 }
 function infoShow(i, hold) {
   if (ASSET.on) return assetInfo();   // hold: 직접 눌렀으면 10초 동안 자동 넘김 멈춤
-  const IL = infoCard ? INFO_CARDS : INFO_MODES, n = IL.length; infoI = (i % n + n) % n; const m = IL[infoI];
+  const IL = infoGame ? INFO_GAMES : infoCard ? INFO_CARDS : INFO_MODES, n = IL.length; infoI = (i % n + n) % n; const m = IL[infoI];
   const re = (el, a) => { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = a || ''; };
   $('infImg').src = m[0]; re($('infImg'));
   const tx = $('infTx'); tx.innerHTML = `<div class="inf-nm">${m[1]}</div><div class="inf-tg">${m[2].map(t => `<b>${t}</b>`).join('')}</div><div class="inf-ds">${m[3]}</div><div class="inf-tp">${m[4]}</div>`; re(tx);
@@ -3042,7 +3042,7 @@ function infoShow(i, hold) {
 let infoHide = false, infoAll = false, infoChat = false, lcMax = false;
 function infoView() {   // 한 개씩 보기 ↔ 전체 보기
   $('infSt').style.display = (infoAll || infoChat) ? 'none' : ''; $('infGrid').style.display = (infoAll && !infoChat) ? 'grid' : 'none'; $('infAll').style.display = infoChat ? 'none' : ''; lcView();
-  $('infAll').textContent = infoAll ? '한 개씩 보기' : '전체 보기';
+  $('infAll').textContent = infoGame ? '시작하기' : infoAll ? '한 개씩 보기' : '전체 보기';
   infoAt = (infoAll || infoChat) ? Infinity : Date.now() + 5000;
 }
 function infoSync() {   // 로비에서만 (선생님도). 설정/콘솔/튜토리얼/프로필 고르기 중엔 잠시 숨김
@@ -3072,9 +3072,9 @@ function lcView() {
   if (on && infoOn) lcUnread = 0;
   $('lcBox').style.display = on ? 'flex' : 'none';
   $('infMax').style.display = on ? '' : 'none';
-  $('infCard').style.display = on ? 'none' : '';
+  $('infCard').style.display = (on || infoGame) ? 'none' : '';
   $('infChat').textContent = on ? '모드 설명' : '채팅' + (lcUnread ? ' (' + (lcUnread > 9 ? '9+' : lcUnread) + ')' : '');
-  document.querySelector('#infoUI .board-title').textContent = on ? '💬 채팅' : (infoCard ? '카드 설명' : '모드 설명');
+  document.querySelector('#infoUI .board-title').textContent = on ? '💬 채팅' : (infoGame ? '게임하기' : infoCard ? '카드 설명' : '모드 설명');
   if (!on) $('lcEmoPanel').classList.remove('on');
 }
 function lcLayout() { document.querySelector('.right-card-container').classList.toggle('lc-max', infoOn && ((infoChat && lcMax) || cgWide)); }
@@ -3815,7 +3815,19 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 #cgPCard b{font-size:46px}
 #cgPCard u{text-decoration:none;font-size:11px;font-weight:bold;color:#4f46e5}
 ` }));
-$('cgOpenBtn').onclick = () => cgOpen();
+/* 게임하기: 모드 설명 창 크기 그대로, 모드 대신 게임을 설명 (◀ ▶ · 자동 넘김 · 시작하기) */
+const INFO_GAMES = [
+  [SC('PQVbThjT3zxxtSMb2Ji8'), '타자 대결', ['1:1', '타자'], '긴 단어가 나오면 똑같이 빨리 쳐요! 먼저 치면 상대는 시간 안에 못 치면 패배. 라운드마다 점점 빨라져요.', '시작하기 → 같은 게임을 고른 친구와 매칭', 'type'],
+  [SC('y46nReaY9L9cZkjd5x2m'), '초성 대결', ['1:1', '어휘'], '초성에 맞는 단어를 먼저 맞혀요! 못 맞히면 패배. 라운드마다 초성이 길어지고 시간은 줄어요.', '시작하기 → 같은 게임을 고른 친구와 매칭', 'cho']
+];
+let infoGame = false;
+$('cgOpenBtn').onclick = () => {
+  if (ASSET.on) return showToast(null, '게임하기', '에셋 로딩이 끝나면 할 수 있어요', '#94a3b8');
+  if (CG.s !== 'idle') return;
+  infoGame = !infoGame; infoAll = false; infoChat = false; lcMax = false; lcLayout(); infoI = 0;
+  $('cgOpenBtn').textContent = infoGame ? '모드 설명' : '게임하기';
+  infoView(); infoShow(0, 1);
+};
 $('cgExit').onclick = () => cgLeave();
 $('cgCancel').onclick = () => cgLeave();
 $('cgGo').onclick = () => cgSubmit($('cgIn').value);
