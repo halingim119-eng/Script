@@ -570,7 +570,7 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
     <div id="normalUI" class="card-section">
       <div class="nickname-section">
         <label for="nickname" class="nickname-label">닉네임</label>
-        <input type="text" id="nickname" class="nickname-input" placeholder="이름" maxlength="12" autocomplete="off">
+        <input type="text" id="nickname" class="nickname-input" placeholder="익명" maxlength="12" autocomplete="off">
         <button id="changeProfileBtn" class="btn btn-outline">📸 프로필 바꾸기</button>
       </div>
     </div>
@@ -3061,7 +3061,7 @@ function infoSync() {   // 로비에서만 (선생님도). 설정/콘솔/튜토�
   $('onlineCountText').closest('.online-count-badge').insertAdjacentElement('afterend', b);
   b.onclick = () => { infoHide = false; infoSync(); };
   const g2 = document.createElement('button'); g2.id = 'cgOpenBtn2'; g2.className = 'inf-open'; g2.textContent = '게임하기'; g2.style.display = 'none';
-  b.insertAdjacentElement('afterend', g2); g2.onclick = () => cgOpen();
+  g2.remove();
 }
 setInterval(() => { if (infoOn && !infoChat && Date.now() >= infoAt) infoShow(infoI + 1); }, 400);
 /* ===== 로비 채팅 (모드 설명 카드를 채팅창으로 바꿔 씀 · 3초에 한 번 · □ 로 크게 보기) ===== */
@@ -3532,7 +3532,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 }
 function cgShow() {
   const u = $('infoUI'); if (u) u.classList.toggle('cg-on', CG.s !== 'idle');
-  cgWide = CG.s === 'play' || CG.s === 'over' || CG.s === 'intro' || (CG.s === 'load' && !cgSet);   // 매칭되면 위 카드가 접히며 세로로 넓어짐
+  cgWide = false;   // 매칭되면 위 카드가 접히며 세로로 넓어짐
   cgRender(); infoSync();
 }
 function cgRender() {
@@ -3608,7 +3608,8 @@ function cgOpen() {
   if (CG.s !== 'idle') return;
   if (gameStarted || curStage) return showToast(null, '게임하기', '지금은 할 수 없어요', '#94a3b8');
   if (!isSubscribed || !room) return showToast(null, '게임하기', '연결 중이에요. 잠시 뒤에 다시 눌러 주세요', '#94a3b8');
-  infoHide = false; if (settingsOpen) closeSettings(); if (cmdOn) cmdOpen(false);
+  if (!infoOn) return showToast(null, '게임하기', '모드 설명 창에서만 할 수 있어요', '#94a3b8');
+  if (infoChat) { infoChat = false; lcMax = false; lcLayout(); infoView(); }
   Object.assign(CG, { s: 'load', inv: null, acc: null, over: null, opp: null, mid: '', lastFind: 0, dis: true, t0: Date.now() });
   $('cgSTxt').textContent = '단어 목록 불러오는 중…';
   { const nl = !cgSet; $('cgSearch').classList.toggle('ld', nl); $('cgLoadBox').style.display = nl ? 'block' : 'none'; $('cgPgFill').style.width = '0%'; $('cgPgTxt').textContent = '0%'; $('cgDl').textContent = ''; }
@@ -3698,7 +3699,7 @@ function cgRecv(p) {
 }
 setInterval(() => {
   if (CG.s === 'idle') return;
-  if (gameStarted || curStage) return cgLeave();   // 선생님이 게임/투표를 시작하면 대결은 끝
+  if (gameStarted || curStage || !infoOn) return cgLeave();   // 선생님이 게임/투표를 시작하면 대결은 끝
   const now = Date.now();
   if (CG.s === 'search') {
     if (now - CG.lastFind > CG_FIND_MS) { CG.lastFind = now; cgSend({ t: 'find', id: myId, n: myNickname, a: selectedImage }); }
@@ -3894,17 +3895,62 @@ function assetEnd() {   // 다 끝나면 닉네임칸 · 프로필 · 목록 · 
 }
 {
   const fsNow = () => !!(document.fullscreenElement || document.webkitFullscreenElement) || (screen.height - innerHeight < 4 && screen.width - innerWidth < 4);
-  const w = setInterval(() => { if (P2) return clearInterval(w); if (fsNow()) { clearInterval(w); assetStart(); } }, 300);
+  const w = setInterval(() => { clearInterval(w); }, 300);
 }
 document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
 .user-item.as{position:relative;overflow:hidden}
 .nickname-input[readonly]{color:#4f46e5;font-weight:bold}
-.right-card-container:has(#infoUI.cg-on){height:510px;max-height:510px}
+.right-card-container:has(#infoUI.cg-on){height:490px;max-height:490px}
 #cgIntro{gap:14px}
 .cg-it{font-size:26px}
 .cg-cdn{font-size:36px}
 #cgIntro .cg-ic.cg-rc{width:214px;height:287px}
 #cgIntro .cg-rc b{font-size:19px;-webkit-text-stroke:4px #0f172a}
+` }));
+document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
+.right-card-container.info-split:has(#infoUI.cg-on)>#defaultUserListUI{flex:0 0 34%}
+#cgBox{padding:6px 10px;gap:5px}
+#cgBox .cg-head{font-size:13px;color:#1e293b;min-height:22px}
+#cgBox .cg-head small{color:#94a3b8}
+#cgBox .cg-head .inf-x{padding:1px 10px}
+#cgPlay{gap:5px}
+#cgBox .cg-pill,#cgBox .cg-pill.tm{color:#334155;border:2px solid #e2e8f0;background:#fff;font-size:12px;padding:2px 10px;box-shadow:none}
+#cgBox .cg-bar{height:10px;background:#f1f5f9;border:1px solid #e2e8f0}
+#cgBox .cg-bar i{background:#94a3b8}
+#cgBox .cg-stage{gap:6px}
+#cgBox .cg-ch{gap:6px}
+#cgBox .cg-ch b{width:48px;height:58px;font-size:34px;border-radius:12px;background:#fff;color:#1e293b;border:2px solid #cbd5e1;box-shadow:0 3px 0 #cbd5e1}
+#cgBox .cg-msg{color:#64748b;font-size:12px;min-height:14px}
+#cgBox .cg-p{border:2px solid #e2e8f0;border-radius:12px;padding:3px 8px;gap:6px;background:#fff;box-shadow:none}
+#cgBox .cg-p.ok{border-color:#22c55e;background:#f0fdf4}
+#cgBox .cg-p img{width:30px;height:30px;border:2px solid #e2e8f0}
+#cgBox .cg-vs>em{color:#94a3b8;font-size:12px}
+#cgBox .cg-in input{padding:7px 14px;font-size:15px;border:2px solid #cbd5e1;box-shadow:none}
+#cgBox .cg-in input:focus{border-color:#94a3b8;box-shadow:0 0 0 3px rgba(148,163,184,.25)}
+#cgBox .cg-in button{background:#e4e6ea;color:#334155;box-shadow:none;padding:0 16px;font-size:13px}
+#cgBox .cg-in button:active:not(:disabled){transform:scale(.96);box-shadow:none}
+#cgBox .cg-in button:disabled{background:#f1f5f9;color:#94a3b8;box-shadow:none}
+#cgBox .cg-in button.cg-hint{background:#fff;color:#475569;border:1px solid #cbd5e1;padding:0 10px;font-size:12px}
+#cgBox .cg-in button.cg-hint:disabled{background:#f1f5f9;color:#94a3b8;border-color:#e2e8f0}
+#cgBox .cg-fb{height:14px;font-size:12px}
+#cgIntro{gap:8px}
+#cgBox .cg-it{font-size:16px;color:#1e293b}
+#cgBox .cg-cdn{font-size:22px;color:#64748b}
+#cgBox .cg-iv{font-size:22px;color:#94a3b8}
+#cgIntro .cg-ic.cg-rc{width:104px;height:140px}
+#cgIntro .cg-rc b{font-size:12px;-webkit-text-stroke:3px #0f172a}
+#cgBox .cg-rt{font-size:30px;color:#1e293b}
+#cgBox .cg-rs{color:#475569}
+#cgBox .cg-bt button{background:#e4e6ea;color:#334155;box-shadow:none;padding:8px 20px}
+#cgBox .cg-bt button.no{background:#f1f5f9;color:#64748b;box-shadow:none}
+#cgSearch{color:#1e293b;gap:8px}
+#cgBox .cg-mm b{width:36px;height:44px;font-size:22px;background:#fff;color:#1e293b;border:2px solid #cbd5e1;box-shadow:0 3px 0 #cbd5e1}
+#cgBox .cg-mmt{font-size:20px;color:#1e293b}
+#cgBox .cg-sweep i{background:#94a3b8}
+#cgBox .cg-sub{color:#94a3b8}
+#cgBox .cg-pgbar i{background:#94a3b8}
+#cgBox #cgPgTxt{color:#475569}
+#cgBox #cgDl{height:50px}
 ` }));
 setInterval(() => document.body.classList.toggle('tch', !!isTeacher), 300);
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
