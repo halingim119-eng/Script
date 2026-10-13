@@ -3524,7 +3524,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 <div class="cg-bar"><i id="cgBar"></i></div>
 <div class="cg-stage"><div class="cg-ch" id="cgCh"></div><div class="cg-msg" id="cgMsg"></div></div>
 <div class="cg-vs"><div class="cg-p" id="cgPMe"><img id="cgMeImg" alt=""><div><b id="cgMeName"></b><span id="cgMeSt"></span></div></div><em>VS</em><div class="cg-p" id="cgPOp"><img id="cgOpImg" alt=""><div><b id="cgOpName"></b><span id="cgOpSt"></span></div></div></div>
-<div class="cg-in"><input id="cgIn" maxlength="12" placeholder="초성에 맞는 단어 입력" autocomplete="off"><button id="cgHintBtn" class="cg-hint">정답 보기 1/1</button><button id="cgGo">제출</button></div>
+<div class="cg-in"><input id="cgIn" maxlength="12" placeholder="초성에 맞는 단어 입력" autocomplete="off"><button id="cgHintBtn" class="cg-hint">정답 보기 2/2</button><button id="cgGo">제출</button></div>
 <div class="cg-fb" id="cgFb"></div>
 </div>
 <div id="cgEnd"><div class="cg-rt" id="cgRt"></div><div class="cg-rs" id="cgRs"></div><div class="cg-bt"><button id="cgAgain">다시 하기</button><button class="no" id="cgBye">나가기</button></div></div>`;
@@ -3532,7 +3532,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 }
 function cgShow() {
   const u = $('infoUI'); if (u) u.classList.toggle('cg-on', CG.s !== 'idle');
-  cgWide = false;   // 매칭되면 위 카드가 접히며 세로로 넓어짐
+  cgWide = CG.s === 'intro';   // 매칭 화면에서는 위 카드가 접히며 카드가 엄청 커짐
   cgRender(); infoSync();
 }
 function cgRender() {
@@ -3562,7 +3562,7 @@ function cgRender() {
   $('cgMsg').textContent = s === 'over' ? '' : both ? '둘 다 성공! 곧 다음 라운드 (초성이 점점 길어져요)' : dm ? '정답! 상대가 시간 안에 못 맞히면 승리해요' : dp ? '상대가 먼저 맞혔어요! 서둘러요' : '초성에 맞는 ' + CG.ch.length + '글자 단어를 입력하세요';
   const dis = dm || s === 'over' || !CG.ch;
   $('cgIn').disabled = dis; $('cgGo').disabled = dis;
-  $('cgHintBtn').disabled = dis || !!CG.hintUsed; $('cgHintBtn').textContent = '정답 보기 ' + (CG.hintUsed ? '0/1' : '1/1');
+  $('cgHintBtn').disabled = dis || CG.hintUsed >= 2; $('cgHintBtn').textContent = '정답 보기 ' + (2 - CG.hintUsed) + '/2';
   if (CG.dis && !dis) $('cgIn').focus();
   CG.dis = dis;
   if (dm) cgFb('정답!', true);
@@ -3604,7 +3604,7 @@ function cgIntro() {   // 매칭 직후 5초: MP3 2번 → 5초가 되면 3번�
 /* ----- 시작 / 매칭 ----- */
 function cgOpen() {
   if (ASSET.on) return showToast(null, '게임하기', '에셋 로딩이 끝나면 할 수 있어요', '#94a3b8');
-  if (isTeacher) return;   // 선생님에게는 초성 대결이 아예 안 보임
+  /* 선생님도 초성 대결 가능 (자동 정답) */
   if (CG.s !== 'idle') return;
   if (gameStarted || curStage) return showToast(null, '게임하기', '지금은 할 수 없어요', '#94a3b8');
   if (!isSubscribed || !room) return showToast(null, '게임하기', '연결 중이에요. 잠시 뒤에 다시 눌러 주세요', '#94a3b8');
@@ -3623,7 +3623,7 @@ function cgLeave(notify) {
   cgShow();
 }
 function cgBegin(mid, host, opp) {
-  Object.assign(CG, { s: 'intro', hintUsed: false, mid, host, opp, inv: null, acc: null, r: 0, ch: '', endAt: Date.now() + CG_ROUND_MS, tot: CG_ROUND_MS, done: {}, wordOf: {}, used: [], over: null, seen: Date.now(), nextAt: 0, lastHb: 0, lastPush: 0, dis: true });
+  Object.assign(CG, { s: 'intro', hintUsed: 0, mid, host, opp, inv: null, acc: null, r: 0, ch: '', endAt: Date.now() + CG_ROUND_MS, tot: CG_ROUND_MS, done: {}, wordOf: {}, used: [], over: null, seen: Date.now(), nextAt: 0, lastHb: 0, lastPush: 0, dis: true });
   cgShow(); cgFb(''); cgIntro();
 }
 function cgNextRound() {   // 진행(호스트)만 문제를 정함
@@ -3717,9 +3717,18 @@ setInterval(() => {
       else if (!CG.over && now >= CG.endAt + 700) cgTimeUp();
       else if (now - CG.lastPush > 2500) cgPush();
     }
-    cgBar();
+    cgBar(); cgAuto();
   }
 }, 250);
+function cgAuto() {   // 선생님은 라운드마다 0.8초 뒤 자동으로 정답을 제출
+  if (!isTeacher || CG.s !== 'play' || CG.over || CG.nextAt || CG.done[myId] || !CG.ch || !cgByLen) return;
+  const k = CG.r + ':' + CG.ch;
+  if (CG.autoK !== k) { CG.autoK = k; CG.autoAt = Date.now() + 800; }
+  if (Date.now() < (CG.autoAt || 0)) return;
+  CG.autoAt = Date.now() + 1500;
+  const ok = (cgByLen[CG.ch.length] || []).filter(w => cgCho(w) === CG.ch && !CG.used.includes(w));
+  if (ok.length) cgSubmit(ok[Math.floor(Math.random() * ok.length)]);
+}
 $('cgOpenBtn').onclick = cgOpen;
 $('cgExit').onclick = () => cgLeave();
 $('cgCancel').onclick = () => cgLeave();
@@ -3728,7 +3737,7 @@ $('cgIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isCompo
 $('cgAgain').onclick = () => { cgLeave(false); cgOpen(); };
 $('cgBye').onclick = () => cgLeave(false);
 document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
-body.tch #cgOpenBtn,body.tch #cgOpenBtn2{display:none!important}
+/* 선생님도 게임하기 버튼 보임 */
 #cgBox{background:radial-gradient(circle at 15% 0%,#c7d2fe 0,transparent 45%),radial-gradient(circle at 100% 100%,#fbcfe8 0,transparent 45%),#f5f3ff;border:2px solid #c7d2fe;box-shadow:inset 0 0 40px rgba(255,255,255,.7),0 6px 18px rgba(99,102,241,.15)}
 .cg-head{font-size:16px;color:#4c1d95}
 .cg-pill{border-width:2px;box-shadow:0 3px 0 #c7d2fe;font-size:13px}
@@ -3800,10 +3809,10 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 const CG_CARDS = ['https://media.ffycdn.net/eu/supercell/Y1L2U4KCGvB874UZE6o1.png?width=2400', 'https://media.ffycdn.net/eu/supercell/spD8MNVUKKSDo3yS2zUH.png?width=2400'];
 function cgCard(id, mid) { let h = 0; const s = String(id) + String(mid); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return CG_CARDS[h % 2]; }
 $('cgHintBtn').onclick = () => {
-  if (CG.s !== 'play' || CG.over || CG.hintUsed || CG.done[myId] || !CG.ch || !cgByLen) return;
+  if (CG.s !== 'play' || CG.over || CG.hintUsed >= 2 || CG.done[myId] || !CG.ch || !cgByLen) return;
   const ok = (cgByLen[CG.ch.length] || []).filter(w => cgCho(w) === CG.ch && !CG.used.includes(w));
   if (!ok.length) return cgFb('보여줄 정답이 없어요', false);
-  CG.hintUsed = true; cgFb('정답 예시: ' + ok[Math.floor(Math.random() * ok.length)], true); cgRender();
+  CG.hintUsed++; cgFb('정답 예시: ' + ok[Math.floor(Math.random() * ok.length)], true); cgRender();
 };
 /* ===== 입장 후 전체화면이 되면: 폴더 에셋 로딩 연출 (나한테만 보임) ===== */
 const ASSET_FILES = ['__self__', 'new_vault_season_01.wav', 'round-begin-brawl-stars.mp3', 'words.file'];   // 같은 폴더의 파일들 (브라우저는 폴더를 읽을 수 없어서 이름을 적어둠 · 파일이 늘면 여기에 추가)
@@ -3954,11 +3963,12 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 ` }));
 document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
 #cgIntro{gap:6px}
-#cgBox .cg-it{font-size:14px}
-#cgBox .cg-cdn{font-size:20px}
-#cgIntro .cg-ic.cg-rc{width:140px;height:188px}
-#cgIntro .cg-rc b{font-size:14px;-webkit-text-stroke:3.5px #0f172a}
-#cgBox .cg-iv{font-size:26px}
+#cgBox .cg-it{font-size:22px}
+#cgBox .cg-cdn{font-size:32px}
+#cgIntro .cg-ic.cg-rc{width:230px;height:308px}
+.right-card-container.info-split.lc-max:has(#infoUI.cg-on)>#defaultUserListUI{flex:0 0 0px;padding-top:0;padding-bottom:0;margin-bottom:-10px;opacity:0;pointer-events:none}
+#cgIntro .cg-rc b{font-size:21px;-webkit-text-stroke:5px #0f172a}
+#cgBox .cg-iv{font-size:36px}
 #cgBox .cg-bar{order:10;height:12px;background:#cbd5e1;border:1px solid #94a3b8}
 #cgBox .cg-bar i{background:#fff!important}
 ` }));
