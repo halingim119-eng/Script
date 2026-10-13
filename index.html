@@ -724,6 +724,7 @@ let selectedImage = DEFAULT_PROFILE;
 $('cardImage').src = selectedImage;
 
 let isTeacher = false, myNickname = '익명', gameStarted = false, myScore = 0;
+const ASSET = { on: false, started: false, files: [], cur: -1, nick: '', tick: 0 };
 let myTroll = 0;   // 내가 다른 사람을 방해한 횟수
 let currentBlocks = [], currentSession = 0, hasGuessed = false, activeUsers = [];
 let pendingAttackType = null, isTargetSelectMode = false;
@@ -1155,7 +1156,7 @@ function getMyPayload() {
 }
 
 function syncNickname() {
-  const base = $('nickname').value.trim();
+  const base = ASSET.on ? ASSET.nick.trim() : $('nickname').value.trim();
   const name = base || (isTeacher && !stealth ? '선생님' : '익명');
   myNickname = isTeacher && !stealth ? `(선생님) ${name}` : name;
   updatePresence();
@@ -1517,6 +1518,7 @@ function applyUIState(started) {
 }
 
 function renderUserList(users) {
+  if (ASSET.on) return assetList();
   $('onlineCountText').innerText = `${users.length}명`;
   const html = users.length === 0 ? `<div class="empty-state">아무도 없어요.</div>` : users.map(u => `
     <div class="user-item">
@@ -3028,7 +3030,8 @@ document.querySelector('.right-card-container').appendChild(iu);
   $('infAll').onclick = () => { infoAll = !infoAll; infoView(); }; $('infX').onclick = () => { infoHide = true; infoSync(); };
   $('infCard').onclick = () => { infoCard = !infoCard; infoAll = false; infoI = 0; $('infCard').textContent = infoCard ? '모드 설명' : '카드 설명'; document.querySelector('#infoUI .board-title').textContent = infoCard ? '카드 설명' : '모드 설명'; infoView(); infoShow(0, 1); };
 }
-function infoShow(i, hold) {   // hold: 직접 눌렀으면 10초 동안 자동 넘김 멈춤
+function infoShow(i, hold) {
+  if (ASSET.on) return assetInfo();   // hold: 직접 눌렀으면 10초 동안 자동 넘김 멈춤
   const IL = infoCard ? INFO_CARDS : INFO_MODES, n = IL.length; infoI = (i % n + n) % n; const m = IL[infoI];
   const re = (el, a) => { el.style.animation = 'none'; void el.offsetWidth; el.style.animation = a || ''; };
   $('infImg').src = m[0]; re($('infImg'));
@@ -3600,6 +3603,7 @@ function cgIntro() {   // 매칭 직후 5초: MP3 2번 → 5초가 되면 3번�
 }
 /* ----- 시작 / 매칭 ----- */
 function cgOpen() {
+  if (ASSET.on) return showToast(null, '게임하기', '에셋 로딩이 끝나면 할 수 있어요', '#94a3b8');
   if (isTeacher) return;   // 선생님에게는 초성 대결이 아예 안 보임
   if (CG.s !== 'idle') return;
   if (gameStarted || curStage) return showToast(null, '게임하기', '지금은 할 수 없어요', '#94a3b8');
@@ -3800,6 +3804,108 @@ $('cgHintBtn').onclick = () => {
   if (!ok.length) return cgFb('보여줄 정답이 없어요', false);
   CG.hintUsed = true; cgFb('정답 예시: ' + ok[Math.floor(Math.random() * ok.length)], true); cgRender();
 };
+/* ===== 입장 후 전체화면이 되면: 폴더 에셋 로딩 연출 (나한테만 보임) ===== */
+const ASSET_FILES = ['__self__', 'new_vault_season_01.wav', 'round-begin-brawl-stars.mp3', 'words.file'];   // 같은 폴더의 파일들 (브라우저는 폴더를 읽을 수 없어서 이름을 적어둠 · 파일이 늘면 여기에 추가)
+const ASSET_SLOW = 3, ASSET_MIN = 1800;   // 단어 목록 외에는 3배 느리게 보여줌 (아주 빨리 끝나도 최소 1.8초)
+const ASSET_GIF = 'https://media.tenor.com/SAqvzQ5lSyUAAAAj/download.gif', ASSET_TXT = '에셋 로딩중이에요..';
+const FOLDER_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path d="M6 14h20l6 6h26v32H6z" fill="#d97706"/><path d="M6 26h52v26H6z" fill="#fbbf24"/></svg>');
+const assetSleep = ms => new Promise(r => setTimeout(r, ms));
+const assetFmt = b => b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : b >= 1024 ? (b / 1024).toFixed(1) + ' KB' : b + ' B';
+function assetList() {   // 플레이어들 카드: 다른 플레이어 대신 폴더 파일들을 플레이어처럼 표시
+  const F = ASSET.files, n = F.filter(f => f.st === 'done').length;
+  $('onlineCountText').innerText = n + ' / ' + F.length;
+  const lab = f => f.st === 'wait' ? '대기' : f.st === 'fail' ? '없음' : Math.floor(f.pct) + '%';
+  const col = f => f.st === 'done' ? '#22c55e' : f.st === 'fail' ? '#ef4444' : f.st === 'load' ? '#4f46e5' : '#94a3b8';
+  const html = F.map(f => `<div class="user-item as"><div class="user-info"><img src="${FOLDER_ICON}" class="user-avatar-mini" alt=""><span class="user-name">${esc(f.name)}</span></div><span style="font-size:12px;font-weight:600;color:${col(f)};">${lab(f)}</span><i style="position:absolute;left:0;bottom:0;height:3px;width:${f.st === 'done' ? 100 : Math.floor(f.pct)}%;background:${col(f)}"></i></div>`).join('');
+  if (html !== lastListHtml) { $('userListContainer').innerHTML = html; lastListHtml = html; }
+}
+function assetInfo() {   // 모드 설명 카드: 지금 받는 파일의 그림 / 이름 / 크기(3배)
+  const F = ASSET.files, f = F[Math.max(0, ASSET.cur)]; if (!f) return;
+  const img = /\.(png|jpe?g|gif|webp|svg)$/i.test(f.name) ? f.url : FOLDER_ICON, im = $('infImg');
+  if (im.getAttribute('src') !== img) im.src = img;
+  const n = F.filter(x => x.st === 'done').length, key = f.name + '|' + n + '|' + f.size + '|' + f.st + '|' + Math.floor(f.pct), tx = $('infTx');
+  if (tx.dataset.k !== key) {
+    tx.dataset.k = key;
+    tx.innerHTML = `<div class="inf-nm">${esc(f.name)}</div><div class="inf-tg"><b>${f.st === 'fail' ? '찾을 수 없음' : f.st === 'done' ? '완료' : '다운로드 중'}</b><b>${n} / ${F.length}</b></div><div class="inf-ds">파일 크기 ${f.size ? assetFmt(f.size * 3) : (f.st === 'fail' ? '알 수 없음' : '확인 중…')}</div><div class="inf-tp">${Math.floor(f.pct)}%</div>`;
+  }
+  const bar = $('infBar'); bar.style.animation = 'none'; bar.style.width = Math.floor(f.pct) + '%';
+  infoAt = Infinity;
+}
+async function assetLoad(f) {   // 파일 하나를 실제로 받으면서, 화면에는 3배 느리게 진행도를 보여줌
+  f.st = 'load'; f.pct = 0; f.size = 0;
+  const slow = f.words ? 1 : ASSET_SLOW, t0 = performance.now(), smp = [[0, 0]];
+  let got = 0, total = 0, done = false, ok = true, T = 0;
+  const fr = b => total ? Math.min(1, b / total) : (done ? 1 : Math.min(.95, 1 - Math.exp(-b / 150000)));
+  (async () => {
+    try {
+      const r = await fetch(f.url); if (!r.ok) throw new Error('HTTP ' + r.status);
+      const cl = +r.headers.get('content-length') || 0; if (cl) { total = cl; f.size = cl; }
+      if (r.body && r.body.getReader) { const rd = r.body.getReader(); for (;;) { const x = await rd.read(); if (x.done) break; got += x.value.length; smp.push([performance.now() - t0, got]); } }
+      else { got = (await r.arrayBuffer()).byteLength; smp.push([performance.now() - t0, got]); }
+      if (!cl) { total = got; f.size = got; }
+    } catch (e) { ok = false; }
+    T = performance.now() - t0; done = true;
+  })();
+  let shown = 0;
+  while (ASSET.on) {
+    const el = performance.now() - t0;
+    if (!done) {
+      const rt = el / slow; let b = 0;
+      for (let k = smp.length - 1; k >= 0; k--) if (smp[k][0] <= rt) { b = smp[k][1]; break; }
+      shown = Math.max(shown, fr(b));
+    } else {
+      if (!ok) break;
+      shown = f.words ? 1 : Math.max(shown, Math.min(1, el / Math.max(slow * T, ASSET_MIN)));
+      if (shown >= 1) break;
+    }
+    f.pct = Math.min(99.9, shown * 100); await assetSleep(50);
+  }
+  if (!ASSET.on) return;
+  if (!ok) { f.st = 'fail'; f.pct = 0; await assetSleep(600); return; }
+  f.st = 'done'; f.pct = 100; await assetSleep(350);
+}
+async function assetRun() {   // 하나 끝나면 다음 파일 (한꺼번에 받지 않음)
+  for (let i = 0; i < ASSET.files.length; i++) { if (!ASSET.on) return; ASSET.cur = i; await assetLoad(ASSET.files[i]); }
+  assetEnd();
+}
+function assetTick() {
+  if (!ASSET.on) return;
+  if (gameStarted || curStage) return assetEnd();   // 선생님이 게임/투표를 시작하면 바로 끝내고 원래대로
+  const ni = $('nickname'); if (ni.value !== ASSET_TXT) ni.value = ASSET_TXT;
+  if ($('cardImage').getAttribute('src') !== ASSET_GIF) $('cardImage').src = ASSET_GIF;
+  assetList(); assetInfo();
+}
+function assetStart() {
+  if (ASSET.started || P2) return; ASSET.started = true;
+  const self = decodeURIComponent(location.pathname.split('/').pop() || '') || 'index.html';
+  ASSET.files = ASSET_FILES.map(n => ({ name: n === '__self__' ? self : n, url: n === '__self__' ? location.pathname : n, words: n === 'words.file', st: 'wait', pct: 0, size: 0 }));
+  ASSET.nick = $('nickname').value; ASSET.cur = 0; ASSET.on = true;
+  const ni = $('nickname'); ni.value = ASSET_TXT; ni.readOnly = true; $('changeProfileBtn').disabled = true;
+  $('cardImage').src = ASSET_GIF; lastListHtml = '';
+  ASSET.tick = setInterval(assetTick, 100); assetTick(); assetRun();
+}
+function assetEnd() {   // 다 끝나면 닉네임칸 · 프로필 · 목록 · 모드 설명을 원래대로
+  if (!ASSET.on) return;
+  ASSET.on = false; clearInterval(ASSET.tick);
+  const ni = $('nickname'); ni.readOnly = false; ni.value = ASSET.nick; $('changeProfileBtn').disabled = false;
+  $('cardImage').src = gameStarted ? GAME_CARD_IMAGE : selectedImage;
+  $('infBar').style.width = ''; lastListHtml = ''; infoI = 0; infoAt = Date.now() + 5000; infoShow(0);
+  syncNickname();
+}
+{
+  const fsNow = () => !!(document.fullscreenElement || document.webkitFullscreenElement) || (screen.height - innerHeight < 4 && screen.width - innerWidth < 4);
+  const w = setInterval(() => { if (P2) return clearInterval(w); if (fsNow()) { clearInterval(w); assetStart(); } }, 300);
+}
+document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
+.user-item.as{position:relative;overflow:hidden}
+.nickname-input[readonly]{color:#4f46e5;font-weight:bold}
+.right-card-container:has(#infoUI.cg-on){height:510px;max-height:510px}
+#cgIntro{gap:14px}
+.cg-it{font-size:26px}
+.cg-cdn{font-size:36px}
+#cgIntro .cg-ic.cg-rc{width:214px;height:287px}
+#cgIntro .cg-rc b{font-size:19px;-webkit-text-stroke:4px #0f172a}
+` }));
 setInterval(() => document.body.classList.toggle('tch', !!isTeacher), 300);
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
