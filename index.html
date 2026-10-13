@@ -3419,7 +3419,17 @@ function cgLoad() {   // words.file 을 한 번만 불러와서 단어 집합 / 
   }).catch(e => { cgLoadP = null; throw e; });
   return cgLoadP;
 }
-function cgPick(r, prev) {   // 단어 파일에 실제로 있는 초성만 고름 (답이 너무 적은 초성은 피함)
+function cgPick(r, prev) {   // 단어가 많은 초성부터 차례로 (글자 수별로, 이미 나온 초성은 건너뜀)
+  const u = CG.uch || (CG.uch = []);
+  for (let L = cgLen(r); L >= 2; L--) {
+    const list = [...cgCnt.entries()].filter(e => e[0].length === L).sort((a, b) => b[1] - a[1]);
+    if (!list.length) continue;
+    const e = list.find(x => !u.includes(x[0])) || list[0];
+    u.push(e[0]); return e[0];
+  }
+  return cgPickOld(r, prev);
+}
+function cgPickOld(r, prev) {   // 단어 파일에 실제로 있는 초성만 고름 (답이 너무 적은 초성은 피함)
   const L = cgLen(r), list = cgByLen[L] || cgByLen[2], need = L <= 2 ? 25 : L === 3 ? 12 : L === 4 ? 5 : 2;
   let best = '';
   for (let i = 0; i < 100; i++) {
@@ -3629,7 +3639,7 @@ function cgLeave(notify) {
   cgShow();
 }
 function cgBegin(mid, host, opp) {
-  Object.assign(CG, { s: 'intro', hintUsed: 0, sc: {}, prog: {}, nx: 0, mid, host, opp, inv: null, acc: null, r: 0, ch: '', endAt: Date.now() + CG_ROUND_MS, tot: CG_ROUND_MS, done: {}, wordOf: {}, used: [], over: null, seen: Date.now(), nextAt: 0, lastHb: 0, lastPush: 0, dis: true });
+  Object.assign(CG, { s: 'intro', uch: [], hintUsed: 0, sc: {}, prog: {}, nx: 0, mid, host, opp, inv: null, acc: null, r: 0, ch: '', endAt: Date.now() + CG_ROUND_MS, tot: CG_ROUND_MS, done: {}, wordOf: {}, used: [], over: null, seen: Date.now(), nextAt: 0, lastHb: 0, lastPush: 0, dis: true });
   cgShow(); cgFb(''); cgIntro();
 }
 function cgNextRound() {   // 진행(호스트)만 문제를 정함
@@ -3817,8 +3827,8 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 ` }));
 /* 게임하기: 모드 설명 창 크기 그대로, 모드 대신 게임을 설명 (◀ ▶ · 자동 넘김 · 시작하기) */
 const INFO_GAMES = [
-  [SC('PQVbThjT3zxxtSMb2Ji8'), '타자 대결', ['1:1', '타자'], '긴 단어가 나오면 똑같이 빨리 쳐요! 먼저 치면 상대는 시간 안에 못 치면 패배. 라운드마다 점점 빨라져요.', '시작하기 → 같은 게임을 고른 친구와 매칭', 'type'],
-  [SC('y46nReaY9L9cZkjd5x2m'), '초성 대결', ['1:1', '어휘'], '초성에 맞는 단어를 먼저 맞혀요! 못 맞히면 패배. 라운드마다 초성이 길어지고 시간은 줄어요.', '시작하기 → 같은 게임을 고른 친구와 매칭', 'cho']
+  ['https://media.ffycdn.net/eu/supercell/TYmBEhNh1jU9Qpc1NrZu.png?width=2400', '타자 대결', ['1:1', '타자'], '긴 단어가 나오면 똑같이 빨리 쳐요! 먼저 치면 상대는 시간 안에 못 치면 패배. 라운드마다 점점 빨라져요.', '시작하기 → 같은 게임을 고른 친구와 매칭', 'type'],
+  ['https://media.ffycdn.net/eu/supercell/nztrMCV844Yh24bDpyef.png?width=2400', '초성 대결', ['1:1', '어휘'], '초성에 맞는 단어를 먼저 맞혀요! 못 맞히면 패배. 라운드마다 초성이 길어지고 시간은 줄어요.', '시작하기 → 같은 게임을 고른 친구와 매칭', 'cho']
 ];
 let infoGame = false;
 $('cgOpenBtn').onclick = () => {
