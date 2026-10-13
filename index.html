@@ -3952,6 +3952,16 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 #cgBox #cgPgTxt{color:#475569}
 #cgBox #cgDl{height:50px}
 ` }));
+document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
+#cgIntro{gap:6px}
+#cgBox .cg-it{font-size:14px}
+#cgBox .cg-cdn{font-size:20px}
+#cgIntro .cg-ic.cg-rc{width:140px;height:188px}
+#cgIntro .cg-rc b{font-size:14px;-webkit-text-stroke:3.5px #0f172a}
+#cgBox .cg-iv{font-size:26px}
+#cgBox .cg-bar{order:10;height:12px;background:#cbd5e1;border:1px solid #94a3b8}
+#cgBox .cg-bar i{background:#fff!important}
+` }));
 setInterval(() => document.body.classList.toggle('tch', !!isTeacher), 300);
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
