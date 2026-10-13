@@ -3518,15 +3518,15 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 {
   const b = document.createElement('div'); b.id = 'cgBox';
   b.innerHTML = `<div class="cg-head"><span id="cgTitle">초성 대결 <small style="font-size:11px;color:#64748b">1:1</small></span><button class="inf-x" id="cgExit">나가기</button></div>
-<div id="cgPick"><div class="cg-pt">게임을 골라요 · 같은 게임을 고른 친구와 연결돼요</div><div class="cg-pg"><button type="button" class="cg-pc" data-g="type"><b>타자<br>게임</b><small>긴 단어를 먼저 똑같이 치면 +1점<br>먼저 3점을 얻으면 승리</small></button><button type="button" class="cg-pc" data-g="cho"><b>초성<br>대결</b><small>초성에 맞는 단어를 먼저 맞히기<br>점점 초성이 길어져요</small></button></div></div>
-<div id="cgSearch"><div class="cg-mm"><b>ㅊ</b><b>ㅅ</b><b>ㄷ</b><b>ㄱ</b></div><div class="cg-mmt">매칭 중</div><div class="cg-sweep"><i></i></div><div id="cgSTxt">상대를 찾는 중…</div><div id="cgLoadBox"><div class="cg-pgbar"><i id="cgPgFill"></i></div><div id="cgPgTxt">0%</div><pre id="cgDl"></pre></div><div class="cg-sub">같은 게임을 고른 다른 친구와 1:1로 연결돼요</div><button class="inf-x" id="cgCancel">취소</button></div>
+<div id="cgPick"><div class="cg-pt">◀ ▶ 로 게임을 넘겨 보고, 눌러서 시작해요</div><div class="cg-pw"><button type="button" class="inf-ar" id="cgPL" style="left:0">◀</button><button type="button" class="cg-pc" id="cgPCard"></button><button type="button" class="inf-ar" id="cgPR" style="right:0">▶</button></div></div>
+<div id="cgSearch"><div class="cg-mm" id="cgMM"><b>ㅊ</b><b>ㅅ</b><b>ㄷ</b><b>ㄱ</b></div><div class="cg-mmt">매칭 중</div><div class="cg-sweep"><i></i></div><div id="cgSTxt">상대를 찾는 중…</div><div id="cgLoadBox"><div class="cg-pgbar"><i id="cgPgFill"></i></div><div id="cgPgTxt">0%</div><pre id="cgDl"></pre></div><div class="cg-sub">같은 게임을 고른 다른 친구와 1:1로 연결돼요</div><button class="inf-x" id="cgCancel">취소</button></div>
 <div id="cgIntro"><div class="cg-it">상대를 찾았어요!</div><div class="cg-ib"><div class="cg-ic cg-rc me"><img class="cg-rcbg" id="cgCardMe" alt=""><img class="cg-rcav" id="cgIMe" alt=""><b id="cgIMeN"></b></div><div class="cg-iv">VS</div><div class="cg-ic cg-rc op"><img class="cg-rcbg" id="cgCardOp" alt=""><img class="cg-rcav" id="cgIOp" alt=""><b id="cgIOpN"></b></div></div><div class="cg-cdn" id="cgCdn">5</div></div>
 <div id="cgPlay">
 <div class="cg-top"><span class="cg-pill" id="cgRound"></span><span class="cg-pill tm" id="cgTimer"></span></div>
 <div class="cg-bar"><i id="cgBar"></i></div>
 <div class="cg-stage"><div class="cg-ch" id="cgCh"></div><div class="cg-tw" id="cgTW"></div><div class="cg-msg" id="cgMsg"></div></div>
 <div class="cg-vs"><div class="cg-p" id="cgPMe"><img id="cgMeImg" alt=""><div><b id="cgMeName"></b><span id="cgMeSt"></span><i class="cg-pb"><u id="cgMePb"></u></i></div></div><em>VS</em><div class="cg-p" id="cgPOp"><img id="cgOpImg" alt=""><div><b id="cgOpName"></b><span id="cgOpSt"></span><i class="cg-pb"><u id="cgOpPb"></u></i></div></div></div>
-<div class="cg-in"><input id="cgIn" maxlength="12" placeholder="초성에 맞는 단어 입력" autocomplete="off"><button id="cgHintBtn" class="cg-hint">정답 보기 2/2</button><button id="cgGo">제출</button></div>
+<div class="cg-in"><input id="cgIn" maxlength="40" placeholder="초성에 맞는 단어 입력" autocomplete="off"><button id="cgHintBtn" class="cg-hint">정답 보기 2/2</button><button id="cgGo">제출</button></div>
 <div class="cg-fb" id="cgFb"></div>
 </div>
 <div id="cgEnd"><div class="cg-rt" id="cgRt"></div><div class="cg-rs" id="cgRs"></div><div class="cg-bt"><button id="cgAgain">다시 하기</button><button class="no" id="cgBye">나가기</button></div></div>`;
@@ -3541,6 +3541,7 @@ function cgShow() {
 function cgRender() {
   if (!$('cgBox')) return;
   const s = CG.s, play = s === 'play' || s === 'over', op = CG.opp;
+  { const mm = $('cgMM'), tl = CG.g === 'type' ? 'ㅌㅈㄷㄱ' : 'ㅊㅅㄷㄱ'; if (mm.dataset.k !== tl) { mm.dataset.k = tl; mm.innerHTML = [...tl].map(c => '<b>' + c + '</b>').join(''); } }
   $('cgSearch').style.display = (s === 'load' || s === 'search') ? 'flex' : 'none';
   $('cgIntro').style.display = s === 'intro' ? 'flex' : 'none';
   $('cgPlay').style.display = play ? 'flex' : 'none';
@@ -3564,7 +3565,7 @@ function cgRender() {
   if (CG.g === 'type') cgTPaint(); else { $('cgMeSt').textContent = st(myId, dm); $('cgOpSt').textContent = st(op.id, dp); }
   $('cgPMe').classList.toggle('ok', dm); $('cgPOp').classList.toggle('ok', dp);
   $('cgMsg').textContent = CG.g === 'type' ? cgTMsg(s) : s === 'over' ? '' : both ? '둘 다 성공! 곧 다음 라운드 (초성이 점점 길어져요)' : dm ? '정답! 상대가 시간 안에 못 맞히면 승리해요' : dp ? '상대가 먼저 맞혔어요! 서둘러요' : '초성에 맞는 ' + CG.ch.length + '글자 단어를 입력하세요';
-  const dis = dm || s === 'over' || !CG.ch || (CG.g === 'type' && (dp || CG.nextAt || CG.nx));
+  const dis = dm || s === 'over' || !CG.ch || (CG.g === 'type' && (CG.nextAt || CG.nx));
   $('cgIn').disabled = dis; $('cgGo').disabled = dis; $('cgIn').placeholder = CG.g === 'type' ? '위 단어를 똑같이 입력' : '초성에 맞는 단어 입력';
   $('cgHintBtn').disabled = dis || CG.hintUsed >= 2; $('cgHintBtn').textContent = '정답 보기 ' + (2 - CG.hintUsed) + '/2';
   if (CG.dis && !dis) $('cgIn').focus();
@@ -3573,13 +3574,13 @@ function cgRender() {
   if (o) {
     const lose = o.loser === myId;
     $('cgRt').textContent = o.draw ? '무승부' : lose ? '패배' : '승리!';
-    $('cgRs').textContent = o.left ? '상대가 나갔어요' : o.draw ? '둘 다 시간 안에 답하지 못했어요' : CG.g === 'type' ? (lose ? '상대가 먼저 ' : '먼저 ') + CG_TWIN + '점을 얻었어요 (' + (CG.sc[myId] || 0) + ' : ' + (CG.sc[op.id] || 0) + ')' : (lose ? '시간 안에 답하지 못했어요' : '상대가 시간 안에 답하지 못했어요') + ' (' + CG.r + '라운드)';
+    $('cgRs').textContent = o.left ? '상대가 나갔어요' : o.draw ? '둘 다 시간 안에 답하지 못했어요' : false ? 0 : (lose ? '시간 안에 답하지 못했어요' : '상대가 시간 안에 답하지 못했어요') + ' (' + CG.r + '라운드)';
   }
 }
 function cgBar() {
   if (CG.s !== 'play' || !CG.opp) return;
   const both = CG.done[myId] && CG.done[CG.opp.id], l = Math.max(0, CG.endAt - Date.now()), f = $('cgBar');
-  if (both || (CG.g === 'type' && (CG.done[myId] || CG.done[CG.opp.id] || CG.nextAt || CG.nx))) { f.style.width = '100%'; $('cgTimer').textContent = ''; return; }
+  if (both || (CG.g === 'type' && (CG.nextAt || CG.nx))) { f.style.width = '100%'; $('cgTimer').textContent = ''; return; }
   f.style.width = Math.min(100, l / (CG.tot || CG_ROUND_MS) * 100) + '%'; f.style.background = l < 5000 ? '#f43f5e' : '';
   const sc = Math.ceil(l / 1000); $('cgTimer').textContent = sc + '초';
   if (l > 0 && sc <= 3 && sc !== CG.lastTk) { CG.lastTk = sc; SFX.tick(); }
@@ -3614,7 +3615,7 @@ function cgOpen(g) {
   if (!isSubscribed || !room) return showToast(null, '게임하기', '연결 중이에요. 잠시 뒤에 다시 눌러 주세요', '#94a3b8');
   if (!infoOn) return showToast(null, '게임하기', '모드 설명 창에서만 할 수 있어요', '#94a3b8');
   if (infoChat) { infoChat = false; lcMax = false; lcLayout(); infoView(); }
-  if (!g) { Object.assign(CG, { s: 'pick', g: '', inv: null, acc: null, over: null, opp: null, mid: '' }); cgShow(); return; }
+  if (!g) { Object.assign(CG, { s: 'pick', g: '', inv: null, acc: null, over: null, opp: null, mid: '' }); cgPickShow(0, 0); cgShow(); return; }
   Object.assign(CG, { s: 'load', g, inv: null, acc: null, over: null, opp: null, mid: '', lastFind: 0, dis: true, t0: Date.now() });
   $('cgSTxt').textContent = '단어 목록 불러오는 중…';
   { const nl = !cgSet; $('cgSearch').classList.toggle('ld', nl); $('cgLoadBox').style.display = nl ? 'block' : 'none'; $('cgPgFill').style.width = '0%'; $('cgPgTxt').textContent = '0%'; $('cgDl').textContent = ''; }
@@ -3648,7 +3649,7 @@ function cgSetOver(o) {
   cgShow();
 }
 function cgTimeUp() {   // 시간이 끝나면: 못 맞힌 사람이 패배 (둘 다 못 맞히면 무승부)
-  if (CG.g === 'type') { CG.nextAt = Date.now() + 1800; cgPush(); setTimeout(cgPush, 500); return; }   // 타자: 시간 초과면 점수 없이 다음 단어
+  ;   // 타자: 시간 초과면 점수 없이 다음 단어
   const a = !!CG.done[myId], b = !!CG.done[CG.opp.id];
   cgSetOver(!a && !b ? { loser: '', draw: 1 } : { loser: a ? CG.opp.id : myId });
   cgPush(); setTimeout(cgPush, 600); setTimeout(cgPush, 1500);
@@ -3697,7 +3698,7 @@ function cgRecv(p) {
     if (nr) { $('cgIn').value = ''; cgFb(''); SFX.newq(); CG.prog = {}; }
     if (p.over) cgSetOver(p.over); else cgRender();
   } else if (p.t === 'ans') {
-    if (CG.host && s === 'play' && p.mid === CG.mid && CG.opp && p.from === CG.opp.id) cgJudge(p.from, String(p.word || '').trim().slice(0, 12), p.r);
+    if (CG.host && s === 'play' && p.mid === CG.mid && CG.opp && p.from === CG.opp.id) cgJudge(p.from, String(p.word || '').trim().slice(0, 40), p.r);
   } else if (p.t === 'rej') {
     if (p.to === myId && p.mid === CG.mid && s === 'play') { cgFb(p.msg, false); SFX.wrong(); $('cgIn').value = CG.last || ''; }
   } else if (p.t === 'tp') {
@@ -3735,25 +3736,25 @@ function cgAuto() {   // 선생님은 라운드마다 0.8초 뒤 자동으로 �
   if (CG.autoK !== k) { CG.autoK = k; CG.autoAt = Date.now() + 800; }
   if (Date.now() < (CG.autoAt || 0)) return;
   CG.autoAt = Date.now() + 1500;
-  if (CG.g === 'type') { if (CG.nx || (CG.opp && CG.done[CG.opp.id])) return; $('cgIn').value = CG.ch; cgTInput(); return; }   // 타자: 선생님은 자동 완성
+  if (CG.g === 'type') { if (CG.nx) return; $('cgIn').value = CG.ch; cgTInput(); return; }   // 타자: 선생님은 자동 완성
   const ok = (cgByLen[CG.ch.length] || []).filter(w => cgCho(w) === CG.ch && !CG.used.includes(w));
   if (ok.length) cgSubmit(ok[Math.floor(Math.random() * ok.length)]);
 }
 /* ===== 타자 대결 ===== */
 const CG_TWIN = 3;   // 먼저 3점을 얻으면 승리
 const cgGName = g => g === 'type' ? '타자 대결' : '초성 대결';
-const cgTMs = w => Math.min(40000, 12000 + w.length * 1500);   // 단어가 길수록 시간을 더 줌
+const cgTMs = w => Math.max(1500, (3000 + w.length * 900) * Math.pow(0.92, CG.r - 1));   // 단어가 길수록 시간을 더 줌
 function cgTPick() {   // 가장 긴 단어들 중에서 (이미 나온 건 제외)
   const pool = cgLong.filter(w => !CG.used.includes(w)), l = pool.length ? pool : cgLong;
   const w = l[Math.floor(Math.random() * l.length)]; CG.used.push(w); return w;
 }
-const cgTSt = id => (CG.sc[id] || 0) + '점 · ' + (CG.done[id] ? '완료!' : (CG.prog[id] || 0) + '/' + (CG.ch ? CG.ch.length : 0));
+const cgTSt = id => CG.done[id] ? '완료!' : (CG.prog[id] || 0) + '/' + (CG.ch ? CG.ch.length : 0);
 function cgTMsg(s) {
   if (s === 'over') return '';
-  if (CG.done[myId]) return '내가 먼저 완성! +1점';
-  if (CG.opp && CG.done[CG.opp.id]) return '상대가 먼저 완성했어요! 다음 단어를 기다려요';
+  if (CG.done[myId]) return CG.opp && CG.done[CG.opp.id] ? '둘 다 성공! 곧 다음 단어 (점점 빨라져요)' : '내가 먼저 완성! 상대가 시간 안에 못 치면 승리해요';
+  if (CG.opp && CG.done[CG.opp.id]) return '상대가 먼저 완성했어요! 서둘러요';
   if (CG.nextAt || CG.nx) return '시간 초과! 다음 단어로 넘어가요';
-  return '위 단어를 똑같이 입력하세요 · 먼저 ' + CG_TWIN + '점을 얻으면 승리';
+  return '위 단어를 똑같이 입력하세요 · 시간 안에 못 치면 패배';
 }
 function cgTPaint() {   // 단어 색칠 + 진행 바
   const w = CG.ch || '', tw = $('cgTW'), L = Math.max(1, w.length), me = !!CG.done[myId];
@@ -3786,15 +3787,34 @@ function cgTSubmit(w) {
 }
 function cgTJudge(id, word) {   // 호스트가 판정: 먼저 맞힌 사람이 1점
   if (word !== CG.ch) { if (id === myId) { cgFb('글자가 달라요!', false); SFX.wrong(); } else cgSend({ t: 'rej', mid: CG.mid, to: id, msg: '글자가 달라요' }); return; }
-  CG.done[id] = true; CG.wordOf[id] = word; CG.sc[id] = (CG.sc[id] || 0) + 1;
+  CG.done[id] = true; CG.wordOf[id] = word;
   if (id === myId) SFX.correct(); else SFX.pop();
-  if (CG.sc[id] >= CG_TWIN) { cgSetOver({ loser: id === myId ? CG.opp.id : myId }); cgPush(); setTimeout(cgPush, 600); setTimeout(cgPush, 1500); return; }
-  CG.nextAt = Date.now() + 2200; cgPush();
+  ;
+  if (CG.done[myId] && CG.done[CG.opp.id]) CG.nextAt = Date.now() + 2200; else CG.endAt = Math.min(CG.endAt, Date.now() + Math.max(1500, Math.min(CG_GRACE_MS, CG.tot * 0.5))); cgPush();
 }
 $('cgIn').addEventListener('input', cgTInput);
 $('cgIn').addEventListener('compositionstart', () => { CG.comp = true; });
 $('cgIn').addEventListener('compositionend', () => { CG.comp = false; cgTInput(); });
 $('cgPick').onclick = e => { const b = e.target.closest('[data-g]'); if (b) cgOpen(b.dataset.g); };
+const CG_GAMES = [['type', '타자<br>게임', '긴 단어를 똑같이 빨리 치기<br>점점 빨라져요 · 못 치면 패배'], ['cho', '초성<br>대결', '초성에 맞는 단어를 먼저 맞히기<br>점점 초성이 길어져요']];
+let cgPickI = 0, cgPickAt = 0;
+function cgPickShow(i, hold) {   // 모드 설명처럼 한 개씩 보여주고, 5초마다 자동으로 넘어감 (직접 누르면 10초 멈춤)
+  const n = CG_GAMES.length; cgPickI = (i % n + n) % n;
+  const g = CG_GAMES[cgPickI], c = $('cgPCard');
+  c.dataset.g = g[0]; c.innerHTML = '<b>' + g[1] + '</b><small>' + g[2] + '</small><u>' + (cgPickI + 1) + ' / ' + n + ' · 눌러서 시작</u>';
+  c.style.animation = 'none'; void c.offsetWidth; c.style.animation = 'infP .35s ease';
+  cgPickAt = Date.now() + (hold ? 10000 : 5000);
+}
+$('cgPL').onclick = () => cgPickShow(cgPickI - 1, 1);
+$('cgPR').onclick = () => cgPickShow(cgPickI + 1, 1);
+setInterval(() => { if (CG.s === 'pick' && Date.now() >= cgPickAt) cgPickShow(cgPickI + 1); }, 400);
+document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
+.cg-pw{position:relative;width:100%;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+#cgPick .inf-ar{z-index:2}
+#cgPCard{width:270px;height:190px;gap:10px}
+#cgPCard b{font-size:46px}
+#cgPCard u{text-decoration:none;font-size:11px;font-weight:bold;color:#4f46e5}
+` }));
 $('cgOpenBtn').onclick = () => cgOpen();
 $('cgExit').onclick = () => cgLeave();
 $('cgCancel').onclick = () => cgLeave();
