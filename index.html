@@ -4233,8 +4233,45 @@ $('cgOpenBtn').onclick = () => {
 };
 setInterval(() => document.body.classList.toggle('tch', !!isTeacher), 300);
 /* ===== 제미나이로 기능 만들기 (선생님 전용) ===== */
-const GEM_KEY_URL = 'https://pastefy.app/mz0hjd4O/raw', GEM_MODEL = 'gemini-2.5-flash';
-let GEM_KEY_CACHE = '';
+const GEM_KEY_URL = 'https://pastefy.app/mz0hjd4O/raw', GEM_MODELS = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash'];
+let GEM_KEY_CACHE = '', GEM_OK = null, GEM_DBG = [];
+function gemLog(k, v) {   // 디버그 기록 (키 값은 절대 기록하지 않음)
+  GEM_DBG.push(new Date().toLocaleTimeString() + '  ' + k + (v ? ' : ' + v : ''));
+  if (GEM_DBG.length > 50) GEM_DBG.shift();
+  console.log('[gem]', k, v || '');
+}
+async function gemFetch(key, init) {   // 여러 주소 · 모델을 차례로 시도 (404 대비)
+  const url = c => c.ep === 'v' ? 'https://aiplatform.googleapis.com/v1/publishers/google/models/' + c.m + ':generateContent?key=' + encodeURIComponent(key) : 'https://generativelanguage.googleapis.com/v1beta/models/' + c.m + ':generateContent';
+  const eps = key.startsWith('AIza') ? ['g', 'v'] : ['v', 'g'], combos = [];
+  if (GEM_OK) combos.push(GEM_OK);
+  eps.forEach(ep => GEM_MODELS.forEach(m => { if (!GEM_OK || GEM_OK.ep !== ep || GEM_OK.m !== m) combos.push({ ep, m }); }));
+  let best = null, err = null;
+  for (const c of combos) {
+    const name = (c.ep === 'v' ? 'Vertex ' : 'Gemini ') + c.m;
+    let r;
+    try { r = await fetch(url(c), c.ep === 'v' ? { method: init.method, headers: { 'Content-Type': 'application/json' }, body: init.body } : init); }
+    catch (e) { err = e; gemLog(name, '요청 실패 ' + String(e && e.message || e)); continue; }
+    gemLog(name, 'HTTP ' + r.status);
+    if (r.ok) { GEM_OK = c; return r; }
+    if (r.status === 429 || r.status >= 500) return r;
+    if (!best || (best.status === 404 && r.status !== 404)) best = r;
+    try { gemLog(name + ' 응답', (await r.clone().text()).slice(0, 300)); } catch (e) {}
+  }
+  if (best) { if ([400, 401, 403].includes(best.status)) GEM_KEY_CACHE = ''; return best; }
+  throw err || new Error('요청 실패');
+}
+function gemDbgShow() {   // 채팅창에 디버그 내용 + 복사 버튼
+  const w = document.createElement('div'), pre = document.createElement('pre'), b = document.createElement('button');
+  pre.style.cssText = 'margin:6px 0 0;max-height:120px;overflow:auto;white-space:pre-wrap;word-break:break-all;font:10px/1.4 Consolas,monospace;user-select:text';
+  pre.textContent = GEM_DBG.join('\n') || '(기록 없음)';
+  b.className = 'cfg-tab'; b.style.marginTop = '6px'; b.textContent = '디버그 복사';
+  b.onclick = async () => {
+    const t = GEM_DBG.join('\n');
+    try { await navigator.clipboard.writeText(t); } catch (e) { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e2) {} ta.remove(); }
+    b.textContent = '복사됐어요';
+  };
+  w.append(pre, b); gemSay('ai', '문제가 생겼어요. 아래 내용을 복사해서 보내 주세요', w);
+}
 const GEMX = {
   modes: {}, mem: {}, fn: {}, hs: {},
   addMode(m) { if (m && m.key) this.modes[m.key] = m; },
@@ -4271,12 +4308,24 @@ function gemApply(e) {
   if (e.css) { const s = document.createElement('style'); s.dataset.gem = e.id; s.textContent = e.css; document.head.appendChild(s); }
   if (e.js) eval(e.js);   // 게임 모듈 안에서 실행 → 게임 변수/함수를 그대로 사용
 }
-async function gemKey() {   // API 키를 외부(pastefy)에서 불러옴 (한 번 받으면 기억)
+async function gemKey() {   // API 키는 외부(pastefy)에서만 불러옴
+  return gemKeyLoad();
+}
+async function gemKeyLoad() {
   if (GEM_KEY_CACHE) return GEM_KEY_CACHE;
-  try {
-    const r = await fetch(GEM_KEY_URL, { cache: 'no-store' });
-    if (r.ok) { const t = (await r.text()).trim(); if (t) { GEM_KEY_CACHE = t; return t; } }
-  } catch (e) { console.warn('키 불러오기 실패', e); }
+  const urls = [GEM_KEY_URL, 'https://pastefy.app/api/v2/paste/mz0hjd4O'];
+  for (const u of urls) {
+    try {
+      const r = await fetch(u, { cache: 'no-store' });
+      gemLog('키 불러오기 ' + u, 'HTTP ' + r.status);
+      if (!r.ok) continue;
+      let t = await r.text();
+      if (u.indexOf('/api/') >= 0) { try { t = JSON.parse(t).content || ''; } catch (e) { t = ''; } }
+      t = String(t).trim().replace(/^["']|["']$/g, '');
+      if (t) { gemLog('키 확인', '길이 ' + t.length + ', 앞 3글자 ' + t.slice(0, 3)); GEM_KEY_CACHE = t; return t; }
+      gemLog('키가 비어 있어요');
+    } catch (e) { gemLog('키 불러오기 실패 ' + u, String(e && e.message || e)); }
+  }
   return '';
 }
 function gemShare() {
@@ -4323,17 +4372,18 @@ async function gemSend() {
   const i = $('gemIn'), q = i.value.trim(); if (!q || GEM.busy) return;
   const l = Math.ceil((GEM.wait - Date.now()) / 1000);
   if (l > 0) return gemSay('sys', '사용량이 많아요. ' + l + '초 뒤에 다시 보내 주세요');
-  const key = await gemKey(); if (!key) return gemSay('sys', 'API 키를 불러오지 못했어요. 잠시 뒤에 다시 시도해 주세요');
-  i.value = ''; gemSay('me', q); GEM.log.push('선생님: ' + q.slice(0, 80));
+  const key = await gemKey(); if (!key) { gemSay('sys', 'API 키를 불러오지 못했어요'); return gemDbgShow(); }
+
+i.value = ''; gemSay('me', q); GEM.log.push('선생님: ' + q.slice(0, 80));
   GEM.busy = true; gemUi(); const th = gemSay('ai', '생각 중…');
-  const fail = (t, sec) => { th.remove(); if (sec) GEM.wait = Date.now() + sec * 1000; gemSay('sys', t); };
+  const fail = (t, sec) => { th.remove(); if (sec) GEM.wait = Date.now() + sec * 1000; gemLog('실패', t); gemSay('sys', t); gemDbgShow(); };
   try {
-    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + GEM_MODEL + ':generateContent', {
+    const r = await gemFetch(key, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({ system_instruction: { parts: [{ text: GEM_SYS }] }, contents: [{ role: 'user', parts: [{ text: gemCtx(q) }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.4 } })
     });
     if (!r.ok) {
-      let j = {}; try { j = await r.json(); } catch (e) {}
+      let j = {}; try { j = await r.json(); } catch (e) {} gemLog('최종 응답 HTTP ' + r.status, JSON.stringify(j).slice(0, 500));
       const m = /(\d+(?:\.\d+)?)\s*s\b/i.exec(JSON.stringify(j.error || {}).replace(/.*retryDelay"?:\s*"/, '').slice(0, 20)) || /retry in ([\d.]+)s/i.exec((j.error && j.error.message) || '');
       const sec = m ? Math.min(120, Math.ceil(+m[1])) : 20;
       if (r.status === 429 || r.status === 492) return fail('사용량이 초과됐어요. 약 ' + sec + '초 뒤에 다시 시도해 주세요', sec);
@@ -4363,7 +4413,7 @@ async function gemSend() {
     const pre = document.createElement('pre'); pre.style.cssText = 'margin:4px 0 0;max-height:90px;overflow:auto;white-space:pre-wrap;word-break:break-all;font:10px/1.4 Consolas,monospace';
     pre.textContent = (e.css ? '/* CSS */\n' + e.css + '\n' : '') + e.js; dt.append(sm, pre); ex.appendChild(dt);
     th.remove(); gemSay('ai', String(o.say || '적용했어요'), ex); SFX.correct();
-  } catch (er) { fail('연결에 실패했어요. 인터넷을 확인해 주세요'); }
+  } catch (er) { gemLog('예외', String(er && er.message || er)); fail('연결에 실패했어요. 인터넷을 확인해 주세요'); }
   finally { GEM.busy = false; gemUi(); }
 }
 function gemToggle(on) {
