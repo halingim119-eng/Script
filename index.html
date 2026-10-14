@@ -2759,7 +2759,7 @@ const cmdGo = () => {
 };
 {
   const cu = document.createElement('div'); cu.id = 'cmdUI'; cu.className = 'card right-card';
-  cu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">⌨ 콘솔 <span style="font-size:11px;color:#94a3b8;font-weight:normal">Ctrl+1 로 닫기 · Tab 자동완성</span></div></div><div id="cmdPick"></div><div id="cmdLog"></div><div class="cmd-in-wrap"><div id="cmdSug"></div><div class="chat-in"><input id="cmdIn" placeholder="/명령어  (예: /kill me · /loopkill all 0.5)" autocomplete="off"><button id="cmdSend">전송</button></div></div>';
+  cu.innerHTML = '<div class="board-header" style="margin-bottom:6px;padding-bottom:4px"><div class="board-title">⌨ 콘솔 <span style="font-size:11px;color:#94a3b8;font-weight:normal">Ctrl 로 닫기 · Tab 자동완성</span></div></div><div id="cmdPick"></div><div id="cmdLog"></div><div class="cmd-in-wrap"><div id="cmdSug"></div><div class="chat-in"><input id="cmdIn" placeholder="/명령어  (예: /kill me · /loopkill all 0.5)" autocomplete="off"><button id="cmdSend">전송</button></div></div>';
   document.querySelector('.right-card-container').appendChild(cu);
   $('cmdSend').onclick = cmdGo;
   $('cmdIn').addEventListener('input', cmdSugRender);
@@ -2775,15 +2775,24 @@ const cmdGo = () => {
     if (r && cmdPickCtx) { const f = cmdPickCtx; cmdPickCtx = null; $('cmdPick').style.display = 'none'; f(r.dataset.id); }
     else if (x) { $('cmdPick').style.display = 'none'; cmdPickCtx = null; }
   };
-  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { if (!isTeacher) return; e.preventDefault(); e.stopImmediatePropagation(); if (e.repeat) return; if (!TUT.on) cmdOpen(); } }, true);
+  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { if (!isTeacher) return; ctTap = false; e.preventDefault(); e.stopImmediatePropagation(); if (e.repeat) return; if (!TUT.on) cmdOpen(); } }, true);
+  /* Ctrl 한 번 누르기 / ` 키로도 콘솔 열기 (브라우저가 Ctrl+숫자를 탭 전환으로 가로채는 문제 회피) */
+  let ctTap = false;
+  addEventListener('keydown', e => {
+    if (e.key === 'Control') { if (!e.repeat) ctTap = true; } else ctTap = false;
+    if (isTeacher && !TUT.on && !e.ctrlKey && !e.altKey && !e.metaKey && e.key === '`' && !/INPUT|TEXTAREA/.test((e.target.tagName || ''))) { e.preventDefault(); cmdOpen(); }
+  }, true);
+  addEventListener('mousedown', () => { ctTap = false; }, true);
+  addEventListener('wheel', () => { ctTap = false; }, true);
+  addEventListener('keyup', e => { if (e.key === 'Control' && ctTap) { ctTap = false; if (isTeacher && !TUT.on) cmdOpen(); } }, true);
 }
 /* ===== 선생님 튜토리얼 ===== */
 const TUT_WAIT = 30000;   // 콘솔 15초 + 버튼·설정 15초
 const TUT = { on: false, tk: 0, phase: 1, step: 0, t0: 0, int: null, to: null, root: null, txt: '' };
 const tkb = (...k) => k.map(x => `<kbd>${x}</kbd>`).join('<i class="pl">+</i>');
 const TUT_ROWS = [
-  ['', tkb('Ctrl', '1'), '콘솔'],
-  ['', tkb('Ctrl', '2'), '튜토리얼 넘기기'],
+  ['', tkb('Ctrl'), '콘솔'],
+  ['', tkb('Ctrl', 'A'), '튜토리얼 넘기기'],
   ['투표 중', '/skipvote', '투표 바로 끝내기'],
   ['게임 중', '/end', '게임 바로 종료'],
   ['로비', '/mode', '모드 바로 시작'],
@@ -2865,8 +2874,8 @@ async function tutMock(k, live) {
 const tR = open => ({ a: 'reset', open }), tY = x => ({ a: 'type', x }), tE = { a: 'enter' }, tW = ms => ({ a: 'wait', ms });
 const tO = (x, k, ms) => ({ a: 'out', x, k, ms }), tKEYS = k => ({ a: 'keys', k }), tOPEN = { a: 'open' }, tPICK = i => ({ a: 'pick', i }), tTAB = { a: 'tab' };
 const TUT_STEPS = [
-  { t: `1. 열고 닫기`, d: `<kbd>Ctrl</kbd> + <kbd>1</kbd> 으로 열면 명령어 목록이 떠요. 또 누르면 닫혀요.`,
-    s: [tR(0), tW(100), tKEYS(['Ctrl', '1']), tOPEN, tY('/help'), tE, tO('반복: /loop<명령> [me|all|닉네임] <초> [인자]', 'ch', 120), tO('/kill — 즉시 탈락 [me|all|닉네임]', '', 120), tO('/addscore [n] — 점수 +n (기본 10)', '', 200)] },
+  { t: `1. 열고 닫기`, d: `<kbd>Ctrl</kbd> 을 한 번 누르면 명령어 목록이 떠요. (Ctrl+1 도 돼요) 또 누르면 닫혀요.`,
+    s: [tR(0), tW(100), tKEYS(['Ctrl']), tOPEN, tY('/help'), tE, tO('반복: /loop<명령> [me|all|닉네임] <초> [인자]', 'ch', 120), tO('/kill — 즉시 탈락 [me|all|닉네임]', '', 120), tO('/addscore [n] — 점수 +n (기본 10)', '', 200)] },
   { t: `2. 대상 정하기`, d: `끝에 <code>me</code>(나) <code>all</code>(전체) 닉네임 중 하나를 붙이세요.`,
     s: [tR(1), tY('/addscore 50 all'), tE, tO('✔ /addscore 50 → 모두', 'ok', 200), tY('/lives 5 서연'), tE, tO('✔ /lives 5 → 서연', 'ok', 300)] },
   { t: `3. 대상 고르기`, d: `대상을 안 쓰면 목록이 떠요. 거기서 고르면 돼요. <code>/bomb</code> <code>/steal</code> <code>/gift</code> 도 똑같아요.`,
@@ -2892,7 +2901,7 @@ function tutBuild() {
   <div class="tut-pg"><i id="tutProgF"></i></div>
   <div class="tut-st">
     <div id="tcCon" class="tut-con off">
-      <div class="tc-bar"><span>⌨ 콘솔</span><span>Ctrl + 1 로 닫기</span></div>
+      <div class="tc-bar"><span>⌨ 콘솔</span><span>Ctrl 로 닫기</span></div>
       <div id="tcLog"></div>
       <div class="tc-in"><div id="tcSug"></div><div class="tc-fi"><span id="tcTxt"></span><i class="tc-car"></i><span id="tcPh" class="tc-ph">/명령어  (예: /kill me)</span></div><span class="tc-bt">전송</span></div>
     </div>
@@ -2993,7 +3002,7 @@ function tutClose(silent) {
   if (!silent) { SFX.pop(); setTimeout(ibookAsk, 350); }   // 튜토리얼이 끝나거나 넘겨지면 아이북 질문 카드
 }
 addEventListener('keydown', e => {
-  if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') && isTeacher && TUT.on) {
+  if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'KeyA') && isTeacher && TUT.on) {
     e.preventDefault(); tutClose(); showToast(null, '튜토리얼', '넘겼어요 · /tutorial 로 다시 볼 수 있어요', '#22c55e');
   }
 }, true);
