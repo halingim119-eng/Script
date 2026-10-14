@@ -2652,6 +2652,37 @@ const CMDS = {
   stoploops: ['반복 전부 중지', 'G', () => { const n = Object.keys(cmdLoops).length; Object.values(cmdLoops).forEach(L => clearInterval(L.id)); Object.keys(cmdLoops).forEach(k => delete cmdLoops[k]); return n + '개 중지'; }, ''],
   clear: ['콘솔 지우기', 'G', () => { cmdLines.length = 0; cmdRender(); }, ''],
   tutorial: ['선생님 튜토리얼 다시 보기', 'G', () => { cmdOpen(false); tutOpen(); }, ''],
+  /* ===== 추가 명령어 30개 ===== */
+  light: ['정답 버튼 빛내기 + 다음 문제도 빛나는 눈', 'T', () => { if (gameStarted && !isDead) { const n = quizN() + '개'; [...$('choiceButtons').querySelectorAll('.choice-btn')].forEach(b => { if (b.innerText === n) b.classList.add('glowing-choice'); }); toggleOutline(true); } hasShiningEyesBuff = true; }, ''],
+  xray: ['블록을 반투명하게 (투시)', 'T', () => { activeShiningEyesRound = true; if (currentBlocks.length) rebuildBlocks(currentBlocks); }, ''],
+  reveal: ['3D 정답 모양 보여주기 (도면 가림 해제)', 'T', () => { if (!gameStarted || isDead) return; showBlueprint(false); $('cameraStatusBadge').innerText = '🔎 정답 ' + quizN() + '개'; if (resizeThree) resizeThree(); }, ''],
+  fillstack: ['쌓기 모드: 정답대로 자동 완성', 'T', () => { if (!stackish() || !gameStarted || isDead || !stackT.length) return; stackH = stackT.map(r => [...r]); renderStack(); if (gameMode === 'stack') stackAct('w'); }, ''],
+  clearstack: ['쌓기 모드: 쌓은 블록 초기화', 'T', () => { if (stackish() && gameStarted) { stackH = emptyH(); renderStack(); } }, ''],
+  card: ['보상 카드 바로 열기', 'T', () => { if (gameStarted && !isDead && S.cards) openCardModal(); }, ''],
+  closecard: ['열린 카드창 · 해킹창 닫기', 'T', () => { $('cardModalOverlay').classList.remove('active'); $('pwModalOverlay').classList.remove('active'); isTargetSelectMode = false; pendingAttackType = null; }, ''],
+  boost: ['다음 문제: 빛나는 눈 + 벼락치기', 'T', () => { hasShiningEyesBuff = true; hasTripleScoreMultiplier = true; }, ''],
+  dim: ['3D 화면 흐리게 (0~1)', 'T', a => { const v = isNaN(N1(a)) ? 0.3 : Math.max(0, Math.min(1, N1(a))); $('threeContainer').style.opacity = v; $('bpView').style.opacity = v; }, '[0~1]'],
+  undim: ['3D 화면 흐림 해제', 'T', () => { $('threeContainer').style.opacity = ''; $('bpView').style.opacity = ''; }, ''],
+  zoom: ['3D 화면 확대/축소 (1=원래)', 'T', a => { const z = N1(a) || 1.6, cv = $('threeContainer').querySelector('canvas'); if (cv) cv.style.transform = z === 1 ? '' : 'scale(' + z + ')'; }, '[배율]'],
+  fx: ['화면 필터 (blur gray invert sepia hue none)', 'T', a => { const m = { blur: 'blur(4px)', gray: 'grayscale(1)', invert: 'invert(1)', sepia: 'sepia(1)', hue: 'hue-rotate(160deg)', none: '' }, v = String(a[0] || 'none').toLowerCase(); document.body.style.filter = m[v] !== undefined ? m[v] : ''; }, '<종류>'],
+  flip: ['화면 거꾸로 뒤집기 (다시 쓰면 해제)', 'T', () => { document.body.style.transform = document.body.style.transform ? '' : 'rotate(180deg)'; }, ''],
+  title: ['문제 제목 글자 바꾸기', 'T', a => { if (a.length) $('quizTitle').innerText = a.join(' '); }, '<내용>'],
+  badge: ['상단 배지 글자 바꾸기', 'T', a => { $('cameraStatusBadge').innerText = a.join(' ') || defaultBadge(); }, '[내용]'],
+  sfx: ['효과음 재생 (correct wrong boom airhorn 등)', 'T', a => { const f = SFX[a[0]]; if (typeof f === 'function') { try { f(+a[1] || 2); } catch (e) {} } }, '<이름>'],
+  countdown: ['알림으로 n초 카운트다운', 'T', a => { let n = Math.max(1, Math.floor(N1(a) || 3)); const tick = () => { bigNotice('⏱ ' + n, '#f59e0b'); SFX.tick(); if (--n > 0) setTimeout(tick, 1000); else setTimeout(() => bigNotice('🚀 시작!', '#22c55e'), 1000); }; tick(); }, '[초]'],
+  reset: ['내 점수 · 방해 · 목숨 초기화 (탈락이면 부활)', 'T', () => { myScore = 0; myTroll = 0; if (gameStarted && isDead) CMDS.revive[2](); else { myLives = maxLives(); renderHud(); } updatePresence(); }, ''],
+  setavatar: ['프로필을 번호로 지정', 'T', a => { const i = Math.max(0, Math.min(profileImages.length - 1, (parseInt(a[0]) || 1) - 1)); selectedImage = profileImages[i]; if (!gameStarted) $('cardImage').src = selectedImage; updatePresence(); }, '<번호>'],
+  killrandom: ['살아있는 랜덤 n명 탈락', 'G', a => { const n = Math.max(1, N1(a) || 1), ids = activeUsers.filter(u => !u.dead && !u.isTeacher).map(u => u.id).sort(() => Math.random() - .5).slice(0, n); ids.forEach(id => sendTo(id, 'kill', [])); return ids.length + '명 탈락 요청'; }, '[n]'],
+  rank: ['점수 상위 n명 보기', 'G', a => { const n = Math.max(1, N1(a) || 5); return [...activeUsers].filter(u => !u.isTeacher).sort((x, y) => (y.score || 0) - (x.score || 0)).slice(0, n).map((u, i) => (i + 1) + '.' + (u.nickname || '익명') + '(' + fs(u.score) + ')').join('  ') || '없음'; }, '[n]'],
+  alive: ['생존자 수와 이름 보기', 'G', () => { const all = activeUsers.filter(u => !u.isTeacher), al = all.filter(u => !u.dead); return al.length + '/' + all.length + '명 생존: ' + al.map(u => u.nickname || '익명').join(', '); }, ''],
+  whoisliar: ['라이어가 누구인지 보기', 'G', () => liarState ? '라이어: ' + nameOf(liarState.liarId) : '라이어 모드가 아니에요', ''],
+  teams: ['팀 구성 보기', 'G', () => { const ks = teamIds(activeUsers); return ks.length ? ks.map(k => teamName(k, activeUsers)).join(' / ') : '팀이 없어요'; }, ''],
+  endin: ['n초 뒤 게임 자동 종료 예약', 'G', a => { const s = Math.max(1, N1(a) || 10); setTimeout(() => { if (gameStarted) teacherEndGame(); }, s * 1000); return s + '초 뒤 종료 예약'; }, '[초]'],
+  startin: ['n초 뒤 모드 투표 자동 시작 예약', 'G', a => { const s = Math.max(1, N1(a) || 10); setTimeout(() => { if (!gameStarted && !curStage && isTeacher) $('startBtn').onclick(); }, s * 1000); return s + '초 뒤 투표 시작 예약'; }, '[초]'],
+  blockcolor: ['블록 색 바꾸기 (#3b82f6 형식)', 'G', a => /^#[0-9a-f]{6}$/i.test(a[0] || '') ? setCfg('blockCol', a[0]) : '색 형식: #3b82f6', '<#색>'],
+  camh: ['카메라 높이 설정', 'G', a => setCfg('camH', N1(a) || 6.5), '<값>'],
+  camr: ['카메라 거리 설정', 'G', a => setCfg('camR', N1(a) || 9.5), '<값>'],
+  cardcount: ['보상 카드 장수 설정 (1~5)', 'G', a => setCfg('cardCount', Math.max(1, Math.min(5, N1(a) || 3))), '<장수>'],
   help: ['명령어 목록 (+ loop 사용법)', 'G', () => { cmdLog('반복: /loop<명령> [me|all|닉네임] <초> [인자]   중지: /unloop<명령> [me|all|닉네임]   예) /loopkill all 0.5', 'ch'); Object.entries(CMDS).forEach(([k, v]) => cmdLog('/' + k + (v[3] ? ' ' + v[3] : '') + (v[1] === 'G' ? '' : ' [me|all|닉네임]') + ' — ' + v[0])); }, '']
 };
 function applyCmd(name, args) { const c = CMDS[name]; if (c && c[1] === 'T') try { c[2](args); } catch (e) { console.warn(e); } }
@@ -3576,7 +3607,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 }
 function cgShow() {
   const u = $('infoUI'); if (u) u.classList.toggle('cg-on', CG.s !== 'idle');
-  cgWide = CG.s === 'intro'; $('cgBox').classList.toggle('cg-typing', CG.g === 'type');
+  cgWide = false; { const iu = $('infoUI'); if (iu) iu.classList.toggle('cg-play', CG.s === 'play' || CG.s === 'over'); } $('cgBox').classList.toggle('cg-typing', CG.g === 'type');
   { const tt = $('cgTitle'); if (tt && tt.firstChild) tt.firstChild.textContent = (CG.s === 'pick' ? '게임하기' : cgGName(CG.g)) + ' '; }   // 매칭 화면에서는 위 카드가 접히며 카드가 엄청 커짐
   cgRender(); infoSync();
 }
@@ -3591,7 +3622,7 @@ function cgRender() {
   $('cgPick').style.display = s === 'pick' ? 'flex' : 'none';
   if (!op) return;
   if (s === 'intro') {
-    $('cgIMe').src = selectedImage; $('cgIMeN').textContent = myNickname;
+    $('cgIMe').src = mgProf; $('cgIMeN').textContent = mgN();
     $('cgIOp').src = op.a || characterImages[0]; $('cgIOpN').textContent = op.n || '상대';
     $('cgCardMe').src = cgCard(myId, CG.mid); $('cgCardOp').src = cgCard(op.id, CG.mid);
     return;
@@ -3601,7 +3632,7 @@ function cgRender() {
   const ck = CG.r + ':' + CG.ch, ce = $('cgCh');
   if (ce.dataset.k !== ck) { ce.dataset.k = ck; ce.innerHTML = CG.ch ? [...CG.ch].map((c, i) => `<b style="animation-delay:${i * .03}s">${c}</b>`).join('') : '<b>?</b>'; }
   $('cgRound').textContent = CG.r ? CG.r + '라운드 · ' + CG.ch.length + '글자' : '준비 중…';
-  $('cgMeImg').src = selectedImage; $('cgMeName').textContent = myNickname + ' (나)';
+  $('cgMeImg').src = mgProf; $('cgMeName').textContent = mgN() + ' (나)';
   $('cgOpImg').src = op.a || characterImages[0]; $('cgOpName').textContent = op.n || '상대';
   const st = (id, d) => d ? (fin && CG.wordOf[id] ? CG.wordOf[id] : '정답') : (o && o.loser === id ? '못 맞힘' : '생각 중…');
   if (CG.g === 'type') cgTPaint(); else { $('cgMeSt').textContent = st(myId, dm); $('cgOpSt').textContent = st(op.id, dp); }
@@ -3662,7 +3693,7 @@ function cgOpen(g) {
   $('cgSTxt').textContent = '단어 목록 불러오는 중…';
   { const nl = !cgSet; $('cgSearch').classList.toggle('ld', nl); $('cgLoadBox').style.display = nl ? 'block' : 'none'; $('cgPgFill').style.width = '0%'; $('cgPgTxt').textContent = '0%'; $('cgDl').textContent = ''; }
   cgShow();
-  cgLoad().then(() => { if (CG.s !== 'load') return; $('cgSearch').classList.remove('ld'); $('cgLoadBox').style.display = 'none'; CG.s = 'search'; CG.t0 = Date.now(); cgSend({ t: 'find', id: myId, n: myNickname, a: selectedImage, g: CG.g }); CG.lastFind = Date.now(); cgShow(); })
+  cgLoad().then(() => { if (CG.s !== 'load') return; $('cgSearch').classList.remove('ld'); $('cgLoadBox').style.display = 'none'; CG.s = 'search'; CG.t0 = Date.now(); cgSend({ t: 'find', id: myId, n: mgN(), a: mgProf, g: CG.g }); CG.lastFind = Date.now(); cgShow(); })
     .catch(e => { if (CG.s !== 'load') return; CG.s = 'idle'; cgShow(); showToast(null, '단어 파일 오류', 'words.file 을 불러오지 못했어요 (' + e.message + ')', '#ef4444'); });
 }
 function cgLeave(notify) {
@@ -3725,10 +3756,10 @@ function cgRecv(p) {
   } else if (p.t === 'inv') {
     if (p.to !== myId || s !== 'search' || CG.inv || CG.acc) return;
     CG.acc = { from: p.from, mid: p.mid, at: Date.now() };
-    cgSend({ t: 'acc', from: myId, to: p.from, mid: p.mid, n: myNickname, a: selectedImage });
+    cgSend({ t: 'acc', from: myId, to: p.from, mid: p.mid, n: mgN(), a: mgProf });
   } else if (p.t === 'acc') {
     if (p.to !== myId || s !== 'search' || !CG.inv || CG.inv.to !== p.from || CG.inv.mid !== p.mid) return;
-    cgSend({ t: 'go', mid: p.mid, host: myId, hn: myNickname, ha: selectedImage, guest: p.from });
+    cgSend({ t: 'go', mid: p.mid, host: myId, hn: mgN(), ha: mgProf, guest: p.from });
     cgBegin(p.mid, true, { id: p.from, n: p.n, a: p.a });
   } else if (p.t === 'go') {
     if (p.guest !== myId || s !== 'search' || !CG.acc || CG.acc.from !== p.host || CG.acc.mid !== p.mid) return;
@@ -3754,7 +3785,7 @@ setInterval(() => {
   if (gameStarted || curStage || !infoOn) return cgLeave();   // 선생님이 게임/투표를 시작하면 대결은 끝
   const now = Date.now();
   if (CG.s === 'search') {
-    if (now - CG.lastFind > CG_FIND_MS) { CG.lastFind = now; cgSend({ t: 'find', id: myId, n: myNickname, a: selectedImage, g: CG.g }); }
+    if (now - CG.lastFind > CG_FIND_MS) { CG.lastFind = now; cgSend({ t: 'find', id: myId, n: mgN(), a: mgProf, g: CG.g }); }
     if (CG.inv && now - CG.inv.at > 3000) CG.inv = null;
     if (CG.acc && now - CG.acc.at > 4000) CG.acc = null;
     $('cgSTxt').textContent = cgGName(CG.g) + ' 상대를 찾는 중… (' + Math.floor((now - CG.t0) / 1000) + '초)';
@@ -4131,6 +4162,87 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 #cgBox.cg-typing .cg-pb{display:block}
 #cgBox.cg-typing .cg-in button.cg-hint{display:none}
 ` }));
+/* ===== 미니게임: 프로필 · 닉네임 정하기 (미니게임에서만 적용, 로비는 그대로) ===== */
+let mgStage = 'setup', mgNick = '', mgProf = DEFAULT_PROFILE, mgPicking = false;
+const MG_PROFILES = [...new Set([...profileImages, ...['gk91wsp25aB3eknrSQHM', 'jrWUkgTBQwTxH4MG9rcc', 'nrQUBkRXgqDrpbhF3o3k', 'NbBYjb7cm5k133jCyQ4q', 'V6xHJSiLSfuUSVwKn3pj', 'NPMCAs5n15XeY1Sitcuf'].map(id => SC(id))])];
+function mgN() { return (mgNick || '').trim() || myNickname; }
+document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
+.right-card-container.info-split:has(#infoUI.cg-on:not(.cg-play))>#defaultUserListUI{flex:0 0 56%}
+#infoUI:not(.cg-play) #cgBox{padding:4px 8px;gap:3px}
+#infoUI:not(.cg-play) #cgBox .cg-head{font-size:12px;min-height:18px}
+#infoUI:not(.cg-play) #cgSearch{gap:4px}
+#infoUI:not(.cg-play) #cgBox .cg-mm b{width:28px;height:34px;font-size:17px;box-shadow:0 2px 0 #cbd5e1}
+#infoUI:not(.cg-play) #cgBox .cg-mmt{font-size:15px;letter-spacing:2px}
+#infoUI:not(.cg-play) #cgBox .cg-sweep{height:6px}
+#infoUI:not(.cg-play) #cgSTxt{font-size:11px}
+#infoUI:not(.cg-play) #cgBox .cg-sub{display:none}
+#infoUI:not(.cg-play) #cgBox #cgDl{height:34px}
+#infoUI:not(.cg-play) #cgIntro{gap:2px}
+#infoUI:not(.cg-play) #cgBox .cg-it{font-size:13px}
+#infoUI:not(.cg-play) #cgBox .cg-cdn{font-size:17px}
+#infoUI:not(.cg-play) #cgBox .cg-iv{font-size:18px}
+#infoUI:not(.cg-play) #cgIntro .cg-ic.cg-rc{width:70px;height:94px}
+#infoUI:not(.cg-play) #cgIntro .cg-rc b{font-size:9px;-webkit-text-stroke:2px #0f172a}
+#mgBox{display:none;flex:1;min-height:0;flex-direction:column;gap:6px}
+.mg-nick{flex:none;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:bold;color:#475569;white-space:nowrap}
+.mg-nick input{flex:1;min-width:0;padding:6px 12px;border:2px solid #cbd5e1;border-radius:12px;font-size:14px;font-weight:bold;outline:none;background:#fff;margin:0;color:#1e293b}
+.mg-nick input:focus{border-color:#4f46e5}
+#mgMain{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:16px}
+#mgImgBtn{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 12px;border:3px solid #e5e7eb;border-radius:16px;background:#fff;cursor:pointer;font-family:inherit;font-size:11px;font-weight:bold;color:#475569;transition:all .2s}
+#mgImgBtn:hover{border-color:#4f46e5;background:#f8fafc;transform:translateY(-2px)}
+#mgImgBtn img{width:78px;height:78px;object-fit:contain;border-radius:50%;background:#f8fafc}
+.mg-side{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:0}
+.mg-tip{font-size:11px;line-height:1.5;color:#64748b;word-break:keep-all}
+.mg-go{padding:9px 16px;border:none;border-radius:12px;background:#4f46e5;color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 0 #3730a3}
+.mg-go:active{transform:translateY(2px);box-shadow:0 1px 0 #3730a3}
+#mgPick{display:none;flex:1;min-height:0;flex-direction:column;gap:4px}
+.mg-pt{flex:none;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:bold;color:#475569}
+#mgGrid{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:2px 4px 2px 2px;align-content:start}
+.mg-pc{height:66px;padding:4px;border:3px solid #e2e8f0;border-radius:14px;background:#fff;cursor:pointer;transition:all .15s}
+.mg-pc img{width:100%;height:100%;object-fit:contain;display:block}
+.mg-pc:hover{border-color:#4f46e5;background:#eef2ff;transform:scale(1.04)}
+.mg-pc.on{border-color:#4f46e5;background:#e0e7ff}
+` }));
+{
+  const b = document.createElement('div'); b.id = 'mgBox';
+  b.innerHTML = '<div class="mg-nick"><span>미니게임 닉네임</span><input id="mgNick" maxlength="12" autocomplete="off"></div>'
+    + '<div id="mgMain"><button type="button" id="mgImgBtn"><img id="mgImg" alt=""><span>눌러서 프로필 고르기</span></button><div class="mg-side"><div class="mg-tip">미니게임에서만 쓰이는 닉네임·프로필이에요.<br>로비로 오면 원래대로 돌아와요.</div><button type="button" class="mg-go" id="mgGo">게임 고르기 ▶</button></div></div>'
+    + '<div id="mgPick"><div class="mg-pt"><span>미니게임 프로필 고르기</span><button type="button" class="inf-x" id="mgBack">돌아가기</button></div><div id="mgGrid"></div></div>';
+  $('infoUI').appendChild(b);
+  $('mgGrid').innerHTML = MG_PROFILES.map(u => '<button type="button" class="mg-pc" data-u="' + esc(u) + '"><img src="' + esc(u) + '" alt=""></button>').join('');
+  const pb = document.createElement('button'); pb.id = 'mgProfBtn'; pb.className = 'inf-x'; pb.textContent = '프로필'; pb.style.display = 'none';
+  $('cgOpenBtn').insertAdjacentElement('afterend', pb);
+}
+function mgRender() {
+  const ni = $('mgNick'); ni.placeholder = $('nickname').value.trim() || '익명';
+  if (document.activeElement !== ni) ni.value = mgNick;
+  $('mgImg').src = mgProf;
+  $('mgMain').style.display = mgPicking ? 'none' : 'flex';
+  $('mgPick').style.display = mgPicking ? 'flex' : 'none';
+  $('mgGrid').querySelectorAll('.mg-pc').forEach(c => c.classList.toggle('on', c.dataset.u === mgProf));
+}
+function mgView() {
+  const setup = infoGame && mgStage === 'setup' && !infoChat;
+  $('mgBox').style.display = setup ? 'flex' : 'none';
+  if (setup) { $('infSt').style.display = 'none'; $('infGrid').style.display = 'none'; $('infAll').style.display = 'none'; infoAt = Infinity; }
+  $('mgProfBtn').style.display = (infoGame && mgStage === 'list' && !infoChat) ? '' : 'none';
+}
+{ const o = infoView; infoView = () => { o(); mgView(); }; }
+$('mgNick').addEventListener('input', e => { mgNick = e.target.value.slice(0, 12); });
+$('mgImgBtn').onclick = () => { mgPicking = true; mgRender(); };
+$('mgBack').onclick = () => { mgPicking = false; mgRender(); };
+$('mgGrid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; mgProf = b.dataset.u; mgPicking = false; mgRender(); };
+$('mgGo').onclick = () => { mgStage = 'list'; mgPicking = false; infoShow(0, 1); infoView(); };
+$('mgProfBtn').onclick = () => { mgStage = 'setup'; mgPicking = false; mgRender(); infoView(); };
+$('cgOpenBtn').onclick = () => {
+  if (ASSET.on) return showToast(null, '게임하기', '에셋 로딩이 끝나면 할 수 있어요', '#94a3b8');
+  if (CG.s !== 'idle') return;
+  infoGame = !infoGame; infoAll = false; infoChat = false; lcMax = false; lcLayout(); infoI = 0;
+  mgStage = 'setup'; mgPicking = false;
+  if (!infoGame) { mgNick = ''; mgProf = DEFAULT_PROFILE; }
+  $('cgOpenBtn').textContent = infoGame ? '모드 설명' : '게임하기';
+  mgRender(); infoShow(0, 1); infoView();
+};
 setInterval(() => document.body.classList.toggle('tch', !!isTeacher), 300);
 applyUIState(false); syncNickname(); fitScreen(); connect(); showUpdate();
 
