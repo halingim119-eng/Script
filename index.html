@@ -2713,9 +2713,17 @@ function cmdPick(label, fn) {   // 콘솔 윗부분에 접속자 카드가 나�
   cmdOpen(true); cmdPickCtx = fn; const p = $('cmdPick'); p.style.display = 'flex';
   p.innerHTML = `<div style="font-size:12px;font-weight:bold;color:#475569">${esc(label)} — 대상을 고르세요</div>` + fakeLabel(activeUsers).map(u => `<div class="rank-item selectable" data-id="${esc(u.id)}"><div class="user-info"><img src="${esc(u.avatarUrl || characterImages[0])}" class="user-avatar-mini" style="width:24px;height:24px" alt=""><span>${esc(u.nickname || '익명')}${u.id === myId ? ' (나)' : ''}</span></div></div>`).join('') + '<button class="cfg-tab" data-x="1">취소</button>';
 }
+function cmdApply() {   // 콘솔이 켜져 있으면 카드 배치를 항상 콘솔 모드로 고정
+  const rc = document.querySelector('.right-card-container');
+  rc.classList.toggle('cmd-split', cmdOn);
+  if (cmdOn) { rc.classList.remove('info-split', 'lc-max', 'split'); infoOn = false; settingsOpen = false; $('settingsUI').style.display = 'none'; }
+  const cu = $('cmdUI'); if (cu) cu.style.display = cmdOn ? 'flex' : '';
+  infoSync();
+}
+setInterval(() => { if (cmdOn && isTeacher) { const rc = document.querySelector('.right-card-container'); if (!rc.classList.contains('cmd-split') || rc.classList.contains('info-split')) cmdApply(); } }, 150);
 function cmdOpen(on) {   // 설정창처럼 카드가 위/아래로 분리됨
   if (!isTeacher) return; cmdOn = on === undefined ? !cmdOn : on;
-  document.querySelector('.right-card-container').classList.toggle('cmd-split', cmdOn); infoSync();
+  cmdApply();
   if (cmdOn) { cmdRender(); if (!cmdHelped) { cmdHelped = true; cmdLog('> /help', 'me'); runCmd('help', [], null); } setTimeout(() => $('cmdIn').focus(), 30); } else { $('cmdPick').style.display = 'none'; $('cmdSug').style.display = 'none'; }
 }
 function cmdSug(v, max = 9) {   // 입력 중인 글자로 명령어 3개 추천
@@ -2767,7 +2775,7 @@ const cmdGo = () => {
     if (r && cmdPickCtx) { const f = cmdPickCtx; cmdPickCtx = null; $('cmdPick').style.display = 'none'; f(r.dataset.id); }
     else if (x) { $('cmdPick').style.display = 'none'; cmdPickCtx = null; }
   };
-  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { if (!isTeacher) return; e.preventDefault(); if (!TUT.on) cmdOpen(); } }, true);
+  addEventListener('keydown', e => { if (e.ctrlKey && !e.shiftKey && !e.altKey && (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1')) { if (!isTeacher) return; e.preventDefault(); e.stopImmediatePropagation(); if (e.repeat) return; if (!TUT.on) cmdOpen(); } }, true);
 }
 /* ===== 선생님 튜토리얼 ===== */
 const TUT_WAIT = 30000;   // 콘솔 15초 + 버튼·설정 15초
@@ -3419,7 +3427,22 @@ function cgLoad() {   // words.file 을 한 번만 불러와서 단어 집합 / 
   }).catch(e => { cgLoadP = null; throw e; });
   return cgLoadP;
 }
-function cgPick(r, prev) {   // 단어가 많은 초성부터 차례로 (글자 수별로, 이미 나온 초성은 건너뜀)
+function cgPick(r, prev) {   // 랜덤 · 정답 단어가 N개 이상인 초성만 (N은 갈수록 줄어 6개까지 → 어려워짐)
+  const u = CG.uch || (CG.uch = []);
+  const lo = Math.max(6, 10 - Math.floor((r - 1) / 2));                  // 1~2라운드 10개 이상 → 9라운드부터 6개
+  const hi = r <= 2 ? Infinity : Math.max(lo + 3, 80 - (r - 3) * 10);    // 갈수록 너무 흔한 초성은 빼서 더 어렵게
+  for (let L = cgLen(r); L >= 2; L--) {
+    const all = [...cgCnt.entries()].filter(e => e[0].length === L && e[1] >= lo);
+    const a = all.filter(e => e[1] <= hi && !u.includes(e[0]) && e[0] !== prev);
+    const b = a.length ? a : all.filter(e => !u.includes(e[0]) && e[0] !== prev);
+    const p = b.length ? b : all;
+    if (!p.length) continue;
+    const e = p[Math.floor(Math.random() * p.length)];
+    u.push(e[0]); return e[0];
+  }
+  return cgPickOld(r, prev);
+}
+function cgPickUnused(r, prev) {   // 단어가 많은 초성부터 차례로 (글자 수별로, 이미 나온 초성은 건너뜀)
   const u = CG.uch || (CG.uch = []);
   for (let L = cgLen(r); L >= 2; L--) {
     const list = [...cgCnt.entries()].filter(e => e[0].length === L).sort((a, b) => b[1] - a[1]);
