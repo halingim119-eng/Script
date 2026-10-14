@@ -3622,9 +3622,9 @@ function cgRender() {
   $('cgPick').style.display = s === 'pick' ? 'flex' : 'none';
   if (!op) return;
   if (s === 'intro') {
-    $('cgIMe').src = mgProf; $('cgIMeN').textContent = mgN();
+    $('cgIMe').src = selectedImage; $('cgIMeN').textContent = mgN();
     $('cgIOp').src = op.a || characterImages[0]; $('cgIOpN').textContent = op.n || '상대';
-    $('cgCardMe').src = cgCard(myId, CG.mid); $('cgCardOp').src = cgCard(op.id, CG.mid);
+    $('cgCardMe').src = cgCard(mgCard); $('cgCardOp').src = cgCard(op.c);
     return;
   }
   if (!play) return;
@@ -3632,7 +3632,7 @@ function cgRender() {
   const ck = CG.r + ':' + CG.ch, ce = $('cgCh');
   if (ce.dataset.k !== ck) { ce.dataset.k = ck; ce.innerHTML = CG.ch ? [...CG.ch].map((c, i) => `<b style="animation-delay:${i * .03}s">${c}</b>`).join('') : '<b>?</b>'; }
   $('cgRound').textContent = CG.r ? CG.r + '라운드 · ' + CG.ch.length + '글자' : '준비 중…';
-  $('cgMeImg').src = mgProf; $('cgMeName').textContent = mgN() + ' (나)';
+  $('cgMeImg').src = selectedImage; $('cgMeName').textContent = mgN() + ' (나)';
   $('cgOpImg').src = op.a || characterImages[0]; $('cgOpName').textContent = op.n || '상대';
   const st = (id, d) => d ? (fin && CG.wordOf[id] ? CG.wordOf[id] : '정답') : (o && o.loser === id ? '못 맞힘' : '생각 중…');
   if (CG.g === 'type') cgTPaint(); else { $('cgMeSt').textContent = st(myId, dm); $('cgOpSt').textContent = st(op.id, dp); }
@@ -3693,7 +3693,7 @@ function cgOpen(g) {
   $('cgSTxt').textContent = '단어 목록 불러오는 중…';
   { const nl = !cgSet; $('cgSearch').classList.toggle('ld', nl); $('cgLoadBox').style.display = nl ? 'block' : 'none'; $('cgPgFill').style.width = '0%'; $('cgPgTxt').textContent = '0%'; $('cgDl').textContent = ''; }
   cgShow();
-  cgLoad().then(() => { if (CG.s !== 'load') return; $('cgSearch').classList.remove('ld'); $('cgLoadBox').style.display = 'none'; CG.s = 'search'; CG.t0 = Date.now(); cgSend({ t: 'find', id: myId, n: mgN(), a: mgProf, g: CG.g }); CG.lastFind = Date.now(); cgShow(); })
+  cgLoad().then(() => { if (CG.s !== 'load') return; $('cgSearch').classList.remove('ld'); $('cgLoadBox').style.display = 'none'; CG.s = 'search'; CG.t0 = Date.now(); cgSend({ t: 'find', id: myId, n: mgN(), a: selectedImage, c: mgCard, g: CG.g }); CG.lastFind = Date.now(); cgShow(); })
     .catch(e => { if (CG.s !== 'load') return; CG.s = 'idle'; cgShow(); showToast(null, '단어 파일 오류', 'words.file 을 불러오지 못했어요 (' + e.message + ')', '#ef4444'); });
 }
 function cgLeave(notify) {
@@ -3756,14 +3756,14 @@ function cgRecv(p) {
   } else if (p.t === 'inv') {
     if (p.to !== myId || s !== 'search' || CG.inv || CG.acc) return;
     CG.acc = { from: p.from, mid: p.mid, at: Date.now() };
-    cgSend({ t: 'acc', from: myId, to: p.from, mid: p.mid, n: mgN(), a: mgProf });
+    cgSend({ t: 'acc', from: myId, to: p.from, mid: p.mid, n: mgN(), a: selectedImage, c: mgCard });
   } else if (p.t === 'acc') {
     if (p.to !== myId || s !== 'search' || !CG.inv || CG.inv.to !== p.from || CG.inv.mid !== p.mid) return;
-    cgSend({ t: 'go', mid: p.mid, host: myId, hn: mgN(), ha: mgProf, guest: p.from });
-    cgBegin(p.mid, true, { id: p.from, n: p.n, a: p.a });
+    cgSend({ t: 'go', mid: p.mid, host: myId, hn: mgN(), ha: selectedImage, hc: mgCard, guest: p.from });
+    cgBegin(p.mid, true, { id: p.from, n: p.n, a: p.a, c: p.c });
   } else if (p.t === 'go') {
     if (p.guest !== myId || s !== 'search' || !CG.acc || CG.acc.from !== p.host || CG.acc.mid !== p.mid) return;
-    cgBegin(p.mid, false, { id: p.host, n: p.hn, a: p.ha });
+    cgBegin(p.mid, false, { id: p.host, n: p.hn, a: p.ha, c: p.hc });
   } else if (p.t === 'st') {
     if (CG.host || p.mid !== CG.mid || (s !== 'play' && s !== 'intro')) return;
     const nr = p.r !== CG.r;
@@ -3785,7 +3785,7 @@ setInterval(() => {
   if (gameStarted || curStage || !infoOn) return cgLeave();   // 선생님이 게임/투표를 시작하면 대결은 끝
   const now = Date.now();
   if (CG.s === 'search') {
-    if (now - CG.lastFind > CG_FIND_MS) { CG.lastFind = now; cgSend({ t: 'find', id: myId, n: mgN(), a: mgProf, g: CG.g }); }
+    if (now - CG.lastFind > CG_FIND_MS) { CG.lastFind = now; cgSend({ t: 'find', id: myId, n: mgN(), a: selectedImage, c: mgCard, g: CG.g }); }
     if (CG.inv && now - CG.inv.at > 3000) CG.inv = null;
     if (CG.acc && now - CG.acc.at > 4000) CG.acc = null;
     $('cgSTxt').textContent = cgGName(CG.g) + ' 상대를 찾는 중… (' + Math.floor((now - CG.t0) / 1000) + '초)';
@@ -3978,7 +3978,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 .cg-in button.cg-hint:disabled{background:#f1f5f9;color:#94a3b8;border-color:#cbd5e1}
 ` }));
 const CG_CARDS = ['https://media.ffycdn.net/eu/supercell/Y1L2U4KCGvB874UZE6o1.png?width=2400', 'https://media.ffycdn.net/eu/supercell/spD8MNVUKKSDo3yS2zUH.png?width=2400'];
-function cgCard(id, mid) { let h = 0; const s = String(id) + String(mid); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return CG_CARDS[h % 2]; }
+function cgCard(c) { return CG_CARDS[Number.isInteger(c) && c >= 0 && c < CG_CARDS.length ? c : 0]; }
 $('cgHintBtn').onclick = () => {
   if (CG.s !== 'play' || CG.over || CG.hintUsed >= 2 || CG.done[myId] || !CG.ch || !cgByLen) return;
   const ok = (cgByLen[CG.ch.length] || []).filter(w => cgCho(w) === CG.ch && !CG.used.includes(w));
@@ -4163,8 +4163,7 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 #cgBox.cg-typing .cg-in button.cg-hint{display:none}
 ` }));
 /* ===== 미니게임: 프로필 · 닉네임 정하기 (미니게임에서만 적용, 로비는 그대로) ===== */
-let mgStage = 'setup', mgNick = '', mgProf = DEFAULT_PROFILE, mgPicking = false;
-const MG_PROFILES = [...new Set([...profileImages, ...['gk91wsp25aB3eknrSQHM', 'jrWUkgTBQwTxH4MG9rcc', 'nrQUBkRXgqDrpbhF3o3k', 'NbBYjb7cm5k133jCyQ4q', 'V6xHJSiLSfuUSVwKn3pj', 'NPMCAs5n15XeY1Sitcuf'].map(id => SC(id))])];
+let mgStage = 'setup', mgNick = '', mgCard = 0;
 function mgN() { return (mgNick || '').trim() || myNickname; }
 document.head.appendChild(Object.assign(document.createElement('style'), { textContent: `
 .right-card-container.info-split:has(#infoUI.cg-on:not(.cg-play))>#defaultUserListUI{flex:0 0 56%}
@@ -4184,62 +4183,48 @@ document.head.appendChild(Object.assign(document.createElement('style'), { textC
 #infoUI:not(.cg-play) #cgIntro .cg-ic.cg-rc{width:70px;height:94px}
 #infoUI:not(.cg-play) #cgIntro .cg-rc b{font-size:9px;-webkit-text-stroke:2px #0f172a}
 #mgBox{display:none;flex:1;min-height:0;flex-direction:column;gap:6px}
-.mg-nick{flex:none;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:bold;color:#475569;white-space:nowrap}
-.mg-nick input{flex:1;min-width:0;padding:6px 12px;border:2px solid #cbd5e1;border-radius:12px;font-size:14px;font-weight:bold;outline:none;background:#fff;margin:0;color:#1e293b}
-.mg-nick input:focus{border-color:#4f46e5}
-#mgMain{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:16px}
-#mgImgBtn{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 12px;border:3px solid #e5e7eb;border-radius:16px;background:#fff;cursor:pointer;font-family:inherit;font-size:11px;font-weight:bold;color:#475569;transition:all .2s}
-#mgImgBtn:hover{border-color:#4f46e5;background:#f8fafc;transform:translateY(-2px)}
-#mgImgBtn img{width:78px;height:78px;object-fit:contain;border-radius:50%;background:#f8fafc}
-.mg-side{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:0}
-.mg-tip{font-size:11px;line-height:1.5;color:#64748b;word-break:keep-all}
-.mg-go{padding:9px 16px;border:none;border-radius:12px;background:#4f46e5;color:#fff;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 3px 0 #3730a3}
-.mg-go:active{transform:translateY(2px);box-shadow:0 1px 0 #3730a3}
-#mgPick{display:none;flex:1;min-height:0;flex-direction:column;gap:4px}
-.mg-pt{flex:none;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:bold;color:#475569}
-#mgGrid{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:2px 4px 2px 2px;align-content:start}
-.mg-pc{height:66px;padding:4px;border:3px solid #e2e8f0;border-radius:14px;background:#fff;cursor:pointer;transition:all .15s}
-.mg-pc img{width:100%;height:100%;object-fit:contain;display:block}
-.mg-pc:hover{border-color:#4f46e5;background:#eef2ff;transform:scale(1.04)}
-.mg-pc.on{border-color:#4f46e5;background:#e0e7ff}
+#infoUI #mgSt img{width:68px;height:92px}
+.mg-ds{display:flex;align-items:center;gap:6px;font-size:12px;line-height:1.5;color:#475569}
+.mg-in{width:150px;padding:2px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;outline:none;background:#fff;color:#1e293b;margin:0;font-family:inherit}
+.mg-in:focus{border-color:#2563eb}
 ` }));
 {
   const b = document.createElement('div'); b.id = 'mgBox';
-  b.innerHTML = '<div class="mg-nick"><span>미니게임 닉네임</span><input id="mgNick" maxlength="12" autocomplete="off"></div>'
-    + '<div id="mgMain"><button type="button" id="mgImgBtn"><img id="mgImg" alt=""><span>눌러서 프로필 고르기</span></button><div class="mg-side"><div class="mg-tip">미니게임에서만 쓰이는 닉네임·프로필이에요.<br>로비로 오면 원래대로 돌아와요.</div><button type="button" class="mg-go" id="mgGo">게임 고르기 ▶</button></div></div>'
-    + '<div id="mgPick"><div class="mg-pt"><span>미니게임 프로필 고르기</span><button type="button" class="inf-x" id="mgBack">돌아가기</button></div><div id="mgGrid"></div></div>';
+  b.innerHTML = '<div class="inf-st" id="mgSt"><button type="button" class="inf-ar" id="mgL" style="left:6px">◀</button><img id="mgCardImg" alt=""><div class="inf-tx"><div class="inf-nm">매칭 카드 고르기</div><div class="inf-tg"><b id="mgCardNo"></b><b>미니게임</b></div><div class="mg-ds"><span>닉네임</span><input class="mg-in" id="mgNick" maxlength="12" autocomplete="off"></div><div class="inf-tp">매칭되면 이 카드가 상대에게 보여요</div></div><button type="button" class="inf-ar" id="mgR" style="right:6px">▶</button></div><button type="button" class="inf-all" id="mgGo">게임 고르기</button>';
   $('infoUI').appendChild(b);
-  $('mgGrid').innerHTML = MG_PROFILES.map(u => '<button type="button" class="mg-pc" data-u="' + esc(u) + '"><img src="' + esc(u) + '" alt=""></button>').join('');
-  const pb = document.createElement('button'); pb.id = 'mgProfBtn'; pb.className = 'inf-x'; pb.textContent = '프로필'; pb.style.display = 'none';
+  const pb = document.createElement('button'); pb.id = 'mgProfBtn'; pb.className = 'inf-x'; pb.textContent = '카드 고르기'; pb.style.display = 'none';
   $('cgOpenBtn').insertAdjacentElement('afterend', pb);
 }
 function mgRender() {
   const ni = $('mgNick'); ni.placeholder = $('nickname').value.trim() || '익명';
   if (document.activeElement !== ni) ni.value = mgNick;
-  $('mgImg').src = mgProf;
-  $('mgMain').style.display = mgPicking ? 'none' : 'flex';
-  $('mgPick').style.display = mgPicking ? 'flex' : 'none';
-  $('mgGrid').querySelectorAll('.mg-pc').forEach(c => c.classList.toggle('on', c.dataset.u === mgProf));
+  const im = $('mgCardImg'), u = CG_CARDS[mgCard]; if (im.getAttribute('src') !== u) im.src = u;
+  $('mgCardNo').textContent = (mgCard + 1) + ' / ' + CG_CARDS.length;
+  $('mgSt').classList.toggle('grad', !!S.infGrad);
+}
+function mgCardGo(d) {
+  const n = CG_CARDS.length; mgCard = ((mgCard + d) % n + n) % n;
+  const im = $('mgCardImg'); im.style.animation = 'none'; void im.offsetWidth; im.style.animation = '';
+  mgRender();
 }
 function mgView() {
   const setup = infoGame && mgStage === 'setup' && !infoChat;
   $('mgBox').style.display = setup ? 'flex' : 'none';
-  if (setup) { $('infSt').style.display = 'none'; $('infGrid').style.display = 'none'; $('infAll').style.display = 'none'; infoAt = Infinity; }
+  if (setup) { $('infSt').style.display = 'none'; $('infGrid').style.display = 'none'; $('infAll').style.display = 'none'; infoAt = Infinity; mgRender(); }
   $('mgProfBtn').style.display = (infoGame && mgStage === 'list' && !infoChat) ? '' : 'none';
 }
 { const o = infoView; infoView = () => { o(); mgView(); }; }
 $('mgNick').addEventListener('input', e => { mgNick = e.target.value.slice(0, 12); });
-$('mgImgBtn').onclick = () => { mgPicking = true; mgRender(); };
-$('mgBack').onclick = () => { mgPicking = false; mgRender(); };
-$('mgGrid').onclick = e => { const b = e.target.closest('[data-u]'); if (!b) return; mgProf = b.dataset.u; mgPicking = false; mgRender(); };
-$('mgGo').onclick = () => { mgStage = 'list'; mgPicking = false; infoShow(0, 1); infoView(); };
-$('mgProfBtn').onclick = () => { mgStage = 'setup'; mgPicking = false; mgRender(); infoView(); };
+$('mgL').onclick = () => mgCardGo(-1);
+$('mgR').onclick = () => mgCardGo(1);
+$('mgGo').onclick = () => { mgStage = 'list'; infoShow(0, 1); infoView(); };
+$('mgProfBtn').onclick = () => { mgStage = 'setup'; mgRender(); infoView(); };
 $('cgOpenBtn').onclick = () => {
   if (ASSET.on) return showToast(null, '게임하기', '에셋 로딩이 끝나면 할 수 있어요', '#94a3b8');
   if (CG.s !== 'idle') return;
   infoGame = !infoGame; infoAll = false; infoChat = false; lcMax = false; lcLayout(); infoI = 0;
-  mgStage = 'setup'; mgPicking = false;
-  if (!infoGame) { mgNick = ''; mgProf = DEFAULT_PROFILE; }
+  mgStage = 'setup';
+  if (!infoGame) mgNick = '';
   $('cgOpenBtn').textContent = infoGame ? '모드 설명' : '게임하기';
   mgRender(); infoShow(0, 1); infoView();
 };
