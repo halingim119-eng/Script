@@ -586,11 +586,20 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
 #mainContainer .tall-card{height:auto!important;flex:1 1 0;min-height:0}
 #mainContainer .short-card{border-top:1px solid #e2e8f0}
 </style>
+<style id="padCss2">
+/* ===== 패치 9: 무대(700x700) = 위에 게임 UI(68%) + 아래 게임기(앞쪽, 1.7배) ===== */
+#padStage{width:700px;height:700px}
+#padStage .main-container{left:-120px;top:0;z-index:1;transform:scale(.68);transform-origin:50% 0;background:#fff;padding:0 0 40px}
+#padStage #padArt{left:-120px;top:330px;z-index:3;transform:scale(.68);transform-origin:50% 0}
+/* 게임기 주변: 배경색 후광이 게임 UI 색을 흐려서 배경색으로 이어 줌 */
+#padStage .padhalo{position:absolute;left:0;top:-14px;width:940px;height:548px;overflow:visible;pointer-events:none;filter:blur(14px);transform:scale(1.03)}
+</style>
 </head>
 ===
 <body>
 <div id="padStage">
 <div id="padArt">
+<svg class="padhalo" viewBox="0 0 920 480" preserveAspectRatio="none" aria-hidden="true"><path d="M 460 36 L 400 36 C 370 36 340 36 320 32 C 290 26 270 12 232 12 C 190 12 160 22 132 38 C 70 72 34 130 22 210 C 10 290 4 350 8 400 C 12 448 48 476 94 470 C 142 464 188 412 222 372 C 252 336 290 318 345 318 L 575 318 C 630 318 668 336 698 372 C 732 412 778 464 826 470 C 872 476 908 448 912 400 C 916 350 910 290 898 210 C 886 130 850 72 788 38 C 760 22 730 12 688 12 C 650 12 630 26 600 32 C 580 36 550 36 520 36 L 460 36 Z" fill="#f1f5f9"/></svg>
 <svg class="padbody" viewBox="0 0 920 480" preserveAspectRatio="none" aria-hidden="true"><path d="M 460 36 L 400 36 C 370 36 340 36 320 32 C 290 26 270 12 232 12 C 190 12 160 22 132 38 C 70 72 34 130 22 210 C 10 290 4 350 8 400 C 12 448 48 476 94 470 C 142 464 188 412 222 372 C 252 336 290 318 345 318 L 575 318 C 630 318 668 336 698 372 C 732 412 778 464 826 470 C 872 476 908 448 912 400 C 916 350 910 290 898 210 C 886 130 850 72 788 38 C 760 22 730 12 688 12 C 650 12 630 26 600 32 C 580 36 550 36 520 36 L 460 36 Z" fill="#fff"/></svg>
 <div class="dpad"><i class="v"></i><i class="h"></i></div>
 <div class="abxy"><b style="left:31px;top:0">Y</b><b style="left:0;top:31px">X</b><b style="left:62px;top:31px">B</b><b style="left:31px;top:62px">A</b></div>
@@ -1166,11 +1175,11 @@ const roster = new Map();
 /* ---------- 화면 크기에 맞춰 UI 확대/축소 ---------- */
 function fitScreen() {
   const rot = p2On || P2, fw = p2On ? window.innerWidth / 2 : window.innerWidth;   // 2인용은 세로로 돌려서 맞춤
-  uiScale = rot ? Math.min(fw / 530, window.innerHeight / 940) : Math.min(fw / 940, window.innerHeight / 530);
+  uiScale = Math.min(fw / 700, window.innerHeight / 700);   // 무대 700x700 (게임 UI + 게임기)
   document.documentElement.style.setProperty('--p2s', Math.min(0.8, fw / window.innerHeight));   // 2인용이면 왼쪽 절반에 맞춤
   uiScale = Math.max(0.4, Math.min(uiScale, 3));
   $('padStage').style.transform = (p2On ? `translateX(${-window.innerWidth / 4}px) rotate(90deg) ` : P2 ? 'rotate(270deg) ' : '') + `scale(${uiScale})`;
-  /* UI는 원래 크기 그대로 (게임기만 2/5로 줄임) */
+  uiScale *= 0.68;   // 게임 UI는 68% 크기
   if (renderer) { renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * uiScale, 3)); if (resizeThree) resizeThree(); }
 }
 window.addEventListener('resize', fitScreen);
