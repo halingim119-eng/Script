@@ -563,7 +563,7 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
 <style id="padCss">
 /* ===== 게임기 틀 ===== */
 #padStage{position:relative;width:940px;height:530px;flex:none;transform-origin:center center}
-#padStage .padbody{position:absolute;left:0;top:-14px;width:940px;height:548px;overflow:visible;pointer-events:none;filter:blur(3px) drop-shadow(0 6px 10px rgba(15,23,42,.10))}
+#padStage .padbody{position:absolute;left:0;top:-14px;width:940px;height:548px;overflow:visible;pointer-events:none;filter:blur(4px) drop-shadow(0 6px 12px rgba(15,23,42,.18))}
 #padStage .dpad{position:absolute;left:100px;top:58px;width:70px;height:70px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)) drop-shadow(0 3px 5px rgba(0,0,0,.1))}
 #padStage .dpad i{position:absolute;background:#fff;border-radius:7px}
 #padStage .dpad .v{left:23px;top:0;width:24px;height:70px}
@@ -571,7 +571,9 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
 #padStage .abxy{position:absolute;left:764px;top:48px;width:90px;height:90px}
 #padStage .abxy b{position:absolute;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3),0 3px 6px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af}
 /* 화면(기존 UI)은 5분의 2만큼 줄여서(60%) 게임기 가운데에 */
-#padStage .main-container{position:absolute;left:0;top:-76px;transform:scale(.6);transform-origin:center center;gap:0;padding:0;align-items:stretch;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 10px 25px -5px rgba(0,0,0,.08);overflow:hidden}
+#padStage .main-container{position:absolute;left:0;top:0;z-index:1;gap:0;padding:0;align-items:stretch;background:rgba(255,255,255,.55);border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 10px 25px -5px rgba(0,0,0,.08);overflow:hidden}
+/* 게임기: 2/5 크기로 줄여서 UI 정중앙 뒤에 (가장자리는 흐려져서 배경색으로 스며듦) */
+#padStage #padArt{position:absolute;left:0;top:0;width:940px;height:530px;z-index:0;pointer-events:none;transform:scale(.4);transform-origin:50% 50%}
 /* ===== 카드 한 장으로 합치기 ===== */
 #mainContainer .card{background:transparent;border:0;box-shadow:none;border-radius:0}
 #mainContainer .left-card{width:320px;height:100%;border-right:1px solid #e2e8f0}
@@ -588,9 +590,11 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
 ===
 <body>
 <div id="padStage">
+<div id="padArt">
 <svg class="padbody" viewBox="0 0 920 480" preserveAspectRatio="none" aria-hidden="true"><path d="M 460 36 L 400 36 C 370 36 340 36 320 32 C 290 26 270 12 232 12 C 190 12 160 22 132 38 C 70 72 34 130 22 210 C 10 290 4 350 8 400 C 12 448 48 476 94 470 C 142 464 188 412 222 372 C 252 336 290 318 345 318 L 575 318 C 630 318 668 336 698 372 C 732 412 778 464 826 470 C 872 476 908 448 912 400 C 916 350 910 290 898 210 C 886 130 850 72 788 38 C 760 22 730 12 688 12 C 650 12 630 26 600 32 C 580 36 550 36 520 36 L 460 36 Z" fill="#fff"/></svg>
 <div class="dpad"><i class="v"></i><i class="h"></i></div>
 <div class="abxy"><b style="left:31px;top:0">Y</b><b style="left:0;top:31px">X</b><b style="left:62px;top:31px">B</b><b style="left:31px;top:62px">A</b></div>
+</div>
 <div class="main-container" id="mainContainer">
   <div class="card left-card">
     <button class="spec-btn" id="specPrev" style="left:6px;top:66%;">←</button>
@@ -1166,7 +1170,7 @@ function fitScreen() {
   document.documentElement.style.setProperty('--p2s', Math.min(0.8, fw / window.innerHeight));   // 2인용이면 왼쪽 절반에 맞춤
   uiScale = Math.max(0.4, Math.min(uiScale, 3));
   $('padStage').style.transform = (p2On ? `translateX(${-window.innerWidth / 4}px) rotate(90deg) ` : P2 ? 'rotate(270deg) ' : '') + `scale(${uiScale})`;
-  uiScale *= 0.6;   // 화면(메인 UI)은 게임기 안에서 60%로 줄어 있음
+  /* UI는 원래 크기 그대로 (게임기만 2/5로 줄임) */
   if (renderer) { renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * uiScale, 3)); if (resizeThree) resizeThree(); }
 }
 window.addEventListener('resize', fitScreen);
