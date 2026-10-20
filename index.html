@@ -560,8 +560,37 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
 .ib-b{min-height:11vh!important;gap:2vw!important}
 .ib-b button{font-size:3.6vh!important;padding:2.6vh!important;border-radius:2vh!important}
 </style>
+<style id="padCss">
+/* ===== 게임기 틀 ===== */
+#padStage{position:relative;width:940px;height:530px;flex:none;transform-origin:center center}
+#padStage .padbody{position:absolute;left:0;top:-14px;width:940px;height:548px;overflow:visible;pointer-events:none;filter:blur(3px) drop-shadow(0 6px 10px rgba(15,23,42,.10))}
+#padStage .dpad{position:absolute;left:100px;top:58px;width:70px;height:70px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)) drop-shadow(0 3px 5px rgba(0,0,0,.1))}
+#padStage .dpad i{position:absolute;background:#fff;border-radius:7px}
+#padStage .dpad .v{left:23px;top:0;width:24px;height:70px}
+#padStage .dpad .h{left:0;top:23px;width:70px;height:24px}
+#padStage .abxy{position:absolute;left:764px;top:48px;width:90px;height:90px}
+#padStage .abxy b{position:absolute;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3),0 3px 6px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af}
+/* 화면(기존 UI)은 5분의 2만큼 줄여서(60%) 게임기 가운데에 */
+#padStage .main-container{position:absolute;left:0;top:-76px;transform:scale(.6);transform-origin:center center;gap:0;padding:0;align-items:stretch;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 10px 25px -5px rgba(0,0,0,.08);overflow:hidden}
+/* ===== 카드 한 장으로 합치기 ===== */
+#mainContainer .card{background:transparent;border:0;box-shadow:none;border-radius:0}
+#mainContainer .left-card{width:320px;height:100%;border-right:1px solid #e2e8f0}
+#mainContainer .right-card-container{height:100%!important;max-height:none!important}
+#mainContainer .right-card-container.split,#mainContainer .right-card-container.cmd-split,#mainContainer .right-card-container.info-split,#mainContainer .right-card-container.gem-open,#mainContainer .right-card-container.tut-open{gap:0}
+#mainContainer #settingsUI,#mainContainer #cmdUI,#mainContainer #gemUI{border-top:1px solid #e2e8f0}
+#mainContainer #tutRoot{gap:0}
+#mainContainer #tutRoot .tut-c1{border-top:1px solid #e2e8f0}
+#mainContainer .game-right-layout{gap:0}
+#mainContainer .tall-card{height:auto!important;flex:1 1 0;min-height:0}
+#mainContainer .short-card{border-top:1px solid #e2e8f0}
+</style>
 </head>
+===
 <body>
+<div id="padStage">
+<svg class="padbody" viewBox="0 0 920 480" preserveAspectRatio="none" aria-hidden="true"><path d="M 460 36 L 400 36 C 370 36 340 36 320 32 C 290 26 270 12 232 12 C 190 12 160 22 132 38 C 70 72 34 130 22 210 C 10 290 4 350 8 400 C 12 448 48 476 94 470 C 142 464 188 412 222 372 C 252 336 290 318 345 318 L 575 318 C 630 318 668 336 698 372 C 732 412 778 464 826 470 C 872 476 908 448 912 400 C 916 350 910 290 898 210 C 886 130 850 72 788 38 C 760 22 730 12 688 12 C 650 12 630 26 600 32 C 580 36 550 36 520 36 L 460 36 Z" fill="#fff"/></svg>
+<div class="dpad"><i class="v"></i><i class="h"></i></div>
+<div class="abxy"><b style="left:31px;top:0">Y</b><b style="left:0;top:31px">X</b><b style="left:62px;top:31px">B</b><b style="left:31px;top:62px">A</b></div>
 <div class="main-container" id="mainContainer">
   <div class="card left-card">
     <button class="spec-btn" id="specPrev" style="left:6px;top:66%;">←</button>
@@ -571,7 +600,7 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
       <div class="nickname-section">
         <label for="nickname" class="nickname-label">닉네임</label>
         <input type="text" id="nickname" class="nickname-input" placeholder="익명" maxlength="12" autocomplete="off">
-        <button id="changeProfileBtn" class="btn btn-outline">🎨 캐릭터 꾸미기</button>
+        <button id="changeProfileBtn" class="btn btn-outline">📸 프로필 바꾸기</button>
       </div>
     </div>
 
@@ -653,7 +682,7 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
 
     <div id="profilePickerUI" class="card right-card" style="display:none;">
       <div class="board-header">
-        <div class="board-title">🎨 캐릭터 꾸미기</div>
+        <div class="board-title">📸 프로필 고르기</div>
         <button id="closeProfilePickerBtn" style="border:none;background:none;cursor:pointer;font-size:13px;color:#64748b;font-weight:bold;">닫기 ✕</button>
       </div>
       <div class="profile-grid-container" id="profileGrid"></div>
@@ -676,6 +705,7 @@ body.p2on #tauntOverlay img,body.p2me #tauntOverlay img{width:90%!important;heig
   </div>
 </div>
 
+</div>
 <div class="modal-overlay" id="cardModalOverlay"><div class="card-container" id="cardContainer"></div></div>
 <div id="resultOverlay">
   <canvas id="fxCanvas"></canvas>
@@ -720,80 +750,7 @@ const cardImages = [SC('XMEic2GRdS2qq7GJaEiB'), SC('TGQBtafzmsdeiJwZSmpo'), SC('
   SC('6UFbyzBNqp1V5z9EASqM'), SC('Cz9rD81f7Qrva9kzgZvA'), SC('Y7xeUH3uBvNkQBzSXkA6')];
 const DEFAULT_PROFILE = SC('fTRckDCnv8CLTEMDi3tt');   // 처음 들어오면 이 프로필
 const profileImages = [DEFAULT_PROFILE, ...characterImages.filter(u => u !== DEFAULT_PROFILE), ...cardImages];
-/* ===== 노랑 동글이 + 장식 90개 ===== */
-const CH_PAL=[['#ef4444','#fde68a','빨강'],['#3b82f6','#ffffff','파랑'],['#22c55e','#fef08a','초록'],['#a855f7','#fbcfe8','보라'],['#f97316','#fff7ed','주황'],['#ec4899','#ffffff','분홍'],['#14b8a6','#ccfbf1','민트'],['#334155','#facc15','검정'],['#f8fafc','#ef4444','흰색'],['#92400e','#fde68a','갈색'],['#facc15','#1e293b','노랑'],['#38bdf8','#e0f2fe','하늘']];
-const chHeart=(x,y,s,c)=>`<path transform="translate(${x} ${y}) scale(${s})" d="M0 6C-12-4-6-14 0-7C6-14 12-4 0 6Z" fill="${c}"/>`;
-const chStar=(x,y,r,f)=>{let p='';for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,q=i%2?r*.45:r;p+=(x+Math.cos(a)*q).toFixed(1)+','+(y+Math.sin(a)*q).toFixed(1)+' ';}return `<polygon points="${p}" fill="${f}"/>`;};
-const chLn=(p,c,w=4)=>`<path d="${p}" stroke="${c}" stroke-width="${w}" fill="none"/>`;
-const CH_HATS=[
-['비니',(c,d)=>`<path d="M58 60Q56 18 100 18Q144 18 142 60Z" fill="${c}"/><rect x="55" y="50" width="90" height="12" rx="6" fill="${d}"/><circle cx="100" cy="16" r="8" fill="${d}"/>`],
-['야구모자',(c,d)=>`<path d="M58 60Q58 22 100 22Q142 22 142 60Z" fill="${c}"/><path d="M100 58Q130 50 168 62Q130 68 100 64Z" fill="${d}"/><circle cx="100" cy="22" r="3" fill="${d}"/>`],
-['신사모',(c,d)=>`<rect x="70" y="14" width="60" height="42" fill="${c}"/><rect x="70" y="42" width="60" height="9" fill="${d}"/><rect x="52" y="54" width="96" height="9" rx="4" fill="${c}"/>`],
-['고깔',(c,d)=>`<path d="M100 4L66 60H134Z" fill="${c}"/>${chLn('M86 34H114M78 48H122',d)}<circle cx="100" cy="6" r="7" fill="${d}"/>`],
-['왕관',(c,d)=>`<path d="M60 62L58 26L80 42L100 18L120 42L142 26L140 62Z" fill="${c}"/><circle cx="100" cy="32" r="4" fill="${d}"/><circle cx="70" cy="54" r="3" fill="${d}"/><circle cx="130" cy="54" r="3" fill="${d}"/>`],
-['카우보이',(c,d)=>`<path d="M44 54Q70 66 100 62Q130 66 156 54Q150 70 100 68Q50 70 44 54Z" fill="${c}"/><path d="M70 58Q68 26 100 32Q132 26 130 58Z" fill="${c}"/><rect x="70" y="50" width="60" height="7" fill="${d}"/>`],
-['마법사모',(c,d)=>`<path d="M100 2Q104 30 132 62H68Q96 30 100 2Z" fill="${c}"/><ellipse cx="100" cy="61" rx="46" ry="7" fill="${c}"/><rect x="80" y="52" width="40" height="6" fill="${d}"/><circle cx="100" cy="38" r="5" fill="${d}"/>`],
-['요리사모',(c,d)=>`<circle cx="78" cy="34" r="17" fill="${c}"/><circle cx="100" cy="26" r="19" fill="${c}"/><circle cx="122" cy="34" r="17" fill="${c}"/><rect x="66" y="40" width="68" height="20" rx="3" fill="${c}"/><rect x="66" y="52" width="68" height="8" fill="${d}"/>`],
-['베레모',(c,d)=>`<ellipse cx="104" cy="42" rx="46" ry="18" fill="${c}" transform="rotate(-8 100 42)"/><rect x="98" y="20" width="6" height="8" rx="3" fill="${d}"/>${chLn('M62 54Q100 66 140 54',d,4)}`],
-['프로펠러',(c,d)=>`<path d="M60 60Q60 24 100 24Q140 24 140 60Z" fill="${c}"/><rect x="96" y="14" width="8" height="12" fill="${d}"/><ellipse cx="82" cy="12" rx="18" ry="4" fill="${d}"/><ellipse cx="118" cy="12" rx="18" ry="4" fill="${c}"/>`],
-['꽃관',(c,d)=>`${chLn('M58 60Q100 24 142 60','#22c55e',5)}`+[[62,56],[76,44],[92,38],[108,38],[124,44],[138,56]].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="7" fill="${c}"/><circle cx="${p[0]}" cy="${p[1]}" r="3" fill="${d}"/>`).join('')],
-['리본띠',(c,d)=>`${chLn('M60 58Q100 18 140 58',c,5)}<polygon points="126,38 108,28 108,48" fill="${c}"/><polygon points="126,38 144,28 144,48" fill="${c}"/><circle cx="126" cy="38" r="5" fill="${d}"/>`],
-['토끼귀',(c,d)=>`<ellipse cx="80" cy="18" rx="10" ry="28" fill="${c}"/><ellipse cx="120" cy="18" rx="10" ry="28" fill="${c}"/><ellipse cx="80" cy="20" rx="4" ry="18" fill="${d}"/><ellipse cx="120" cy="20" rx="4" ry="18" fill="${d}"/>`],
-['고양이귀',(c,d)=>`<path d="M60 56L62 22L88 44Z" fill="${c}"/><path d="M140 56L138 22L112 44Z" fill="${c}"/><path d="M66 48L67 33L80 44Z" fill="${d}"/><path d="M134 48L133 33L120 44Z" fill="${d}"/>`],
-['악마뿔',(c,d)=>`<path d="M66 54Q56 34 70 16Q80 34 90 46Z" fill="${c}"/><path d="M134 54Q144 34 130 16Q120 34 110 46Z" fill="${c}"/>`],
-['천사링',(c,d)=>`<ellipse cx="100" cy="26" rx="26" ry="7" fill="none" stroke="${c}" stroke-width="6"/><ellipse cx="100" cy="26" rx="26" ry="7" fill="none" stroke="${d}" stroke-width="1.5"/>`],
-['새싹',(c,d)=>`${chLn('M100 46V22','#16a34a',4)}<path d="M100 26Q80 12 70 24Q86 34 100 26Z" fill="${c}"/><path d="M100 26Q120 12 130 24Q114 34 100 26Z" fill="${d}"/>`],
-['해적모',(c,d)=>`<path d="M52 58Q56 18 100 28Q144 18 148 58Q100 48 52 58Z" fill="${c}"/><circle cx="100" cy="40" r="7" fill="${d}"/><circle cx="97" cy="39" r="1.6" fill="${c}"/><circle cx="103" cy="39" r="1.6" fill="${c}"/>`],
-['산타모',(c,d)=>`<path d="M58 60Q60 22 106 22Q134 26 148 58Z" fill="${c}"/><rect x="54" y="52" width="92" height="11" rx="5" fill="${d}"/><circle cx="148" cy="58" r="8" fill="${d}"/>`],
-['버킷햇',(c,d)=>`<path d="M62 60Q62 26 100 26Q138 26 138 60Z" fill="${c}"/><path d="M44 58Q100 70 156 58Q150 66 100 66Q50 66 44 58Z" fill="${d}"/>`],
-['헤드폰',(c,d)=>`${chLn('M54 88Q54 22 100 22Q146 22 146 88',c,6)}<rect x="44" y="78" width="14" height="28" rx="6" fill="${d}"/><rect x="142" y="78" width="14" height="28" rx="6" fill="${d}"/>`],
-['밀짚모자',(c,d)=>`<ellipse cx="100" cy="58" rx="60" ry="10" fill="${c}"/><path d="M70 56Q72 28 100 28Q128 28 130 56Z" fill="${c}"/><rect x="70" y="46" width="60" height="7" fill="${d}"/>`],
-['컵케이크',(c,d)=>`<path d="M72 60L76 44H124L128 60Z" fill="${d}"/><path d="M72 46Q70 32 88 30Q92 16 108 22Q126 20 128 46Z" fill="${c}"/><circle cx="100" cy="16" r="5" fill="#ef4444"/>`],
-['버섯',(c,d)=>`<path d="M50 60Q48 16 100 16Q152 16 150 60Z" fill="${c}"/><circle cx="76" cy="38" r="7" fill="${d}"/><circle cx="108" cy="30" r="8" fill="${d}"/><circle cx="128" cy="46" r="6" fill="${d}"/>`],
-['호박',(c,d)=>`<ellipse cx="100" cy="40" rx="30" ry="22" fill="${c}"/>${chLn('M100 18Q98 10 104 6','#16a34a',4)}${chLn('M88 20Q80 40 88 60M112 20Q120 40 112 60',d,2.5)}`],
-['우산',(c,d)=>`<path d="M44 46Q100 -10 156 46Q142 38 128 46Q114 38 100 46Q86 38 72 46Q58 38 44 46Z" fill="${c}"/>${chLn('M100 8Q84 24 86 44M100 8Q116 24 114 44',d,2)}${chLn('M100 46V58',d,4)}`],
-['안전모',(c,d)=>`<path d="M56 60Q56 18 100 18Q144 18 144 60Z" fill="${c}"/><rect x="92" y="18" width="16" height="30" fill="${d}"/><rect x="50" y="54" width="100" height="8" rx="4" fill="${c}"/>`],
-['졸업모',(c,d)=>`<path d="M44 34L100 14L156 34L100 54Z" fill="${c}"/><path d="M70 46V60Q100 68 130 60V46L100 56Z" fill="${d}"/>${chLn('M150 36V58',d,3)}<circle cx="150" cy="60" r="4" fill="${d}"/>`],
-['별안테나',(c,d)=>`${chLn('M84 50Q76 30 82 16M116 50Q124 30 118 16',c,3)}${chStar(82,13,9,d)}${chStar(118,13,9,d)}`],
-['하트',(c,d)=>chHeart(80,34,1.3,c)+chHeart(120,34,1.3,c)+chHeart(100,22,1,d)]
-];
-const CH_ALL=[];for(let k=0;k<3;k++)CH_HATS.forEach((h,i)=>{const p=CH_PAL[(i*5+k*4)%12];CH_ALL.push({n:p[2]+' '+h[0],f:()=>h[1](p[0],p[1])});});   // 30종 × 3색 = 90개
-function chSvg(hat,o={}){
-  const K='#1e293b',h=CH_ALL[hat]?CH_ALL[hat].f():'';
-  const eye=x=>`<g class="eye"><circle cx="${x}" cy="84" r="10" fill="#fff" stroke="${K}" stroke-width="2"/><g class="pup"><circle cx="${x}" cy="84" r="5.5" fill="${K}"/><circle cx="${x+2}" cy="82" r="1.8" fill="#fff"/></g></g>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${o.vb||'0 0 200 200'}"${o.live?' class="chlive"':''}><g transform="translate(0 18)" stroke-linecap="round" stroke-linejoin="round"><path d="M52 96L26 120M148 96L174 120M88 138L85 166L76 168M112 138L115 166L124 168" stroke="${K}" stroke-width="4" fill="none"/><circle cx="100" cy="90" r="50" fill="#facc15" stroke="${K}" stroke-width="4"/><ellipse cx="66" cy="100" rx="7" ry="4.5" fill="#fb923c" opacity=".55"/><ellipse cx="134" cy="100" rx="7" ry="4.5" fill="#fb923c" opacity=".55"/>${eye(80)}${eye(120)}<path d="M90 104Q100 114 110 104" stroke="${K}" stroke-width="3.5" fill="none"/><g stroke="${K}" stroke-width="2.5">${h}</g></g></svg>`;
-}
-const avatarUri=h=>'data:image/svg+xml;utf8,'+chSvg(h).replace(/%/g,'%25').replace(/"/g,"'").replace(/#/g,'%23').replace(/</g,'%3C').replace(/>/g,'%3E');
-const CH_KEY='blocksHat'+(P2?'_p2':'');
-let chHat=(()=>{try{const v=parseInt(localStorage.getItem(CH_KEY));return v>=0&&v<CH_ALL.length?v:-1}catch(e){return -1}})();
-{const lv=document.createElement('div');lv.id='liveChar';$('cardImage').parentNode.appendChild(lv);}
-function chRefresh(){
-  $('liveChar').innerHTML=chSvg(chHat,{live:1});
-  const pv=$('chPv');if(pv)pv.innerHTML=chSvg(chHat,{live:1});
-  const pn=$('chPn');if(pn)pn.textContent=chHat<0?'장식 없음':CH_ALL[chHat].n;
-  document.querySelectorAll('#profileGrid [data-i]').forEach(e=>e.classList.toggle('on',+e.dataset.i===chHat));
-}
-function chSet(i){chHat=i;try{localStorage.setItem(CH_KEY,i)}catch(e){}selectedImage=avatarUri(i);$('cardImage').src=selectedImage;chRefresh();updatePresence();}
-function chInitPicker(){
-  const sc=$('profileScroll'),g=$('profileGrid'),pv=document.createElement('div');
-  pv.id='chPrev';pv.innerHTML='<div class="ch-pv" id="chPv"></div><div class="ch-pn" id="chPn"></div>';sc.insertBefore(pv,g);
-  g.innerHTML=[-1,...CH_ALL.keys()].map(i=>`<div class="profile-thumb-card" data-i="${i}" title="${i<0?'없음':CH_ALL[i].n}">${chSvg(i,{vb:'25 0 150 125'})}</div>`).join('');
-  g.onclick=e=>{const c=e.target.closest('[data-i]');if(c)chSet(+c.dataset.i);};
-  chRefresh();
-}
-/* 눈이 마우스를 따라감 + 큰 캐릭터 표시 */
-let chMX=-1e4,chMY=-1e4;addEventListener('pointermove',e=>{chMX=e.clientX;chMY=e.clientY;});
-setInterval(()=>{
-  const im=$('cardImage'),lv=$('liveChar'),show=im.getAttribute('src')===selectedImage;
-  lv.style.display=show?'flex':'none';im.style.visibility=show?'hidden':'';
-  document.querySelectorAll('svg.chlive').forEach(s=>{
-    const r=s.getBoundingClientRect();if(!r.width)return;
-    const sc=Math.min(r.width,r.height)/200,dx=chMX-(r.left+r.width/2),dy=chMY-(r.top+r.height/2+2*sc),d=Math.hypot(dx,dy)||1,m=4*Math.min(1,d/(45*sc));
-    s.querySelectorAll('.pup').forEach(p=>p.setAttribute('transform',`translate(${(dx/d*m).toFixed(2)} ${(dy/d*m).toFixed(2)})`));
-  });
-},50);
-document.head.appendChild(Object.assign(document.createElement('style'),{textContent:`.card-image-container{position:relative}#liveChar{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}#liveChar svg{width:85%;height:100%}.chlive .eye{animation:chBlink 4s infinite;transform-box:fill-box;transform-origin:center}@keyframes chBlink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}.profile-grid-container{grid-template-columns:repeat(5,1fr)!important;gap:6px!important}.profile-thumb-card{padding:2px!important}.profile-thumb-card svg{width:100%;height:58px;display:block}.profile-thumb-card.on{border-color:#2563eb;background:#dbeafe}#chPrev{flex:none;text-align:center}.ch-pv{width:120px;height:120px;margin:0 auto}.ch-pv svg{width:100%;height:100%}.ch-pn{font-size:12px;font-weight:bold;color:#475569}`}));
-let selectedImage = avatarUri(chHat);
+let selectedImage = DEFAULT_PROFILE;
 $('cardImage').src = selectedImage;
 
 let isTeacher = false, myNickname = '익명', gameStarted = false, myScore = 0;
@@ -1208,7 +1165,8 @@ function fitScreen() {
   uiScale = rot ? Math.min(fw / 530, window.innerHeight / 940) : Math.min(fw / 940, window.innerHeight / 530);
   document.documentElement.style.setProperty('--p2s', Math.min(0.8, fw / window.innerHeight));   // 2인용이면 왼쪽 절반에 맞춤
   uiScale = Math.max(0.4, Math.min(uiScale, 3));
-  $('mainContainer').style.transform = (p2On ? `translateX(${-window.innerWidth / 4}px) rotate(90deg) ` : P2 ? 'rotate(270deg) ' : '') + `scale(${uiScale})`;
+  $('padStage').style.transform = (p2On ? `translateX(${-window.innerWidth / 4}px) rotate(90deg) ` : P2 ? 'rotate(270deg) ' : '') + `scale(${uiScale})`;
+  uiScale *= 0.6;   // 화면(메인 UI)은 게임기 안에서 60%로 줄어 있음
   if (renderer) { renderer.setPixelRatio(Math.min((window.devicePixelRatio || 1) * uiScale, 3)); if (resizeThree) resizeThree(); }
 }
 window.addEventListener('resize', fitScreen);
@@ -2464,7 +2422,8 @@ $('lobbyBtn').onclick = closeResult;
 $('changeProfileBtn').onclick = () => { closeSettings(); $('defaultUserListUI').style.display = 'none'; $('profilePickerUI').style.display = 'flex'; infoSync(); };
 $('closeProfilePickerBtn').onclick = () => { $('profilePickerUI').style.display = 'none'; $('defaultUserListUI').style.display = 'flex'; infoSync(); };
 { const sc = document.createElement('div'); sc.className = 'profile-scroll'; sc.id = 'profileScroll'; const g = $('profileGrid'); g.parentNode.insertBefore(sc, g); sc.appendChild(g); }
-chInitPicker();
+$('profileGrid').innerHTML = profileImages.map(u => `<div class="profile-thumb-card" data-u="${esc(u)}"><img class="profile-thumb-img" src="${esc(u)}" alt=""></div>`).join('');
+$('profileGrid').onclick = e => { const c = e.target.closest('[data-u]'); if (!c) return; selectedImage = c.dataset.u; $('cardImage').src = selectedImage; $('closeProfilePickerBtn').onclick(); updatePresence(); };
 $('rankingList').onclick = e => { if (gameMode === 'bomb') { const b = e.target.closest('[data-bomb]'); if (b) bombGive(b.dataset.bomb); return; }
   const el = e.target.closest('[data-userid]'); if (!el || !isTargetSelectMode) return;
   const id = el.dataset.userid, t = pendingAttackType; isTargetSelectMode = false; pendingAttackType = null; renderRankingList(activeUsers);
@@ -2918,7 +2877,7 @@ const TUT_ROWS2 = [
   ['설정', '<span class="tkb">탭</span>', '모드별 설정'],
   ['설정', '<span class="tkb">기본값으로</span>', '전부 되돌리기'],
   ['설정', '<span class="tkb">닫기</span>', '설정창 닫기'],
-  ['로비', '<span class="tkb">🎨 캐릭터 꾸미기</span>', '프로필 고르기'],
+  ['로비', '<span class="tkb">📸 프로필 바꾸기</span>', '프로필 고르기'],
   ['시상식', '<span class="tkb">로비로</span>', '시상식 끝나면'],
   ['콘솔', '/tutorial', '튜토리얼 다시']
 ];
@@ -3163,7 +3122,7 @@ function infoShow(i, hold) {
   ;
   re($('infBar'), 'infB ' + (hold ? 10 : 5) + 's linear forwards'); infoAt = Date.now() + (hold ? 10000 : 5000);
 }
-let infoHide = false, infoAll = false, infoChat = false, lcMax = false;
+let infoHide = true, infoAll = false, infoChat = false, lcMax = false;
 function infoView() {   // 한 개씩 보기 ↔ 전체 보기
   $('infSt').style.display = (infoAll || infoChat) ? 'none' : ''; $('infGrid').style.display = (infoAll && !infoChat) ? 'grid' : 'none'; $('infAll').style.display = infoChat ? 'none' : ''; lcView();
   $('infAll').textContent = infoGame ? '시작하기' : infoAll ? '한 개씩 보기' : '전체 보기';
@@ -3171,8 +3130,8 @@ function infoView() {   // 한 개씩 보기 ↔ 전체 보기
 }
 function infoSync() {   // 로비에서만 (선생님도). 설정/콘솔/튜토리얼/프로필 고르기 중엔 잠시 숨김
   const lobby = !gameStarted && !curStage && $('profilePickerUI').style.display !== 'flex' && !$('resultOverlay').classList.contains('active');
-  const on = false && lobby && !infoHide && !settingsOpen && !cmdOn && !TUT.on && !document.querySelector('.right-card-container').classList.contains('gem-open'), ob = $('infOpenBtn');
-  if (ob) ob.style.display = (lobby && infoHide) ? '' : 'none';
+  const on = lobby && !infoHide && !settingsOpen && !cmdOn && !TUT.on && !document.querySelector('.right-card-container').classList.contains('gem-open'), ob = $('infOpenBtn');
+  if (ob) ob.style.display = 'none';   // 모드 설명 카드 삭제: 다시 여는 버튼도 숨김
   const gb = $('cgOpenBtn2'); if (gb) gb.style.display = (lobby && infoHide) ? '' : 'none';
   $('infSt').classList.toggle('grad', !!S.infGrad);
   document.querySelector('.right-card-container').classList.toggle('lc-max', on && ((infoChat && lcMax) || cgWide));
