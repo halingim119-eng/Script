@@ -48,7 +48,7 @@ input.codein:focus{border-color:#2563eb}
   <div class="pane" id="paneSend">
     <div class="drop" id="drop">여기를 눌러 영상 고르기<br><small>(끌어다 놓아도 돼요)</small></div>
     <input type="file" id="fileIn" accept="video/*,*/*" class="hide">
-    <div id="sendInfo" class="hide" style="display:none;flex-direction:column;gap:12px">
+    <div id="sendInfo" style="display:none;flex-direction:column;gap:12px">
       <div class="file" id="sendFile"></div>
       <div class="sub">핸드폰에서 이 사이트를 열고 아래 코드를 입력하거나, QR을 찍으세요.</div>
       <div class="code" id="codeBig">------</div>
@@ -65,11 +65,11 @@ input.codein:focus{border-color:#2563eb}
     <input class="codein" id="codeIn" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="off">
     <button class="btn" id="connBtn">연결하기</button>
     <div class="msg" id="getMsg"></div>
-    <div id="getInfo" class="hide" style="display:none;flex-direction:column;gap:12px">
+    <div id="getInfo" style="display:none;flex-direction:column;gap:12px">
       <div class="file" id="getFile"></div>
       <button class="btn green" id="dlBtn">다운로드 시작</button>
       <div class="bar"><i id="getBar"></i></div>
-      <a class="btn green hide" id="saveLink" style="display:none">💾 핸드폰에 저장</a>
+      <a class="btn green" id="saveLink" style="display:none">💾 핸드폰에 저장</a>
     </div>
   </div>
 
