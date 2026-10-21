@@ -69,68 +69,29 @@ input.t:focus{border-color:var(--ink)}
 .pc img{width:68px;height:68px;border-radius:50%;background:#fff;object-fit:contain;box-shadow:var(--sh)}
 .pc .bl{margin-top:6px;border-radius:14px 14px 0 0;font-size:32px;display:flex;align-items:center;justify-content:center;background:#fff;box-shadow:var(--sh)}
 @keyframes up{from{opacity:0;transform:translateY(40px)}}
-
-
-.lobby{padding:0 10px;gap:0;justify-content:center;align-items:flex-start}
-.pad{position:relative;width:920px;height:480px;flex:none}
-.pad .body{position:absolute;left:0;top:0;overflow:visible;filter:drop-shadow(0 1px 1px rgba(0,0,0,.1)) drop-shadow(0 8px 14px rgba(0,0,0,.13))}
-.dpad{position:absolute;left:95px;top:65px;width:70px;height:70px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3)) drop-shadow(0 3px 5px rgba(0,0,0,.1))}
-.dpad i{position:absolute;background:#fff;border-radius:7px}
-.dpad .v{left:23px;top:0;width:24px;height:70px}
-.dpad .h{left:0;top:23px;width:70px;height:24px}
-.abxy{position:absolute;left:745px;top:55px;width:90px;height:90px}
-.abxy b{position:absolute;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3),0 3px 6px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center;font-size:11px;color:#9ca3af}
-.pl{position:absolute;top:148px;width:154px;height:244px;display:flex;flex-direction:column;gap:8px}
-.pl-l{left:26px}.pl-r{left:740px}
-.pl .plist{padding:3px}
-.nm{overflow:hidden;text-overflow:ellipsis;min-width:0}
-.mid{position:absolute;left:236px;top:44px;width:448px;height:270px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:3px;overflow-y:auto}
-.mid .bigav{width:48px;height:48px}
-.mid input.t{width:240px;padding:6px;font-size:15px;flex:none}
-.mid .pf{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;width:290px;padding:3px;overflow:visible;flex:none}
-.mid #tpanel{flex:none}
-.pad .tile{font-size:0;padding:5px 4px}
-.pad .tile b{font-size:13px;margin:0}
-.pad .tile span{font-size:10px}
-.mid #wait{flex:none;text-align:center}
-
-.mid{top:40px;height:276px;gap:6px}
-.mid .bigav{width:44px;height:44px}
-.mid .pf{width:272px;gap:5px}
-.pad .tile{padding:4px 4px}
-.pl .plist{-webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent);padding-bottom:18px}
-#zipBtn{background:var(--ink);color:#fff;border-color:var(--ink);box-shadow:none;cursor:pointer;animation:zipin .4s both}
-#zipBtn:hover{background:#374151}
-@keyframes zipin{from{opacity:0;transform:translateY(-6px)}}
 </style>
 </head>
 <body>
 <div id="app">
   <div id="hd">
-    <b>비례 노트 배틀</b><div class="sp"></div>
-    <button class="btn sm" id="zipBtn" style="display:none">ZIP 다운로드</button>
+    <b>📐 비례 노트 배틀</b><div class="sp"></div>
     <div class="pill"><span id="cnt">0명</span><input type="password" id="tcode" placeholder="코드" autocomplete="new-password"></div>
   </div>
 
   <div class="scr lobby" id="scrLobby">
-    <div class="pad">
-      <svg class="body" viewBox="0 0 920 480" width="920" height="480" aria-hidden="true"><path d="M 460 36 L 400 36 C 370 36 340 36 320 32 C 290 26 270 12 232 12 C 190 12 160 22 132 38 C 70 72 34 130 22 210 C 10 290 4 350 8 400 C 12 448 48 476 94 470 C 142 464 188 412 222 372 C 252 336 290 318 345 318 L 575 318 C 630 318 668 336 698 372 C 732 412 778 464 826 470 C 872 476 908 448 912 400 C 916 350 910 290 898 210 C 886 130 850 72 788 38 C 760 22 730 12 688 12 C 650 12 630 26 600 32 C 580 36 550 36 520 36 L 460 36 Z" fill="#fff" stroke="rgba(0,0,0,.06)" stroke-width="1.5"/></svg>
-      <div class="dpad"><i class="v"></i><i class="h"></i></div>
-      <div class="abxy"><b style="left:31px;top:0">Y</b><b style="left:0;top:31px">X</b><b style="left:62px;top:31px">B</b><b style="left:31px;top:62px">A</b></div>
-      <div class="pl pl-l"><div class="sec">플레이어들</div><div class="plist" id="plL"></div></div>
-      <div class="mid">
-        <img id="av" class="bigav" alt="">
-        <input id="nickname" class="t" placeholder="닉네임" maxlength="12" autocomplete="off">
-        <div class="pf" id="pf"></div>
-        <div id="tpanel" style="display:none;flex-direction:column;gap:8px;width:100%">
-          <div class="tiles" id="tiles"></div>
-          <div class="row"><label style="font-size:13px">라운드 수 <input id="rounds" class="n" type="number" value="3" min="1" max="10" style="width:56px;font-size:16px;padding:3px"></label>
-          <button class="btn" id="startBtn" style="flex:1;padding:6px 18px">게임 시작</button></div>
-        </div>
-        <div id="wait" class="sec">선생님이 시작하길 기다려요</div>
+    <div class="card plcard"><div class="sec">✏️ 친구들</div><div class="plist" id="plL"></div></div>
+    <div class="card ctr">
+      <img id="av" class="bigav" alt="">
+      <input id="nickname" class="t" placeholder="닉네임" maxlength="12" autocomplete="off">
+      <div class="pf" id="pf"></div>
+      <div id="tpanel" style="display:none;flex-direction:column;gap:10px;width:100%">
+        <div class="tiles" id="tiles"></div>
+        <div class="row"><label style="font-size:13px">라운드 수 <input id="rounds" class="n" type="number" value="3" min="1" max="10" style="width:60px;font-size:16px"></label>
+        <button class="btn" id="startBtn" style="flex:1">게임 시작</button></div>
       </div>
-      <div class="pl pl-r"><div class="sec">플레이어들</div><div class="plist" id="plR"></div></div>
+      <div id="wait" class="sec">선생님이 시작하길 기다려요 ⏳</div>
     </div>
+    <div class="card plcard"><div class="sec">✏️ 친구들</div><div class="plist" id="plR"></div></div>
   </div>
 
   <div class="scr game" id="scrGame" style="display:none">
@@ -140,7 +101,7 @@ input.t:focus{border-color:var(--ink)}
   </div>
 
   <div class="scr res" id="scrRes" style="display:none">
-    <div class="big"> 결과 발표</div>
+    <div class="big">🏆 결과 발표</div>
     <div id="rpod"></div>
     <div class="card plist" id="rlist" style="width:100%;max-height:140px;padding:10px;flex-direction:row;flex-wrap:wrap"></div>
     <button class="btn" id="backBtn">로비로</button>
@@ -175,7 +136,7 @@ function chk(o){const n=x=>Number.isInteger(+x)?+x:0,a=n(o.a),b=n(o.b),c=n(o.c);
  if(c<1||c>999||a<1||b<1||a>99||b>99||(c*a)%(a+b))return null;return{txt:`사탕 ${c}개를 ${a} : ${b}로 나누면 앞사람의 몫은?`,ans:c*a/(a+b)}}
 const sysProb=()=>{const[a,b]=coprime(),k=rnd(2,8);return{txt:`${a} : ${b} = ${a*k} : □`,ans:b*k}};
 const ING=['밀가루','설탕','우유','버터','계란','소금','꿀','초코'];
-const MODES={recipe:['','비밀 레시피','단서를 나눠 연비 풀기'],imp:['','사기꾼 찾기','다른 문제 받은 사람 찾기'],rev:['','거꾸로 출제','내가 낸 문제를 친구가 풀어요']};
+const MODES={recipe:['🍰','비밀 레시피','단서를 나눠 연비 풀기'],imp:['🎭','사기꾼 찾기','다른 문제 받은 사람 찾기'],rev:['🔄','거꾸로 출제','내가 낸 문제를 친구가 풀어요']};
 const PH={recipe:[['solve',60],['reveal',7]],imp:[['solve',45],['vote',40],['reveal',8]],rev:[['make',80],['solve',80],['reveal',8]]};
 const NEED={recipe:1,imp:3,rev:2};
 
@@ -265,7 +226,7 @@ function renderAll(){
     rdNow=host.rd;scNow=host.sc||{};phEnd=Date.now()+rdNow.pl;phDur=Math.max(1,rdNow.pd*1000);curKey=`${rdNow.sid}-${rdNow.rn}-${rdNow.ph}`;
     if(!inGame){inGame=true;show('Game')}
     if(shownKey!==curKey){shownKey=curKey;$('stage').dataset.t='p';$('stage').innerHTML=stageHtml(rdNow);if(rdNow.ph==='reveal'){const r=(rdNow.d.res||{})[myId];if(!isTeacher&&r!=null)r>0?SFX.ok():SFX.no()}}
-    const M=MODES[rdNow.mode];$('gMode').textContent=`${M[1]} · ${rdNow.rn}/${rdNow.rounds}`;
+    const M=MODES[rdNow.mode];$('gMode').textContent=`${M[0]} ${M[1]} · ${rdNow.rn}/${rdNow.rounds}`;
     $('gscore').textContent=isTeacher?'':`⭐ ${scNow[myId]||0}점`;$('endBtn').style.display=isTeacher?'':'none';
     const sp=['solve','vote','make'].includes(rdNow.ph),ps=users.filter(u=>!u.isTeacher);
     $('prog').textContent=sp?`제출 ${ps.filter(u=>u.sb&&u.sb.k===curKey).length+(isTeacher?0:0)}/${ps.length}`:'';
@@ -276,7 +237,7 @@ function renderAll(){
 }
 function renderLobby(users){
   $('cnt').textContent=`${users.length}명`;
-  const chip=u=>`<div class="chip"><img src="${esc(u.avatarUrl||profileImages[0])}" alt=""><span class="nm">${esc(u.nickname||'익명')}${u.id===myId?' (나)':''}</span></div>`;
+  const chip=u=>`<div class="chip"><img src="${esc(u.avatarUrl||profileImages[0])}" alt="">${esc(u.nickname||'익명')}${u.id===myId?' (나)':''}</div>`;
   const L=users.filter((_,i)=>i%2===0).map(chip).join(''),R=users.filter((_,i)=>i%2===1).map(chip).join(''),k=L+'|'+R;
   if(k!==lastList){$('plL').innerHTML=L;$('plR').innerHTML=R;lastList=k}
   $('tpanel').style.display=isTeacher?'flex':'none';$('wait').style.display=isTeacher?'none':'block';
@@ -296,26 +257,26 @@ function stageHtml(rd){
   if(m==='recipe'){
     if(ph==='solve'){
       if(T)return d.teams.map((t,i)=>`<div class="tm"><b>${i+1}팀</b>${t.ids.map(av).join('')}</div>`).join('');
-      const ti=d.tm[me];if(ti==null)return wait('다음 라운드부터 함께해요 ');
+      const ti=d.tm[me];if(ti==null)return wait('다음 라운드부터 함께해요 👋');
       const t=d.teams[ti];
-      return `<div class="clue"><small> 내 단서 — 말로만 팀원에게 알려 주세요!</small>${d.cl[me].map(c=>`<div>${c}</div>`).join('')}</div><div class="team">${t.ids.map(av).join('')}</div><div class="q">${t.q}</div><div class="ch">${t.ch.map(v=>`<button class="cb" data-act="ans" data-v="${v}">${v}g</button>`).join('')}</div>`;
+      return `<div class="clue"><small>🤫 내 단서 — 말로만 팀원에게 알려 주세요!</small>${d.cl[me].map(c=>`<div>${c}</div>`).join('')}</div><div class="team">${t.ids.map(av).join('')}</div><div class="q">${t.q}</div><div class="ch">${t.ch.map(v=>`<button class="cb" data-act="ans" data-v="${v}">${v}g</button>`).join('')}</div>`;
     }
     return fb+(d.rv||[]).map((r,i)=>`<div class="tm"><b>${i+1}팀</b>${r.nm.join(' : ')} = ${r.v.join(' : ')} → 정답 <b>${r.ans}g</b></div>`).join('');
   }
   if(m==='imp'){
     if(ph==='solve'){
-      if(T)return wait('학생들이 풀고 있어요 ');
-      const p=d.pr[me];if(!p)return wait('다음 라운드부터 함께해요 ');
-      return `<div class="role ${p.i?'bad':''}">${p.i?' 당신이 사기꾼! 들키지 않게 연기하세요':' 사기꾼은 숫자가 다른 문제를 받았어요'}</div><div class="big">${p.t}</div>${num}`;
+      if(T)return wait('학생들이 풀고 있어요 ✏️');
+      const p=d.pr[me];if(!p)return wait('다음 라운드부터 함께해요 👋');
+      return `<div class="role ${p.i?'bad':''}">${p.i?'🎭 당신이 사기꾼! 들키지 않게 연기하세요':'🔍 사기꾼은 숫자가 다른 문제를 받았어요'}</div><div class="big">${p.t}</div>${num}`;
     }
     if(ph==='vote'){
       const p=!T&&d.pr&&d.pr[me];
       return `<div class="q">서로 풀이를 말해 보고, 사기꾼 같은 친구를 찾으세요!</div>${p?`<div class="role">내 문제: ${p.t}</div>`:''}<div class="vgrid">${Object.entries(d.an).map(([id,a])=>`<div class="vc ${id===me?'me':''}" data-act="vote" data-id="${esc(id)}">${av(id)}<b>${esc(a)}</b></div>`).join('')}</div>`;
     }
-    return `<div class="big"> 사기꾼은 ${esc(nick(d.imp))}!</div><div class="q">${d.caught?'붙잡았어요! 정확히 찍은 친구 +10':'놓쳤어요! 사기꾼 +20'}</div>${fb}`;
+    return `<div class="big">🎭 사기꾼은 ${esc(nick(d.imp))}!</div><div class="q">${d.caught?'붙잡았어요! 정확히 찍은 친구 +10':'놓쳤어요! 사기꾼 +20'}</div>${fb}`;
   }
   if(ph==='make'){
-    if(T)return wait('학생들이 문제를 만드는 중 ');
+    if(T)return wait('학생들이 문제를 만드는 중 ✍️');
     return `<div class="q">친구가 풀 문제를 만드세요 (정답이 자연수여야 해요)</div>
       <div class="row"><button class="cb" data-act="type" data-t="p">비례식</button><button class="cb" data-act="type" data-t="s">비례배분</button></div>
       <div id="fp" class="big"><input class="n" id="ma"> : <input class="n" id="mb"> = <input class="n" id="mc"> : □</div>
@@ -323,17 +284,17 @@ function stageHtml(rd){
       <button class="btn" data-act="make">문제 제출</button><div id="mmsg" class="fb"></div>`;
   }
   if(ph==='solve'){
-    if(T)return wait('친구가 낸 문제를 푸는 중 ');
-    const a=d.as[me];if(!a)return wait('다음 라운드부터 함께해요 ');
+    if(T)return wait('친구가 낸 문제를 푸는 중 ✏️');
+    const a=d.as[me];if(!a)return wait('다음 라운드부터 함께해요 👋');
     return `<div class="role">${a.fn?esc(a.fn)+'님이 낸 문제':'선생님이 낸 문제'}</div><div class="big">${a.t}</div>${num}`;
   }
-  return fb+(d.ls||[]).map(x=>`<div class="tm ${x.ok?'g':''}">${esc(x.c)} → ${esc(x.n)} : ${x.t} = <b>${x.ans}</b> ${x.ok?'정답':'오답'}</div>`).join('');
+  return fb+(d.ls||[]).map(x=>`<div class="tm ${x.ok?'g':''}">${esc(x.c)} → ${esc(x.n)} : ${x.t} = <b>${x.ans}</b> ${x.ok?'✅':'❌'}</div>`).join('');
 }
 function submit(v){sb={k:curKey,v};SFX.pop();updatePresence()}
 $('stage').onclick=e=>{
   const b=e.target.closest('[data-act]');if(!b||isTeacher||!rdNow)return;const a=b.dataset.act,st=$('stage');
   if(a==='ans'){submit(b.dataset.v);st.querySelectorAll('.cb').forEach(x=>x.classList.toggle('sel',x===b))}
-  else if(a==='num'){const v=$('numIn').value.trim();if(v==='')return;submit(String(+v));b.textContent='제출됨 '}
+  else if(a==='num'){const v=$('numIn').value.trim();if(v==='')return;submit(String(+v));b.textContent='제출됨 ✓'}
   else if(a==='vote'){if(b.dataset.id===myId)return;submit(b.dataset.id);st.querySelectorAll('.vc').forEach(x=>x.classList.toggle('sel',x===b))}
   else if(a==='type'){st.dataset.t=b.dataset.t;$('fp').style.display=b.dataset.t==='p'?'':'none';$('fs').style.display=b.dataset.t==='s'?'':'none'}
   else if(a==='make'){
@@ -374,7 +335,7 @@ window.addEventListener('pagehide',()=>{try{room.send({type:'broadcast',event:'b
 $('nickname').addEventListener('input',()=>{syncNickname();try{localStorage.setItem('ratioNick',$('nickname').value.trim())}catch(e){}});
 try{const sv=localStorage.getItem('ratioNick');if(sv)$('nickname').value=sv.slice(0,12)}catch(e){}
 $('tcode').addEventListener('input',e=>{const v=e.target.value===CFG.teacherCode;if(v===isTeacher)return;isTeacher=v;if(v){e.target.style.display='none';SFX.ok()}syncNickname()});
-$('tiles').innerHTML=Object.entries(MODES).map(([k,m])=>`<div class="tile${k===mode?' sel':''}" data-m="${k}"><b>${m[1]}</b><span>${m[2]}</span></div>`).join('');
+$('tiles').innerHTML=Object.entries(MODES).map(([k,m])=>`<div class="tile${k===mode?' sel':''}" data-m="${k}">${m[0]}<b>${m[1]}</b><span>${m[2]}</span></div>`).join('');
 $('tiles').onclick=e=>{const t=e.target.closest('[data-m]');if(!t)return;mode=t.dataset.m;[...$('tiles').children].forEach(x=>x.classList.toggle('sel',x===t))};
 $('startBtn').onclick=hostStart;
 $('endBtn').onclick=()=>{if(isTeacher&&H)finish()};
@@ -383,34 +344,6 @@ $('pf').innerHTML=profileImages.map((u,i)=>`<img src="${esc(u)}" data-u="${esc(u
 $('pf').onclick=e=>{const c=e.target.closest('[data-u]');if(!c)return;selectedImage=c.dataset.u;$('av').src=selectedImage;$('pf').querySelectorAll('img').forEach(x=>x.classList.toggle('sel',x===c));updatePresence()};
 function fit(){const s=Math.max(.4,Math.min(innerWidth/960,innerHeight/560,3));$('app').style.transform=`scale(${s})`}
 addEventListener('resize',fit);
-/* ===== ZIP 자동 찾기 (같은 폴더, 이름 무관) ===== */
-(async()=>{
-  const btn=$('zipBtn');if(!btn)return;
-  const base=new URL('./',location.href);let url=null;
-  try{
-    const r=await fetch(base.href,{cache:'no-store'});
-    if(r.ok){
-      const doc=new DOMParser().parseFromString(await r.text(),'text/html');
-      const hs=[...doc.querySelectorAll('a[href]')].map(a=>a.getAttribute('href')).filter(h=>/\.zip([?#]|$)/i.test(h));
-      if(hs.length)url=new URL(hs[0],base).href;
-    }
-  }catch(e){}
-  if(!url&&/\.github\.io$/i.test(location.hostname)){
-    try{
-      const user=location.hostname.split('.')[0],parts=location.pathname.split('/').filter(Boolean);
-      const proj=parts[0]&&!/\.html?$/i.test(parts[0]);
-      const repo=proj?parts[0]:user+'.github.io';
-      const sub=(proj?parts.slice(1):parts).filter(p=>!/\.html?$/i.test(p)).join('/');
-      const j=await (await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${sub}`)).json();
-      const f=Array.isArray(j)&&j.find(x=>/\.zip$/i.test(x.name));
-      if(f)url=f.download_url;
-    }catch(e){}
-  }
-  if(!url)return;
-  const name=decodeURIComponent(url.split('?')[0].split('/').pop())||'download.zip';
-  btn.style.display='';
-  btn.onclick=()=>{const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()};
-})();
 syncNickname();fit();connect();
 </script>
 </body>
