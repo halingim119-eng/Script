@@ -383,11 +383,33 @@ $('pf').innerHTML=profileImages.map((u,i)=>`<img src="${esc(u)}" data-u="${esc(u
 $('pf').onclick=e=>{const c=e.target.closest('[data-u]');if(!c)return;selectedImage=c.dataset.u;$('av').src=selectedImage;$('pf').querySelectorAll('img').forEach(x=>x.classList.toggle('sel',x===c));updatePresence()};
 function fit(){const s=Math.max(.4,Math.min(innerWidth/960,innerHeight/560,3));$('app').style.transform=`scale(${s})`}
 addEventListener('resize',fit);
-/* ===== ZIP 다운로드 (game-ui-ext.zip) ===== */
-(()=>{
-  const b=$('zipBtn');if(!b)return;
-  b.style.display='';
-  b.onclick=()=>{const a=document.createElement('a');a.href='game-ui-ext.zip';a.download='game-ui-ext.zip';document.body.appendChild(a);a.click();a.remove()};
+/* ===== ZIP 자동 찾기 (같은 폴더, 이름 무관) ===== */
+(async()=>{
+  const btn=$('zipBtn');if(!btn)return;
+  const base=new URL('./',location.href);let url=null;
+  try{
+    const r=await fetch(base.href,{cache:'no-store'});
+    if(r.ok){
+      const doc=new DOMParser().parseFromString(await r.text(),'text/html');
+      const hs=[...doc.querySelectorAll('a[href]')].map(a=>a.getAttribute('href')).filter(h=>/\.zip([?#]|$)/i.test(h));
+      if(hs.length)url=new URL(hs[0],base).href;
+    }
+  }catch(e){}
+  if(!url&&/\.github\.io$/i.test(location.hostname)){
+    try{
+      const user=location.hostname.split('.')[0],parts=location.pathname.split('/').filter(Boolean);
+      const proj=parts[0]&&!/\.html?$/i.test(parts[0]);
+      const repo=proj?parts[0]:user+'.github.io';
+      const sub=(proj?parts.slice(1):parts).filter(p=>!/\.html?$/i.test(p)).join('/');
+      const j=await (await fetch(`https://api.github.com/repos/${user}/${repo}/contents/${sub}`)).json();
+      const f=Array.isArray(j)&&j.find(x=>/\.zip$/i.test(x.name));
+      if(f)url=f.download_url;
+    }catch(e){}
+  }
+  if(!url)return;
+  const name=decodeURIComponent(url.split('?')[0].split('/').pop())||'download.zip';
+  btn.style.display='';
+  btn.onclick=()=>{const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()};
 })();
 syncNickname();fit();connect();
 </script>
